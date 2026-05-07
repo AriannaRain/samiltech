@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>담임교사 페이지 — 삼일공업고등학교 취업정보 포털</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#1A3A6B;--primary-light:#2E5FAD;--accent:#E8740A;
+  --bg:#F4F6FA;--card:#fff;--text:#1C2B3A;--text-sub:#5A6A7E;
+  --border:#DDE3EE;--radius:12px;--shadow:0 2px 12px rgba(26,58,107,.10);
+  --green:#38A169;--red:#E53E3E;--nav-h:60px;--sidebar:200px
+}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text)}
+
+/* 로그인 */
+.login-screen{position:fixed;inset:0;background:var(--primary);display:flex;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:0}
+.login-box{background:#fff;border-radius:16px;padding:36px;width:360px}
+.login-logo{text-align:center;margin-bottom:24px}
+.login-logo .mark{width:56px;height:56px;background:var(--accent);border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:10px}
+.login-logo h2{font-size:18px;font-weight:700}
+.login-logo p{font-size:13px;color:var(--text-sub);margin-top:4px}
+.form-group{margin-bottom:13px}
+.form-group label{display:block;font-size:12px;font-weight:600;color:var(--text-sub);margin-bottom:5px}
+.form-group input,.form-group select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;transition:.2s}
+.form-group input:focus{border-color:var(--primary-light)}
+.btn-login{width:100%;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px}
+.login-hint{margin-top:12px;padding:10px 14px;background:var(--bg);border-radius:8px;font-size:12px;color:var(--text-sub);line-height:1.6}
+
+/* 레이아웃 */
+nav.topnav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:var(--primary);z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 24px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.nav-brand{display:flex;align-items:center;gap:10px}
+.nav-logo{width:36px;height:36px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;line-height:1.2;text-align:center}
+.nav-title{color:#fff;font-weight:700;font-size:15px}
+.nav-title span{color:rgba(255,255,255,.6);font-size:11px;display:block;font-weight:400}
+.nav-info{display:flex;align-items:center;gap:12px}
+.nav-teacher{color:rgba(255,255,255,.9);font-size:13px}
+.nav-teacher strong{color:#fff}
+.nav-btn{padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit}
+.nav-btn-ghost{background:rgba(255,255,255,.15);color:#fff}
+.nav-btn-ghost:hover{background:rgba(255,255,255,.25)}
+
+.layout{display:flex;padding-top:var(--nav-h);min-height:100vh}
+.sidebar{width:var(--sidebar);background:#fff;border-right:1px solid var(--border);position:fixed;top:var(--nav-h);bottom:0;overflow-y:auto}
+.side-nav{padding:12px 0}
+.nav-section{padding:10px 16px 4px;font-size:10px;color:var(--text-sub);letter-spacing:.5px;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 16px;color:var(--text-sub);cursor:pointer;transition:.15s;font-size:13px;border-left:3px solid transparent}
+.nav-item:hover{background:var(--bg);color:var(--text)}
+.nav-item.active{background:#EBF4FF;color:var(--primary);border-left-color:var(--primary);font-weight:600}
+.nav-item .icon{font-size:16px;width:20px;text-align:center}
+
+.main{margin-left:var(--sidebar);flex:1;padding:24px}
+.page-header{margin-bottom:20px}
+.page-header h1{font-size:21px;font-weight:700}
+.page-header p{font-size:13px;color:var(--text-sub);margin-top:4px}
+
+/* 카드 */
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
+.card-title{font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.card-title::before{content:'';width:4px;height:18px;background:var(--accent);border-radius:2px}
+
+/* 대시보드 카드 */
+.dash-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.dash-card{background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);text-align:center}
+.dash-num{font-size:30px;font-weight:700;color:var(--primary)}
+.dash-label{font-size:12px;color:var(--text-sub);margin-top:4px}
+
+/* 버튼 */
+.btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:.15s}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-accent{background:var(--accent);color:#fff}
+.btn-ghost{background:none;border:1px solid var(--border);color:var(--text-sub)}
+.btn-ghost:hover{border-color:var(--primary);color:var(--primary)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-group{display:flex;gap:8px;margin-top:12px}
+
+/* 테이블 */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--bg);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-sub);border-bottom:2px solid var(--border)}
+td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:hover td{background:#fafbfd}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.badge-green{background:#F0FFF4;color:var(--green)}
+.badge-blue{background:#EBF4FF;color:var(--primary)}
+.badge-gray{background:var(--bg);color:var(--text-sub)}
+.badge-orange{background:#FFF3E0;color:var(--accent)}
+
+/* 업로드 영역 */
+.upload-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:32px;text-align:center;cursor:pointer;transition:.2s;background:var(--bg)}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--primary);background:#EBF4FF}
+.upload-zone .icon{font-size:36px;margin-bottom:10px}
+.upload-zone h3{font-size:15px;font-weight:600;margin-bottom:4px}
+.upload-zone p{font-size:13px;color:var(--text-sub)}
+.upload-zone input{display:none}
+
+/* 진행바 */
+.progress-wrap{margin-top:16px;display:none}
+.progress-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.progress-fill{height:100%;background:var(--primary);border-radius:4px;transition:.3s;width:0}
+.progress-label{font-size:12px;color:var(--text-sub);margin-top:6px}
+
+/* 알림 */
+.alert{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:12px}
+.alert-success{background:#F0FFF4;color:var(--green);border:1px solid #C6F6D5}
+.alert-error{background:#FFF5F5;color:var(--red);border:1px solid #FED7D7}
+.alert-info{background:#EBF4FF;color:var(--primary);border:1px solid #BEE3F8}
+
+/* 탭 */
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* PW 변경 모달 */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:16px;padding:24px;width:360px}
+.modal h3{font-size:17px;font-weight:700;margin-bottom:16px}
+.modal-btns{display:flex;gap:8px;margin-top:16px}
+
+/* 채용공고 카드 (읽기전용) */
+.job-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:12px}
+.job-company{font-size:12px;color:var(--text-sub);margin-bottom:3px;display:flex;gap:6px;align-items:center}
+.job-rec{background:var(--accent);color:#fff;font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600}
+.job-title{font-size:15px;font-weight:700;margin-bottom:8px}
+.job-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.job-tag{background:var(--bg);color:var(--text-sub);font-size:11px;padding:3px 8px;border-radius:20px;border:1px solid var(--border)}
+.job-footer{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);padding-top:10px;font-size:12px;color:var(--text-sub)}
+.deadline-urgent{color:var(--red);font-weight:600}
+
+@media(max-width:768px){
+  .sidebar{display:none}
+  .main{margin-left:0}
+  .dash-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- 로그인 -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="mark">👨‍🏫</div>
+      <h2>담임교사 로그인</h2>
+      <p>삼일공업고등학교 취업정보 포털</p>
+    </div>
+    <div class="form-group"><label>아이디</label><input id="l-id" placeholder="관리자로부터 받은 아이디" onkeydown="if(event.key==='Enter')tryLogin()"></div>
+    <div class="form-group"><label>비밀번호</label><input type="password" id="l-pw" placeholder="비밀번호" onkeydown="if(event.key==='Enter')tryLogin()"></div>
+    <button class="btn-login" onclick="tryLogin()">로그인</button>
+    <div class="login-hint">💡 아이디/비밀번호는 관리자에게 문의하세요<br>아이디 형식: 학과코드_학년반 (예: 전자_104)</div>
+  </div>
+</div>
+
+<!-- 네비게이션 -->
+<nav class="topnav" id="topNav" style="display:none">
+  <div class="nav-brand">
+    <div class="nav-logo">삼일<br>공고</div>
+    <div class="nav-title">담임교사 페이지<span>SAMIL JOBS</span></div>
+  </div>
+  <div class="nav-info">
+    <div class="nav-teacher" id="navTeacherInfo"></div>
+    <button class="nav-btn nav-btn-ghost" onclick="openPwModal()">🔑 비밀번호 변경</button>
+    <button class="nav-btn nav-btn-ghost" onclick="logout()">로그아웃</button>
+  </div>
+</nav>
+
+<!-- 레이아웃 -->
+<div class="layout" id="appLayout" style="display:none">
+  <!-- 사이드바 -->
+  <div class="sidebar">
+    <div class="side-nav">
+      <div class="nav-section">내 반 관리</div>
+      <div class="nav-item active" onclick="showTab('dashboard',this)"><span class="icon">📊</span>대시보드</div>
+      <div class="nav-item" onclick="showTab('upload',this)"><span class="icon">📤</span>생기부 업로드</div>
+      <div class="nav-item" onclick="showTab('students',this)"><span class="icon">🎓</span>학생 목록</div>
+      <div class="nav-section">채용 정보</div>
+      <div class="nav-item" onclick="showTab('jobs',this)"><span class="icon">📋</span>채용공고 열람</div>
+    </div>
+  </div>
+
+  <!-- 메인 -->
+  <div class="main">
+
+    <!-- 대시보드 -->
+    <div class="tab-panel active" id="tab-dashboard">
+      <div class="page-header">
+        <h1 id="dashTitle">내 반 현황</h1>
+        <p id="dashSub"></p>
+      </div>
+      <div class="dash-grid">
+        <div class="dash-card"><div class="dash-num" id="d-total">0</div><div class="dash-label">전체 학생</div></div>
+        <div class="dash-card"><div class="dash-num" id="d-uploaded">0</div><div class="dash-label">생기부 등록</div></div>
+        <div class="dash-card"><div class="dash-num" id="d-jobs">0</div><div class="dash-label">진행중 채용공고</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">공지사항</div>
+        <div class="alert alert-info">📌 생기부 Excel 파일을 업로드하면 학생 계정이 자동 생성됩니다.</div>
+        <div class="alert alert-info">📌 학생 초기 비밀번호는 생년월일 6자리(YYMMDD)입니다.</div>
+        <div class="alert alert-info">📌 업로드 후 학생 목록에서 계정 생성 여부를 확인하세요.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">최근 등록 학생</div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>학번</th><th>이름</th><th>성별</th><th>생년월일</th><th>계정상태</th></tr></thead>
+          <tbody id="recentStudentTb"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- 생기부 업로드 -->
+    <div class="tab-panel" id="tab-upload">
+      <div class="page-header"><h1>생활기록부 Excel 업로드</h1><p>추출기로 생성한 Excel 파일을 업로드하면 학생 계정이 자동 생성됩니다.</p></div>
+      <div class="card">
+        <div class="card-title">파일 업로드</div>
+        <div class="alert alert-info">✅ 업로드 가능 파일: 생활기록부 추출기(samil_record_extractor.exe)로 생성한 <strong>.xlsx</strong> 파일</div>
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()"
+             ondragover="event.preventDefault();this.classList.add('drag')"
+             ondragleave="this.classList.remove('drag')"
+             ondrop="handleDrop(event)">
+          <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFile(this.files[0])">
+          <div class="icon">📂</div>
+          <h3>파일을 클릭하거나 드래그하여 업로드</h3>
+          <p>Excel 파일 (.xlsx) 지원</p>
+        </div>
+        <div class="progress-wrap" id="progressWrap">
+          <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+          <div class="progress-label" id="progressLabel">처리 중...</div>
+        </div>
+        <div id="uploadAlert" style="margin-top:12px"></div>
+      </div>
+      <div class="card" id="previewCard" style="display:none">
+        <div class="card-title">업로드 미리보기</div>
+        <div id="previewAlert" class="alert alert-success" style="margin-bottom:12px"></div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>학과</th><th>학번</th><th>이름</th><th>성별</th><th>생년월일</th><th>담임</th><th>초기PW</th></tr></thead>
+          <tbody id="previewTb"></tbody>
+        </table></div>
+        <div class="btn-group">
+          <button class="btn btn-accent" onclick="confirmUpload()">✅ 저장 확정</button>
+          <button class="btn btn-ghost" onclick="cancelUpload()">취소</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 학생 목록 -->
+    <div class="tab-panel" id="tab-students">
+      <div class="page-header"><h1>학생 목록</h1><p id="studentSubTitle"></p></div>
+      <div class="card">
+        <div style="display:flex;gap:10px;margin-bottom:14px">
+          <input id="searchName" placeholder="이름 또는 학번 검색" oninput="renderStudentList()"
+            style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;flex:1">
+          <button class="btn btn-ghost btn-sm" onclick="exportCSV()">📥 목록 내보내기</button>
+        </div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>학번</th><th>이름</th><th>성별</th><th>생년월일</th><th>자격증</th><th>계정상태</th><th>관리</th></tr></thead>
+          <tbody id="studentListTb"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- 채용공고 열람 -->
+    <div class="tab-panel" id="tab-jobs">
+      <div class="page-header"><h1>채용공고 열람</h1><p>현재 진행중인 채용공고를 확인하세요.</p></div>
+      <div id="jobListWrap"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 비밀번호 변경 모달 -->
+<div class="modal-overlay" id="pwModal">
+  <div class="modal">
+    <h3>🔑 비밀번호 변경</h3>
+    <div class="form-group"><label>현재 비밀번호</label><input type="password" id="pw-cur"></div>
+    <div class="form-group"><label>새 비밀번호</label><input type="password" id="pw-new"></div>
+    <div class="form-group"><label>비밀번호 확인</label><input type="password" id="pw-cf"></div>
+    <div id="pw-alert" style="margin-top:8px"></div>
+    <div class="modal-btns">
+      <button class="btn btn-accent" style="flex:1" onclick="changePw()">변경</button>
+      <button class="btn btn-ghost" style="flex:1" onclick="closePwModal()">취소</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ── 상태 ──
+let DB = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
+let ME = null; // 현재 로그인 교사 정보
+let pendingStudents = []; // 업로드 미리보기 대기
+
+function saveDB(){ localStorage.setItem('samilAdmin', JSON.stringify(DB)); }
+
+// ── 로그인 ──
+function tryLogin(){
+  const id = document.getElementById('l-id').value.trim();
+  const pw = document.getElementById('l-pw').value;
+  if(!id||!pw){ alert('아이디와 비밀번호를 입력하세요'); return; }
+
+  const teachers = DB.teachers||[];
+  const found = teachers.find(t => t.id===id && t.pw===pw);
+  if(!found){ alert('아이디 또는 비밀번호가 틀렸습니다.'); return; }
+
+  ME = found;
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('topNav').style.display='flex';
+  document.getElementById('appLayout').style.display='flex';
+  document.getElementById('navTeacherInfo').innerHTML =
+    `<strong>${ME.name}</strong> 선생님 | ${ME.dept} ${ME.grade}학년 ${ME.cls}반`;
+  init();
+}
+
+function logout(){
+  ME=null;
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('topNav').style.display='none';
+  document.getElementById('appLayout').style.display='none';
+  document.getElementById('l-pw').value='';
+}
+
+// ── 초기화 ──
+function init(){
+  const myStudents = getMyStudents();
+  // 대시보드
+  document.getElementById('dashTitle').textContent = `${ME.dept} ${ME.grade}학년 ${ME.cls}반 현황`;
+  document.getElementById('dashSub').textContent   = `${ME.year}학년도`;
+  document.getElementById('d-total').textContent   = myStudents.length;
+  document.getElementById('d-uploaded').textContent= myStudents.filter(s=>s.uploaded).length;
+  document.getElementById('d-jobs').textContent    = (DB.jobs||[]).filter(j=>j.active).length;
+  document.getElementById('studentSubTitle').textContent = `${ME.dept} ${ME.grade}학년 ${ME.cls}반 | 총 ${myStudents.length}명`;
+
+  // 최근 학생
+  document.getElementById('recentStudentTb').innerHTML = myStudents.slice(0,5).map(s=>`
+    <tr><td>${s.id}</td><td><strong>${s.name}</strong></td><td>${s.gender||'—'}</td>
+    <td>${s.birth||'—'}</td>
+    <td><span class="badge ${s.uploaded?'badge-green':'badge-gray'}">${s.uploaded?'등록됨':'미등록'}</span></td></tr>
+  `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-sub)">업로드된 학생이 없습니다</td></tr>';
+
+  renderStudentList();
+  renderJobs();
+}
+
+function getMyStudents(){
+  return (DB.students||[]).filter(s=>
+    s.dept===ME.dept && s.grade===String(ME.grade) && s.cls===String(ME.cls)
+  );
+}
+
+// ── 파일 업로드 ──
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if(file) handleFile(file);
+}
+
+function handleFile(file){
+  if(!file||!file.name.match(/\.xlsx?$/i)){
+    showUploadAlert('error','xlsx 또는 xls 파일만 업로드 가능합니다.');
+    return;
+  }
+  const wrap=document.getElementById('progressWrap');
+  wrap.style.display='block';
+  setProgress(20,'파일 읽는 중...');
+
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      setProgress(50,'데이터 분석 중...');
+      const wb=XLSX.read(e.target.result,{type:'array'});
+
+      // 학생기본정보 시트 파싱
+      const ws=wb.Sheets['학생기본정보'];
+      if(!ws){ showUploadAlert('error','학생기본정보 시트를 찾을 수 없습니다.'); wrap.style.display='none'; return; }
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1});
+
+      // 헤더 확인 (row 0)
+      const header=rows[0]||[];
+      const idxMap={};
+      header.forEach((h,i)=>{ idxMap[h]=i; });
+
+      setProgress(80,'계정 생성 준비 중...');
+
+      // 자격증 시트도 파싱
+      const certWs=wb.Sheets['자격증'];
+      const certRows=certWs?XLSX.utils.sheet_to_json(certWs,{header:1}).slice(1):[];
+
+      pendingStudents=rows.slice(1).filter(r=>r.length>2).map(r=>{
+        const 학과=r[idxMap['학과']]||'';
+        const 학번=String(r[idxMap['학번']]||'');
+        const 이름=r[idxMap['이름']]||'';
+        const 성별=r[idxMap['성별']]||'';
+        const 생년월일=String(r[idxMap['생년월일(YYMMDD)']]||r[idxMap['생년월일']]||'');
+        const 담임=r[idxMap['담임교사']]||'';
+        const pw=생년월일;
+        // 자격증 수
+        const certs=certRows.filter(cr=>String(cr[idxMap['학번']||1])===학번).length;
+        return {dept:학과,id:학번,name:이름,gender:성별,birth:생년월일,teacher:담임,pw,
+                grade:String(ME.grade),cls:String(ME.cls),certCount:certs,uploaded:true};
+      }).filter(s=>s.name&&s.id);
+
+      setProgress(100,'완료!');
+
+      // 미리보기
+      document.getElementById('previewAlert').textContent=`총 ${pendingStudents.length}명 확인되었습니다. 저장을 확정하세요.`;
+      document.getElementById('previewTb').innerHTML=pendingStudents.map(s=>`
+        <tr><td>${s.dept}</td><td>${s.id}</td><td><strong>${s.name}</strong></td>
+        <td>${s.gender}</td><td>${s.birth}</td><td>${s.teacher}</td>
+        <td><span class="badge badge-blue">${s.pw}</span></td></tr>`).join('');
+      document.getElementById('previewCard').style.display='block';
+      setTimeout(()=>wrap.style.display='none',800);
+
+    } catch(err){
+      showUploadAlert('error','파일 파싱 오류: '+err.message);
+      wrap.style.display='none';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function setProgress(pct,label){
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressLabel').textContent=label;
+}
+
+function confirmUpload(){
+  if(!pendingStudents.length) return;
+  if(!DB.students) DB.students=[];
+  let added=0, updated=0;
+  pendingStudents.forEach(s=>{
+    const idx=DB.students.findIndex(x=>x.id===s.id&&x.dept===s.dept);
+    if(idx>-1){ DB.students[idx]={...DB.students[idx],...s}; updated++; }
+    else{ DB.students.push(s); added++; }
+  });
+  saveDB();
+  showUploadAlert('success',`✅ 저장 완료! 신규 ${added}명 추가, ${updated}명 업데이트`);
+  document.getElementById('previewCard').style.display='none';
+  pendingStudents=[];
+  document.getElementById('fileInput').value='';
+  init();
+}
+
+function cancelUpload(){
+  pendingStudents=[];
+  document.getElementById('previewCard').style.display='none';
+  document.getElementById('fileInput').value='';
+}
+
+function showUploadAlert(type,msg){
+  document.getElementById('uploadAlert').innerHTML=`<div class="alert alert-${type==='error'?'error':'success'}">${msg}</div>`;
+}
+
+// ── 학생 목록 ──
+function renderStudentList(){
+  const q=(document.getElementById('searchName').value||'').toLowerCase();
+  const list=getMyStudents().filter(s=>!q||s.name.includes(q)||s.id.includes(q));
+  document.getElementById('studentListTb').innerHTML=list.map((s,i)=>`
+    <tr>
+      <td>${s.id}</td>
+      <td><strong>${s.name}</strong></td>
+      <td>${s.gender||'—'}</td>
+      <td>${s.birth||'—'}</td>
+      <td>${s.certCount?`<span class="badge badge-orange">${s.certCount}개</span>`:'—'}</td>
+      <td><span class="badge ${s.uploaded?'badge-green':'badge-gray'}">${s.uploaded?'등록됨':'미등록'}</span></td>
+      <td><button class="btn btn-sm btn-ghost" onclick="resetPw('${s.id}')">PW초기화</button></td>
+    </tr>`
+  ).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--text-sub)">학생 없음</td></tr>';
+}
+
+function resetPw(id){
+  if(!confirm('초기 비밀번호(생년월일)로 초기화합니까?')) return;
+  const s=DB.students.find(x=>x.id===id);
+  if(s){ s.pw=s.birth; saveDB(); alert('초기화 완료'); }
+}
+
+function exportCSV(){
+  const list=getMyStudents();
+  const header=['학번','이름','성별','생년월일','자격증수'];
+  const rows=[header,...list.map(s=>[s.id,s.name,s.gender||'',s.birth||'',s.certCount||0])];
+  const csv=rows.map(r=>r.join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`${ME.dept}_${ME.grade}학년${ME.cls}반_학생목록.csv`; a.click();
+}
+
+// ── 채용공고 ──
+function renderJobs(){
+  const today=new Date();
+  const jobs=(DB.jobs||[]).filter(j=>j.active);
+  document.getElementById('jobListWrap').innerHTML=jobs.map(j=>{
+    const dl=new Date(j.dl); const diff=Math.ceil((dl-today)/86400000);
+    return `<div class="job-card">
+      <div class="job-company">${j.co}${j.rec?`<span class="job-rec">학교장추천 ${j.recCnt}명</span>`:''}</div>
+      <div class="job-title">${j.job}</div>
+      <div class="job-tags">
+        ${(j.tags||[]).map(t=>`<span class="job-tag">${t}</span>`).join('')}
+        <span class="job-tag">📍${j.loc}</span>
+        <span class="job-tag">👤${j.cnt}명</span>
+      </div>
+      <div class="job-footer">
+        <span class="${diff<=7&&diff>=0?'deadline-urgent':''}">마감 ${j.dl}${diff<=7&&diff>=0?' ⚠':''}</span>
+        <span>${j.desc?j.desc.substring(0,30)+'...':''}</span>
+      </div>
+    </div>`;
+  }).join('')||'<div class="card" style="text-align:center;color:var(--text-sub);padding:32px">진행중인 채용공고가 없습니다</div>';
+}
+
+// ── 비밀번호 변경 ──
+function openPwModal(){ document.getElementById('pwModal').classList.add('open'); }
+function closePwModal(){ document.getElementById('pwModal').classList.remove('open'); ['pw-cur','pw-new','pw-cf'].forEach(x=>document.getElementById(x).value=''); }
+function changePw(){
+  const cur=document.getElementById('pw-cur').value;
+  const nw=document.getElementById('pw-new').value;
+  const cf=document.getElementById('pw-cf').value;
+  const al=document.getElementById('pw-alert');
+  if(cur!==ME.pw){ al.innerHTML='<div class="alert alert-error">현재 비밀번호가 틀렸습니다.</div>'; return; }
+  if(nw.length<4){ al.innerHTML='<div class="alert alert-error">4자 이상 입력하세요.</div>'; return; }
+  if(nw!==cf){ al.innerHTML='<div class="alert alert-error">새 비밀번호가 일치하지 않습니다.</div>'; return; }
+  const idx=DB.teachers.findIndex(t=>t.id===ME.id);
+  if(idx>-1){ DB.teachers[idx].pw=nw; ME.pw=nw; saveDB(); }
+  al.innerHTML='<div class="alert alert-success">✅ 변경되었습니다.</div>';
+  setTimeout(closePwModal, 1200);
+}
+
+// ── 탭 ──
+function showTab(id,el){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  el.classList.add('active');
+}
+
+// 클릭 외부 모달 닫기
+document.getElementById('pwModal').addEventListener('click',function(e){ if(e.target===this) closePwModal(); });
+</script>
+</body>
+</html>

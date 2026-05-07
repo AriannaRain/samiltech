@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관리자 페이지 — 삼일공업고등학교 취업정보 포털</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#1A3A6B;--primary-light:#2E5FAD;--accent:#E8740A;
+  --bg:#F4F6FA;--card:#fff;--text:#1C2B3A;--text-sub:#5A6A7E;
+  --border:#DDE3EE;--radius:12px;--shadow:0 2px 12px rgba(26,58,107,.10);
+  --red:#E53E3E;--green:#38A169;--sidebar:220px
+}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+
+/* 사이드바 */
+.sidebar{width:var(--sidebar);background:var(--primary);position:fixed;top:0;left:0;bottom:0;overflow-y:auto;z-index:100}
+.sidebar-brand{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,.1)}
+.sidebar-brand h2{color:#fff;font-size:14px;font-weight:700}
+.sidebar-brand p{color:rgba(255,255,255,.5);font-size:11px;margin-top:2px}
+.sidebar-year{padding:10px 16px;background:rgba(255,255,255,.08)}
+.sidebar-year label{color:rgba(255,255,255,.6);font-size:11px}
+.sidebar-year select{width:100%;margin-top:4px;padding:6px 8px;border-radius:6px;border:none;background:rgba(255,255,255,.15);color:#fff;font-size:13px;font-family:inherit}
+.sidebar-year select option{background:var(--primary);color:#fff}
+nav.side-nav{padding:8px 0}
+.nav-section{padding:10px 16px 4px;font-size:10px;color:rgba(255,255,255,.4);letter-spacing:.5px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;color:rgba(255,255,255,.75);cursor:pointer;transition:.15s;font-size:13px;border-left:3px solid transparent}
+.nav-item:hover{background:rgba(255,255,255,.08);color:#fff}
+.nav-item.active{background:rgba(255,255,255,.12);color:#fff;border-left-color:var(--accent)}
+.nav-item .icon{font-size:16px;width:20px;text-align:center}
+.nav-logout{margin:8px 16px;padding:10px;background:rgba(231,74,74,.2);border:1px solid rgba(231,74,74,.3);border-radius:8px;color:#fc8181;font-size:13px;text-align:center;cursor:pointer}
+.nav-logout:hover{background:rgba(231,74,74,.3)}
+
+/* 메인 */
+.main{margin-left:var(--sidebar);flex:1;padding:24px}
+.page-header{margin-bottom:24px}
+.page-header h1{font-size:22px;font-weight:700}
+.page-header p{font-size:13px;color:var(--text-sub);margin-top:4px}
+
+/* 카드 */
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
+.card-title{font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.card-title::before{content:'';width:4px;height:18px;background:var(--accent);border-radius:2px}
+
+/* 통계 */
+.dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.dash-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);text-align:center}
+.dash-num{font-size:28px;font-weight:700;color:var(--primary)}
+.dash-label{font-size:12px;color:var(--text-sub);margin-top:4px}
+
+/* 폼 */
+.form-row{display:grid;gap:12px;margin-bottom:12px}
+.form-row.cols2{grid-template-columns:1fr 1fr}
+.form-row.cols3{grid-template-columns:1fr 1fr 1fr}
+.form-row.cols4{grid-template-columns:1fr 1fr 1fr 1fr}
+.form-group label{display:block;font-size:12px;font-weight:600;margin-bottom:5px;color:var(--text-sub)}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;transition:.2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--primary-light)}
+.form-group textarea{resize:vertical;min-height:80px}
+
+/* 버튼 */
+.btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:.15s}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-light)}
+.btn-accent{background:var(--accent);color:#fff}
+.btn-accent:hover{opacity:.9}
+.btn-danger{background:var(--red);color:#fff}
+.btn-danger:hover{opacity:.9}
+.btn-ghost{background:none;border:1px solid var(--border);color:var(--text-sub)}
+.btn-ghost:hover{border-color:var(--primary);color:var(--primary)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-group{display:flex;gap:8px;margin-top:12px}
+
+/* 테이블 */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--bg);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-sub);border-bottom:2px solid var(--border)}
+td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:hover td{background:#fafbfd}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.badge-blue{background:#EBF4FF;color:var(--primary)}
+.badge-green{background:#F0FFF4;color:var(--green)}
+.badge-orange{background:#FFF3E0;color:var(--accent)}
+.badge-red{background:#FFF5F5;color:var(--red)}
+
+/* 탭 패널 */
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* 토글 스위치 */
+.switch{position:relative;display:inline-block;width:40px;height:22px}
+.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:22px;transition:.3s}
+.slider:before{content:'';position:absolute;width:16px;height:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+input:checked+.slider{background:var(--primary)}
+input:checked+.slider:before{transform:translateX(18px)}
+
+/* 알림 */
+.alert{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:12px}
+.alert-success{background:#F0FFF4;color:var(--green);border:1px solid #C6F6D5}
+.alert-error{background:#FFF5F5;color:var(--red);border:1px solid #FED7D7}
+
+/* 색상 선택 */
+.color-picker-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.color-dot{width:28px;height:28px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:.15s}
+.color-dot.selected,.color-dot:hover{border-color:var(--text)}
+
+/* 로그인 화면 */
+.login-screen{position:fixed;inset:0;background:var(--primary);display:flex;align-items:center;justify-content:center;z-index:999}
+.login-box{background:#fff;border-radius:16px;padding:32px;width:340px;text-align:center}
+.login-box h2{font-size:20px;font-weight:700;margin-bottom:4px}
+.login-box p{font-size:13px;color:var(--text-sub);margin-bottom:24px}
+.login-box input{width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;margin-bottom:10px;outline:none}
+.login-box button{width:100%;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
+
+/* 반응형 */
+@media(max-width:900px){
+  .sidebar{width:60px}
+  .sidebar-brand,.sidebar-year,.nav-section,.nav-item span{display:none}
+  .main{margin-left:60px}
+  .dash-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- 로그인 -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <h2>🔐 관리자 로그인</h2>
+    <p>삼일공업고등학교 취업정보 포털</p>
+    <input type="password" id="adminPw" placeholder="관리자 비밀번호" onkeydown="if(event.key==='Enter')tryLogin()">
+    <button onclick="tryLogin()">로그인</button>
+  </div>
+</div>
+
+<!-- 사이드바 -->
+<div class="sidebar">
+  <div class="sidebar-brand">
+    <h2>⚙️ 관리자 페이지</h2>
+    <p>삼일공업고등학교</p>
+  </div>
+  <div class="sidebar-year">
+    <label>관리 연도</label>
+    <select id="yearSelect" onchange="setYear(this.value)"></select>
+  </div>
+  <nav class="side-nav">
+    <div class="nav-section">대시보드</div>
+    <div class="nav-item active" onclick="showTab('dashboard',this)"><span class="icon">📊</span><span>현황 대시보드</span></div>
+
+    <div class="nav-section">초기 설정</div>
+    <div class="nav-item" onclick="showTab('dept',this)"><span class="icon">🏫</span><span>학과 관리</span></div>
+    <div class="nav-item" onclick="showTab('class',this)"><span class="icon">📋</span><span>학과-학년-반 구조</span></div>
+    <div class="nav-item" onclick="showTab('teacher',this)"><span class="icon">👨‍🏫</span><span>담임교사 계정</span></div>
+
+    <div class="nav-section">콘텐츠 관리</div>
+    <div class="nav-item" onclick="showTab('jobs',this)"><span class="icon">📝</span><span>채용공고 관리</span></div>
+    <div class="nav-item" onclick="showTab('banner',this)"><span class="icon">🖼️</span><span>배너 관리</span></div>
+    <div class="nav-item" onclick="showTab('employ',this)"><span class="icon">📈</span><span>취업현황 관리</span></div>
+    <div class="nav-item" onclick="showTab('stats',this)"><span class="icon">🔢</span><span>통계 설정</span></div>
+
+    <div class="nav-section">학생 데이터</div>
+    <div class="nav-item" onclick="showTab('student',this)"><span class="icon">🎓</span><span>학생 데이터</span></div>
+  </nav>
+  <div class="nav-logout" onclick="logout()">로그아웃</div>
+</div>
+
+<!-- 메인 -->
+<div class="main">
+
+<!-- 대시보드 -->
+<div class="tab-panel active" id="tab-dashboard">
+  <div class="page-header"><h1>현황 대시보드</h1><p>전체 현황을 한눈에 확인하세요</p></div>
+  <div class="dash-grid">
+    <div class="dash-card"><div class="dash-num" id="d-jobs">0</div><div class="dash-label">진행중 채용공고</div></div>
+    <div class="dash-card"><div class="dash-num" id="d-teachers">0</div><div class="dash-label">등록 담임교사</div></div>
+    <div class="dash-card"><div class="dash-num" id="d-students">0</div><div class="dash-label">등록 학생 수</div></div>
+    <div class="dash-card"><div class="dash-num" id="d-depts">0</div><div class="dash-label">운영 학과 수</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">최근 등록 채용공고</div>
+    <div class="tbl-wrap"><table id="dashJobTable">
+      <thead><tr><th>업체명</th><th>직무</th><th>마감일</th><th>학교장추천</th><th>상태</th></tr></thead>
+      <tbody id="dashJobTb"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- 학과 관리 -->
+<div class="tab-panel" id="tab-dept">
+  <div class="page-header"><h1>학과 관리</h1><p>학과명을 먼저 설정하세요. 모든 기능의 기반이 됩니다.</p></div>
+  <div class="card">
+    <div class="card-title">학과 추가</div>
+    <div class="form-row cols2">
+      <div class="form-group"><label>학과명</label><input id="deptName" placeholder="예: 전자과"></div>
+      <div class="form-group"><label>학과 코드</label><input id="deptCode" placeholder="예: EL"></div>
+    </div>
+    <div class="btn-group"><button class="btn btn-accent" onclick="addDept()">학과 추가</button></div>
+  </div>
+  <div class="card">
+    <div class="card-title">등록된 학과</div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>학과명</th><th>코드</th><th>등록일</th><th>관리</th></tr></thead>
+      <tbody id="deptTb"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- 학과-학년-반 구조 -->
+<div class="tab-panel" id="tab-class">
+  <div class="page-header"><h1>학과-학년-반 구조 설정</h1><p>연도별로 각 학과의 학년-반 구성을 설정합니다.</p></div>
+  <div class="card">
+    <div class="card-title">반 추가</div>
+    <div class="form-row cols4">
+      <div class="form-group"><label>학과</label><select id="clsDept"></select></div>
+      <div class="form-group"><label>학년</label><select id="clsGrade"><option>1</option><option>2</option><option>3</option></select></div>
+      <div class="form-group"><label>반</label><input id="clsNum" type="number" min="1" max="20" placeholder="1"></div>
+      <div class="form-group"><label>학생수</label><input id="clsCount" type="number" placeholder="30"></div>
+    </div>
+    <div class="btn-group"><button class="btn btn-accent" onclick="addClass()">반 추가</button></div>
+  </div>
+  <div class="card">
+    <div class="card-title">구조 현황 (<span id="clsYear"></span>)</div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>학과</th><th>학년</th><th>반</th><th>학생수</th><th>관리</th></tr></thead>
+      <tbody id="clsTb"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- 담임교사 계정 -->
+<div class="tab-panel" id="tab-teacher">
+  <div class="page-header"><h1>담임교사 계정 관리</h1><p>연도별로 담임교사 계정을 생성합니다. 1교사 = 1반.</p></div>
+  <div class="card">
+    <div class="card-title">계정 추가</div>
+    <div class="form-row cols3">
+      <div class="form-group"><label>학과</label><select id="tcDept"></select></div>
+      <div class="form-group"><label>학년</label><select id="tcGrade"><option>1</option><option>2</option><option>3</option></select></div>
+      <div class="form-group"><label>반</label><input id="tcClass" type="number" min="1" placeholder="1"></div>
+    </div>
+    <div class="form-row cols2">
+      <div class="form-group"><label>교사 이름</label><input id="tcName" placeholder="홍길동"></div>
+      <div class="form-group"><label>비밀번호</label><input id="tcPw" placeholder="초기 비밀번호"></div>
+    </div>
+    <div class="btn-group"><button class="btn btn-accent" onclick="addTeacher()">계정 추가</button></div>
+  </div>
+  <div class="card">
+    <div class="card-title">담임교사 목록 (<span id="tcYear"></span>)</div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>학과</th><th>학년</th><th>반</th><th>이름</th><th>아이디</th><th>PW</th><th>관리</th></tr></thead>
+      <tbody id="tcTb"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- 채용공고 관리 -->
+<div class="tab-panel" id="tab-jobs">
+  <div class="page-header"><h1>채용공고 관리</h1><p>채용공고를 등록하고 관리합니다.</p></div>
+  <div class="card">
+    <div class="card-title">공고 등록</div>
+    <div class="form-row cols2">
+      <div class="form-group"><label>업체명</label><input id="j-co" placeholder="(주)삼성전자"></div>
+      <div class="form-group"><label>직무</label><input id="j-job" placeholder="전자기기 생산"></div>
+    </div>
+    <div class="form-row cols3">
+      <div class="form-group"><label>근무지</label><input id="j-loc" placeholder="수원"></div>
+      <div class="form-group"><label>모집인원</label><input id="j-cnt" type="number" placeholder="3"></div>
+      <div class="form-group"><label>마감일</label><input id="j-dl" type="date"></div>
+    </div>
+    <div class="form-row cols2">
+      <div class="form-group"><label>태그 (쉼표 구분)</label><input id="j-tags" placeholder="전자과,정규직"></div>
+      <div class="form-group"><label>학교장 추천 인원 (0=미해당)</label><input id="j-rec" type="number" value="0" min="0"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>상세내용</label><textarea id="j-desc" rows="4" placeholder="채용 상세 내용을 입력하세요"></textarea></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>붙임파일 URL (쉼표로 구분, 파일명|URL 형식)</label><input id="j-files" placeholder="채용공고문.pdf|https://..., 지원서.hwp|https://..."></div>
+    </div>
+    <div class="btn-group"><button class="btn btn-accent" onclick="addJob()">공고 등록</button><button class="btn btn-ghost" onclick="clearJobForm()">초기화</button></div>
+  </div>
+  <div class="card">
+    <div class="card-title">공고 목록</div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>업체명</th><th>직무</th><th>근무지</th><th>마감일</th><th>추천</th><th>상태</th><th>관리</th></tr></thead>
+      <tbody id="jobTb"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- 배너 관리 -->
+<div class="tab-panel" id="tab-banner">
+  <div class="page-header"><h1>배너 관리</h1><p>메인 페이지 배너를 등록하고 관리합니다.</p></div>
+  <div class="card">
+    <div class="card-title">배너 추가</div>
+    <div class="form-row cols2">
+      <div class="form-group"><label>배너 제목</label><input id="b-title" placeholder="2026 취업박람회 안내"></div>
+      <div class="form-group"><label>링크 URL</label><input id="b-url" placeholder="https://..."></div>
+    </div>
+    <div class="form-row cols2">
+      <div class="form-group"><label>마감일</label><input id="b-dl" type="date"></div>
+      <div class="form-group"><label>배경 색상</label>
+        <div class="color-picker-row" id="colorPicker">
+          <div class="color-dot selected" style="background:#1A3A6B" data-color="#1A3A6B" onclick="pickColor(this)"></div>
+          <div class="color-dot" style="background:#E8740A" data-color="#E8740A" onclick="pickColor(this)"></div>
+          <div class="color-dot" style="background:#2E5FAD" data-color="#2E5FAD" onclick="pickColor(this)"></div>
+          <div class="color-dot" style="background:#1D6A4A" data-color="#1D6A4A" onclick="pickColor(this)"></div>
+          <div class="color-dot" style="background:#6B46C1" data-color="#6B46C1" onclick="pickColor(this)"></div>
+          <div class="color-dot" style="background:#C53030" data-color="#C53030" onclick="pickColor(this)"></div>
+        </div>
+        <input type="hidden" id="b-color" value="#1A3A6B">
+      </div>
+    </div>
+    <div class="btn-group"><button class="btn btn-accent" onclick="addBanner()">배너 추가</button></div>
+  </div>
+  <div class="card">
+    <div class="card-title">배너 목록</div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>색상</th><th>제목</th><th>마감일</th><th>URL</th><th>관리</th></tr></thead>
+      <tbody id="bannerTb"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- 취업현황 -->
+<div class="tab-panel" id="tab-employ">
+  <div class="page-header"><h1>취업현황 관리</h1><p>연도별 학과별 취업현황을 입력합니다.</p></div>
+  <div class="card">
+    <div class="card-title">데이터 입력</div>
+    <div class="form-row cols3">
+      <div class="form-group"><label>학과</label><select id="e-dept"></select></div>
+      <div class="form-group"><label>졸업인원</label><input id="e-grad" type="number" placeholder="68"></div>
+      <div class="form-group"><label>취업자</label><input id="e-emp" type="number" placeholder="54"></div>
+    </div>
+    <div class="form-row cols2">
+      <div class="form-group"><label>진학자</label><input id="e-adv" type="number" placeholder="8"></div>
+      <div class="form-group"><label>연도</label><input id="e-year" type="number" placeholder="2025"></div>
+    </div>
+    <div class="btn-group"><button class="btn btn-accent" onclick="addEmploy()">저장</button></div>
+  </div>
+  <div class="card">
+    <div class="card-title">주요 취업업체 및 합격자소서/후기</div>
+    <div class="form-row cols3">
+      <div class="form-group"><label>업체명</label>
+        <input id="er-co" placeholder="삼성전자 검색..." autocomplete="off" oninput="showCoSuggest(this.value)" onblur="setTimeout(()=>document.getElementById('co-suggest').style.display='none',200)">
+        <div id="co-suggest" style="display:none;position:absolute;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);z-index:50;max-height:160px;overflow-y:auto;min-width:220px"></div>
+      </div>
+      <div class="form-group"><label>학과</label><select id="er-dept"></select></div>
+      <div class="form-group"><label>졸업연도</label><input id="er-year" type="number" placeholder="2025"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>합격자소서 (URL 또는 내용)</label><textarea id="er-essay" placeholder="합격자소서 내용 또는 파일 URL"></textarea></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>합격 후기</label><textarea id="er-review" placeholder="합격 후기 내용"></textarea></div>
+    </div>
+    <div class="btn-group"><button class="btn btn-accent" onclick="addReview()">등록</button></div>
+  </div>
+  <div class="card">
+    <div class="card-title">취업현황 목록</div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>연도</th><th>학과</th><th>졸업</th><th>취업</th><th>진학</th><th>취업률</th><th>관리</th></tr></thead>
+      <tbody id="employTb"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- 통계 설정 -->
+<div class="tab-panel" id="tab-stats">
+  <div class="page-header"><h1>통계 설정</h1><p>연도별 졸업생 수 및 취업률을 누적 관리합니다.</p></div>
+  <div class="card">
+    <div class="card-title">연도별 통계 추가</div>
+    <div class="form-row cols3">
+      <div class="form-group"><label>연도</label><input id="st-year" type="number" placeholder="2025"></div>
+      <div class="form-group"><label>졸업생 수</label><input id="st-grad" type="number" placeholder="312"></div>
+      <div class="form-group"><label>취업률 (%)</label><input id="st-rate" type="number" placeholder="78"></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-accent" onclick="addStats()">추가</button>
+    </div>
+    <div id="statsAlert" style="margin-top:12px"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">누적 통계 현황</div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>연도</th><th>졸업생 수</th><th>취업률</th><th>관리</th></tr></thead>
+      <tbody id="statsTb"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- 학생 데이터 -->
+<div class="tab-panel" id="tab-student">
+  <div class="page-header"><h1>학생 데이터 관리</h1><p>담임교사가 업로드한 Excel 파일을 처리합니다.</p></div>
+  <div class="card">
+    <div class="card-title">Excel 업로드</div>
+    <div class="form-row cols2">
+      <div class="form-group"><label>학과</label><select id="sd-dept"></select></div>
+      <div class="form-group"><label>학년-반</label><select id="sd-class"></select></div>
+    </div>
+    <div class="form-group" style="margin-bottom:12px"><label>Excel 파일 선택</label>
+      <input type="file" id="sd-file" accept=".xlsx,.xls" style="padding:8px;border:1px dashed var(--border);border-radius:8px;width:100%;cursor:pointer">
+    </div>
+    <div class="btn-group"><button class="btn btn-accent" onclick="uploadExcel()">업로드 처리</button></div>
+    <div id="uploadResult" style="margin-top:12px"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">등록 학생 현황</div>
+    <div class="form-row cols2">
+      <div class="form-group"><label>학과 필터</label><select id="sf-dept" onchange="renderStudents()"><option value="">전체</option></select></div>
+      <div class="form-group"><label>검색</label><input id="sf-name" placeholder="이름 또는 학번 검색" oninput="renderStudents()"></div>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>학과</th><th>학번</th><th>이름</th><th>성별</th><th>담임</th><th>졸업여부</th><th>관리</th></tr></thead>
+      <tbody id="studentTb"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- 관리자 설정 -->
+<div class="tab-panel" id="tab-settings">
+  <div class="page-header"><h1>관리자 설정</h1><p>비밀번호 및 관리자 정보를 관리합니다.</p></div>
+
+  <div class="card">
+    <div class="card-title">🔑 마스터 비밀번호</div>
+    <p style="font-size:13px;color:var(--text-sub);margin-bottom:14px">마스터 비밀번호는 모든 설정 변경 권한을 가집니다. 최초 기본값: <code>samil_master</code></p>
+    <div class="form-row cols3">
+      <div class="form-group"><label>현재 마스터 비밀번호</label><input type="password" id="mp-cur" placeholder="현재 비밀번호"></div>
+      <div class="form-group"><label>새 비밀번호</label><input type="password" id="mp-new" placeholder="새 비밀번호"></div>
+      <div class="form-group"><label>비밀번호 확인</label><input type="password" id="mp-confirm" placeholder="다시 입력"></div>
+    </div>
+    <div class="btn-group"><button class="btn btn-accent" onclick="changeMasterPw()">마스터 비밀번호 변경</button></div>
+    <div id="mp-alert" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔓 공통 비밀번호</div>
+    <p style="font-size:13px;color:var(--text-sub);margin-bottom:14px">공통 비밀번호는 여러 관리자가 함께 사용합니다. 최초 기본값: <code>samil2024</code></p>
+    <div class="form-row cols3">
+      <div class="form-group"><label>마스터 비밀번호 (권한 확인)</label><input type="password" id="cp-master" placeholder="마스터 비밀번호 입력"></div>
+      <div class="form-group"><label>새 공통 비밀번호</label><input type="password" id="cp-new" placeholder="새 공통 비밀번호"></div>
+      <div class="form-group"><label>비밀번호 확인</label><input type="password" id="cp-confirm" placeholder="다시 입력"></div>
+    </div>
+    <div class="btn-group"><button class="btn btn-accent" onclick="changeCommonPw()">공통 비밀번호 변경</button></div>
+    <div id="cp-alert" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">ℹ️ 현재 비밀번호 상태</div>
+    <table style="width:100%;font-size:13px">
+      <thead><tr><th style="padding:8px;background:var(--bg);text-align:left">구분</th><th style="padding:8px;background:var(--bg);text-align:left">설명</th><th style="padding:8px;background:var(--bg);text-align:left">상태</th></tr></thead>
+      <tbody>
+        <tr><td style="padding:10px">🔑 마스터 비밀번호</td><td style="padding:10px;color:var(--text-sub)">모든 권한 (비밀번호 변경 포함)</td><td style="padding:10px"><span id="mp-status" class="badge badge-blue">설정됨</span></td></tr>
+        <tr><td style="padding:10px">🔓 공통 비밀번호</td><td style="padding:10px;color:var(--text-sub)">일반 관리 작업 (공고/배너/현황 등)</td><td style="padding:10px"><span id="cp-status" class="badge badge-green">설정됨</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+// ── 상태 ──
+let DB = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
+const INIT = {depts:[],classes:[],teachers:[],jobs:[],banners:[],employ:[],reviews:[],students:[],stats:{grad:0,rate:0},year:new Date().getFullYear()};
+if(!DB.depts) DB = {...INIT,...DB};
+
+let currentYear = DB.year || new Date().getFullYear();
+// 비밀번호 (localStorage 우선, 없으면 기본값)
+function getMasterPw(){ return localStorage.getItem('samilMasterPw')||'samil_master'; }
+function getCommonPw(){ return localStorage.getItem('samilCommonPw')||'samil2024'; }
+
+function save(){ localStorage.setItem('samilAdmin',JSON.stringify(DB)); }
+
+function changeMasterPw(){
+  const cur=document.getElementById('mp-cur').value;
+  const nw=document.getElementById('mp-new').value;
+  const cf=document.getElementById('mp-confirm').value;
+  const al=document.getElementById('mp-alert');
+  if(cur!==getMasterPw()){al.innerHTML='<div class="alert alert-error">❌ 현재 비밀번호가 틀렸습니다.</div>';return;}
+  if(nw.length<4){al.innerHTML='<div class="alert alert-error">❌ 비밀번호는 4자 이상이어야 합니다.</div>';return;}
+  if(nw!==cf){al.innerHTML='<div class="alert alert-error">❌ 새 비밀번호가 일치하지 않습니다.</div>';return;}
+  localStorage.setItem('samilMasterPw',nw);
+  al.innerHTML='<div class="alert alert-success">✅ 마스터 비밀번호가 변경되었습니다.</div>';
+  ['mp-cur','mp-new','mp-confirm'].forEach(x=>document.getElementById(x).value='');
+}
+
+function changeCommonPw(){
+  const master=document.getElementById('cp-master').value;
+  const nw=document.getElementById('cp-new').value;
+  const cf=document.getElementById('cp-confirm').value;
+  const al=document.getElementById('cp-alert');
+  if(master!==getMasterPw()){al.innerHTML='<div class="alert alert-error">❌ 마스터 비밀번호가 틀렸습니다.</div>';return;}
+  if(nw.length<4){al.innerHTML='<div class="alert alert-error">❌ 비밀번호는 4자 이상이어야 합니다.</div>';return;}
+  if(nw!==cf){al.innerHTML='<div class="alert alert-error">❌ 새 비밀번호가 일치하지 않습니다.</div>';return;}
+  localStorage.setItem('samilCommonPw',nw);
+  al.innerHTML='<div class="alert alert-success">✅ 공통 비밀번호가 변경되었습니다.</div>';
+  ['cp-master','cp-new','cp-confirm'].forEach(x=>document.getElementById(x).value='');
+}
+
+// ── 로그인 ──
+function tryLogin(){
+  const pw = document.getElementById('adminPw').value;
+  if(pw===getMasterPw()||pw===getCommonPw()){ document.getElementById('loginScreen').style.display='none'; init(); }
+  else alert('비밀번호가 틀렸습니다.');
+}
+function logout(){ document.getElementById('loginScreen').style.display='flex'; }
+
+// ── 초기화 ──
+function init(){
+  // 연도 선택
+  const sel = document.getElementById('yearSelect');
+  const yr = new Date().getFullYear();
+  sel.innerHTML = '';
+  for(let y=yr+1;y>=yr-3;y--){ const o=document.createElement('option'); o.value=y; o.textContent=y+'년'; if(y===currentYear) o.selected=true; sel.appendChild(o); }
+  renderAll();
+}
+
+function setYear(y){ currentYear=parseInt(y); DB.year=currentYear; save(); renderAll(); }
+
+function renderAll(){
+  updateDeptSelects();
+  renderDepts(); renderClasses(); renderTeachers();
+  renderJobs(); renderBanners(); renderEmploy();
+  renderStudents(); updateDash();
+  document.getElementById('clsYear').textContent = currentYear+'년';
+  document.getElementById('tcYear').textContent  = currentYear+'년';
+  loadStats();
+}
+
+// ── 학과 ──
+function addDept(){
+  const name=document.getElementById('deptName').value.trim();
+  const code=document.getElementById('deptCode').value.trim();
+  if(!name){alert('학과명을 입력하세요');return;}
+  if(DB.depts.find(d=>d.name===name)){alert('이미 존재하는 학과입니다');return;}
+  DB.depts.push({name,code,date:today()});
+  save(); updateDeptSelects(); renderDepts();
+  document.getElementById('deptName').value=''; document.getElementById('deptCode').value='';
+}
+function delDept(i){ if(confirm('삭제하시겠습니까?')){ DB.depts.splice(i,1); save(); updateDeptSelects(); renderDepts(); } }
+function renderDepts(){
+  document.getElementById('deptTb').innerHTML = DB.depts.map((d,i)=>
+    `<tr><td><strong>${d.name}</strong></td><td>${d.code}</td><td>${d.date}</td>
+    <td><button class="btn btn-sm btn-danger" onclick="delDept(${i})">삭제</button></td></tr>`
+  ).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--text-sub)">등록된 학과 없음</td></tr>';
+}
+
+// ── 학과-학년-반 ──
+function addClass(){
+  const dept=document.getElementById('clsDept').value;
+  const grade=document.getElementById('clsGrade').value;
+  const num=document.getElementById('clsNum').value;
+  const count=document.getElementById('clsCount').value;
+  if(!dept||!num){alert('학과와 반을 입력하세요');return;}
+  if(!DB.classes) DB.classes=[];
+  DB.classes.push({year:currentYear,dept,grade,num,count,date:today()});
+  save(); renderClasses();
+}
+function delClass(i){ if(confirm('삭제?')){ DB.classes.splice(i,1); save(); renderClasses(); } }
+function renderClasses(){
+  const list = (DB.classes||[]).filter(c=>c.year===currentYear);
+  document.getElementById('clsTb').innerHTML = list.map((c,i)=>{
+    const realI = DB.classes.indexOf(c);
+    return `<tr><td>${c.dept}</td><td>${c.grade}학년</td><td>${c.num}반</td><td>${c.count||'-'}명</td>
+    <td><button class="btn btn-sm btn-danger" onclick="delClass(${realI})">삭제</button></td></tr>`;
+  }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-sub)">데이터 없음</td></tr>';
+}
+
+// ── 담임교사 ──
+function addTeacher(){
+  const dept=document.getElementById('tcDept').value;
+  const grade=document.getElementById('tcGrade').value;
+  const cls=document.getElementById('tcClass').value;
+  const name=document.getElementById('tcName').value.trim();
+  const pw=document.getElementById('tcPw').value.trim();
+  if(!dept||!cls||!name||!pw){alert('모든 항목을 입력하세요');return;}
+  const id = `${dept.replace('과','')}_${grade}${cls.padStart(2,'0')}`;
+  if(!DB.teachers) DB.teachers=[];
+  DB.teachers.push({year:currentYear,dept,grade,cls,name,id,pw,date:today()});
+  save(); renderTeachers();
+  ['tcClass','tcName','tcPw'].forEach(x=>document.getElementById(x).value='');
+}
+function delTeacher(i){ if(confirm('삭제?')){ DB.teachers.splice(i,1); save(); renderTeachers(); } }
+function renderTeachers(){
+  const list=(DB.teachers||[]).filter(t=>t.year===currentYear);
+  document.getElementById('tcTb').innerHTML = list.map((t,i)=>{
+    const realI=DB.teachers.indexOf(t);
+    return `<tr><td>${t.dept}</td><td>${t.grade}학년</td><td>${t.cls}반</td><td><strong>${t.name}</strong></td>
+    <td><span class="badge badge-blue">${t.id}</span></td><td>${t.pw}</td>
+    <td><button class="btn btn-sm btn-danger" onclick="delTeacher(${realI})">삭제</button></td></tr>`;
+  }).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-sub)">데이터 없음</td></tr>';
+}
+
+// ── 채용공고 ──
+function addJob(){
+  const co=document.getElementById('j-co').value.trim();
+  const job=document.getElementById('j-job').value.trim();
+  if(!co||!job){alert('업체명과 직무를 입력하세요');return;}
+  const recVal=parseInt(document.getElementById('j-rec').value)||0;
+  const filesRaw=document.getElementById('j-files').value.trim();
+  const files=filesRaw?filesRaw.split(',').map(f=>{const[name,url]=f.split('|');return{name:name?.trim(),url:url?.trim()||'#'}}):[]; 
+  if(!DB.jobs) DB.jobs=[];
+  DB.jobs.unshift({
+    co,job,loc:document.getElementById('j-loc').value,
+    cnt:document.getElementById('j-cnt').value,
+    dl:document.getElementById('j-dl').value,
+    tags:document.getElementById('j-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
+    rec:recVal>0,recCnt:recVal,
+    desc:document.getElementById('j-desc').value,
+    files,date:today(),active:true
+  });
+  save(); renderJobs(); clearJobForm(); updateDash();
+}
+function clearJobForm(){ ['j-co','j-job','j-loc','j-cnt','j-dl','j-tags','j-desc','j-files'].forEach(x=>document.getElementById(x).value=''); document.getElementById('j-rec').value='0'; }
+function toggleJob(i){ DB.jobs[i].active=!DB.jobs[i].active; save(); renderJobs(); }
+function delJob(i){ if(confirm('삭제?')){ DB.jobs.splice(i,1); save(); renderJobs(); updateDash(); } }
+function renderJobs(){
+  document.getElementById('jobTb').innerHTML = (DB.jobs||[]).map((j,i)=>`
+    <tr><td><strong>${j.co}</strong></td><td>${j.job}</td><td>${j.loc}</td><td>${j.dl}</td>
+    <td>${j.rec?`<span class="badge badge-orange">${j.recCnt}명</span>`:'—'}</td>
+    <td><span class="badge ${j.active?'badge-green':'badge-red'}">${j.active?'진행중':'마감'}</span></td>
+    <td style="display:flex;gap:4px">
+      <button class="btn btn-sm btn-ghost" onclick="toggleJob(${i})">${j.active?'마감':'재개'}</button>
+      <button class="btn btn-sm btn-danger" onclick="delJob(${i})">삭제</button>
+    </td></tr>`
+  ).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-sub)">공고 없음</td></tr>';
+  // 대시보드 최근공고
+  document.getElementById('dashJobTb').innerHTML = (DB.jobs||[]).slice(0,5).map(j=>`
+    <tr><td>${j.co}</td><td>${j.job}</td><td>${j.dl}</td>
+    <td>${j.rec?`<span class="badge badge-orange">${j.recCnt}명</span>`:'—'}</td>
+    <td><span class="badge ${j.active?'badge-green':'badge-red'}">${j.active?'진행중':'마감'}</span></td></tr>`
+  ).join('');
+}
+
+// ── 배너 ──
+let pickedColor='#1A3A6B';
+function pickColor(el){ pickedColor=el.dataset.color; document.getElementById('b-color').value=pickedColor; document.querySelectorAll('.color-dot').forEach(d=>d.classList.remove('selected')); el.classList.add('selected'); }
+function addBanner(){
+  const title=document.getElementById('b-title').value.trim();
+  if(!title){alert('제목을 입력하세요');return;}
+  if(!DB.banners) DB.banners=[];
+  DB.banners.push({title,url:document.getElementById('b-url').value,dl:document.getElementById('b-dl').value,color:pickedColor,date:today()});
+  save(); renderBanners();
+  ['b-title','b-url','b-dl'].forEach(x=>document.getElementById(x).value='');
+}
+function delBanner(i){ if(confirm('삭제?')){ DB.banners.splice(i,1); save(); renderBanners(); } }
+function renderBanners(){
+  document.getElementById('bannerTb').innerHTML=(DB.banners||[]).map((b,i)=>`
+    <tr><td><div style="width:24px;height:24px;border-radius:50%;background:${b.color}"></div></td>
+    <td><strong>${b.title}</strong></td><td>${b.dl||'—'}</td>
+    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis">${b.url||'—'}</td>
+    <td><button class="btn btn-sm btn-danger" onclick="delBanner(${i})">삭제</button></td></tr>`
+  ).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--text-sub)">배너 없음</td></tr>';
+}
+
+// ── 취업현황 ──
+function addEmploy(){
+  const dept=document.getElementById('e-dept').value;
+  const grad=parseInt(document.getElementById('e-grad').value)||0;
+  const emp=parseInt(document.getElementById('e-emp').value)||0;
+  const adv=parseInt(document.getElementById('e-adv').value)||0;
+  const year=parseInt(document.getElementById('e-year').value)||currentYear;
+  if(!dept){alert('학과를 선택하세요');return;}
+  if(!DB.employ) DB.employ=[];
+  DB.employ.push({year,dept,grad,emp,adv});
+  save(); renderEmploy();
+}
+function showCoSuggest(val){
+  const box=document.getElementById('co-suggest');
+  if(!val||val.length<1){box.style.display='none';return;}
+  const matches=[...new Set((DB.reviews||[]).map(r=>r.co))].filter(c=>c.toLowerCase().includes(val.toLowerCase()));
+  if(!matches.length){box.style.display='none';return;}
+  box.style.display='block';
+  box.innerHTML=matches.map(c=>`<div style="padding:9px 14px;cursor:pointer;font-size:13px" onmousedown="document.getElementById('er-co').value='${c}';document.getElementById('co-suggest').style.display='none'">${c}</div>`).join('');
+}
+function addReview(){
+  const co=document.getElementById('er-co').value.trim();
+  const dept=document.getElementById('er-dept').value;
+  if(!co){alert('업체명을 입력하세요');return;}
+  if(!DB.reviews) DB.reviews=[];
+  DB.reviews.push({co,dept,gradYear:document.getElementById('er-year').value,essay:document.getElementById('er-essay').value,review:document.getElementById('er-review').value,date:today()});
+  save();
+  ['er-co','er-essay','er-review'].forEach(x=>document.getElementById(x).value='');
+  alert('등록 완료');
+}
+function delEmploy(i){ if(confirm('삭제?')){ DB.employ.splice(i,1); save(); renderEmploy(); } }
+function renderEmploy(){
+  document.getElementById('employTb').innerHTML=(DB.employ||[]).map((e,i)=>
+    `<tr><td>${e.year}</td><td>${e.dept}</td><td>${e.grad}</td><td>${e.emp}</td><td>${e.adv}</td>
+    <td class="dept-rate" style="font-weight:700;color:var(--primary)">${e.grad?Math.round(e.emp/e.grad*100):0}%</td>
+    <td><button class="btn btn-sm btn-danger" onclick="delEmploy(${i})">삭제</button></td></tr>`
+  ).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--text-sub)">데이터 없음</td></tr>';
+}
+
+// ── 통계 ──
+function loadStats(){
+  renderStats();
+}
+function addStats(){
+  const year=parseInt(document.getElementById('st-year').value);
+  const grad=document.getElementById('st-grad').value;
+  const rate=document.getElementById('st-rate').value;
+  if(!year||!grad||!rate){alert('모든 항목을 입력하세요');return;}
+  if(!DB.statsHistory) DB.statsHistory=[];
+  const idx=DB.statsHistory.findIndex(s=>s.year===year);
+  if(idx>-1){
+    if(!confirm(`${year}년 데이터가 이미 있습니다. 수정하시겠습니까?`)) return;
+    DB.statsHistory[idx]={year,grad,rate};
+  } else {
+    DB.statsHistory.push({year,grad,rate});
+    DB.statsHistory.sort((a,b)=>b.year-a.year);
+  }
+  // 가장 최근 연도를 메인 통계로 사용
+  DB.stats=DB.statsHistory[0];
+  save(); renderStats();
+  document.getElementById('statsAlert').innerHTML='<div class="alert alert-success">✅ 저장되었습니다.</div>';
+  setTimeout(()=>document.getElementById('statsAlert').innerHTML='',2000);
+  ['st-year','st-grad','st-rate'].forEach(x=>document.getElementById(x).value='');
+}
+function delStats(i){
+  if(confirm('삭제?')){ DB.statsHistory.splice(i,1); DB.stats=DB.statsHistory[0]||{}; save(); renderStats(); }
+}
+function renderStats(){
+  document.getElementById('statsTb').innerHTML=(DB.statsHistory||[]).map((s,i)=>`
+    <tr><td><strong>${s.year}년</strong></td><td>${s.grad}명</td><td>${s.rate}%</td>
+    <td><button class="btn btn-sm btn-danger" onclick="delStats(${i})">삭제</button></td></tr>`
+  ).join('')||'<tr><td colspan="4" style="text-align:center;color:var(--text-sub)">데이터 없음</td></tr>';
+}
+
+// ── 학생 ──
+function uploadExcel(){
+  const file=document.getElementById('sd-file').files[0];
+  if(!file){alert('파일을 선택하세요');return;}
+  document.getElementById('uploadResult').innerHTML='<div class="alert alert-success">✅ 파일이 선택되었습니다. Google Sheets 연동 후 자동 저장됩니다.</div>';
+}
+function renderStudents(){
+  const filter=document.getElementById('sf-dept').value;
+  const q=document.getElementById('sf-name').value.toLowerCase();
+  const list=(DB.students||[]).filter(s=>(!filter||s.dept===filter)&&(!q||s.name.includes(q)||s.id.includes(q)));
+  document.getElementById('studentTb').innerHTML=list.map((s,i)=>`
+    <tr><td>${s.dept}</td><td>${s.id}</td><td><strong>${s.name}</strong></td><td>${s.gender||'—'}</td>
+    <td>${s.teacher||'—'}</td><td><span class="badge ${s.graduated?'badge-blue':'badge-green'}">${s.graduated?'졸업':'재학'}</span></td>
+    <td><button class="btn btn-sm btn-ghost" onclick="resetPw(${i})">PW초기화</button></td></tr>`
+  ).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--text-sub)">학생 데이터 없음<br><small>담임교사가 Excel 업로드 시 자동 생성됩니다</small></td></tr>';
+}
+function resetPw(i){ if(confirm('초기 비밀번호(생년월일)로 초기화합니까?')){ DB.students[i].pw=DB.students[i].birth; save(); alert('초기화 완료'); } }
+
+// ── 공통 ──
+function updateDeptSelects(){
+  const depts=DB.depts||[];
+  ['clsDept','tcDept','e-dept','er-dept','sd-dept','sf-dept'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    const hasAll=id==='sf-dept';
+    el.innerHTML=(hasAll?'<option value="">전체</option>':'')+depts.map(d=>`<option value="${d.name}">${d.name}</option>`).join('');
+  });
+}
+function updateDash(){
+  document.getElementById('d-jobs').textContent=(DB.jobs||[]).filter(j=>j.active).length;
+  document.getElementById('d-teachers').textContent=(DB.teachers||[]).filter(t=>t.year===currentYear).length;
+  document.getElementById('d-students').textContent=(DB.students||[]).length;
+  document.getElementById('d-depts').textContent=(DB.depts||[]).length;
+}
+function today(){ return new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit'}); }
+function showTab(id,el){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  el.classList.add('active');
+  if(id==='dashboard') updateDash();
+}
+</script>
+</body>
+</html>
