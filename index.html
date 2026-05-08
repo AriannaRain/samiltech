@@ -202,17 +202,17 @@ footer strong{color:#fff}
       </div>
       <div id="tab-st">
         <div class="form-group"><label>학과</label><select id="l-dept"><option value="">선택</option></select></div>
-        <div class="form-group"><label>학번</label><input id="l-id" placeholder="예: 3104"></div>
-        <div class="form-group"><label>비밀번호</label><input type="password" id="l-pw" placeholder="초기: 생년월일 6자리"></div>
+        <div class="form-group"><label>학번</label><input id="l-id" placeholder="예: 3104" onkeydown="if(event.key==='Enter')loginStudent()"></div>
+        <div class="form-group"><label>비밀번호</label><input type="password" id="l-pw" placeholder="초기: 생년월일 6자리" onkeydown="if(event.key==='Enter')loginStudent()"></div>
         <button class="btn-submit" onclick="alert('Google Sheets 연동 후 활성화')">로그인</button>
       </div>
       <div id="tab-tc" style="display:none">
-        <div class="form-group"><label>아이디</label><input id="t-id"></div>
-        <div class="form-group"><label>비밀번호</label><input type="password" id="t-pw"></div>
-        <button class="btn-submit" onclick="alert('Google Sheets 연동 후 활성화')">로그인</button>
+        <div class="form-group"><label>아이디</label><input id="t-id" onkeydown="if(event.key==='Enter')loginTeacher()"></div>
+        <div class="form-group"><label>비밀번호</label><input type="password" id="t-pw" onkeydown="if(event.key==='Enter')loginTeacher()"></div>
+        <button class="btn-submit" onclick="loginTeacher()">로그인</button>
       </div>
       <div id="tab-ad" style="display:none">
-        <div class="form-group"><label>관리자 비밀번호</label><input type="password" id="a-pw"></div>
+        <div class="form-group"><label>관리자 비밀번호</label><input type="password" id="a-pw" onkeydown="if(event.key==='Enter')tryAdmin()"></div>
         <button class="btn-submit" onclick="tryAdmin()">로그인</button>
       </div>
     </div>
@@ -344,8 +344,16 @@ function switchTab(tab,btn){
   btn.classList.add('active');
 }
 function tryAdmin(){
-  if(document.getElementById('a-pw').value==='samil2024'){alert('관리자 로그인 성공');closeModal('loginModal');}
-  else alert('비밀번호가 틀렸습니다.');
+  const pw=document.getElementById('a-pw').value;
+  const masterPw=localStorage.getItem('samilMasterPw')||'samil_master';
+  const commonPw=localStorage.getItem('samilCommonPw')||'samil2024';
+  if(pw===masterPw||pw===commonPw){
+    closeModal('loginModal');
+    window.location.href='admin.html';
+  } else {
+    document.getElementById('a-pw').value='';
+    alert('비밀번호가 틀렸습니다.');
+  }
 }
 function toggleMenu(){document.getElementById('navMenu').classList.toggle('open');}
 function closeMenu(){document.getElementById('navMenu').classList.remove('open');}
