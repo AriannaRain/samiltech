@@ -126,7 +126,7 @@ input:checked+.slider:before{transform:translateX(18px)}
 <body>
 
 <!-- 로그인 -->
-<div class="login-screen" id="loginScreen">
+<div class="login-screen" id="loginScreen" style="display:none">
   <div class="login-box">
     <h2>🔐 관리자 로그인</h2>
     <p>삼일공업고등학교 취업정보 포털</p>
@@ -510,7 +510,9 @@ function tryLogin(){
 // 이미 로그인된 경우 스킵
 window.addEventListener('DOMContentLoaded',()=>{
   if(sessionStorage.getItem('samilAdminAuth')==='1'){
-    document.getElementById('loginScreen').style.display='none'; init();
+    init();
+  } else {
+    document.getElementById('loginScreen').style.display='flex';
   }
 });
 function logout(){ sessionStorage.removeItem('samilAdminAuth'); document.getElementById('loginScreen').style.display='flex'; }
