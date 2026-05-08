@@ -279,7 +279,13 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div class="form-row">
       <div class="form-group"><label>붙임파일 URL (쉼표로 구분, 파일명|URL 형식)</label><input id="j-files" placeholder="채용공고문.pdf|https://..., 지원서.hwp|https://..."></div>
     </div>
-    <div class="btn-group"><button class="btn btn-accent" onclick="addJob()">공고 등록</button><button class="btn btn-ghost" onclick="clearJobForm()">초기화</button></div>
+    <div id="job-edit-banner" style="display:none;background:#FFF3E0;border:1px solid #F6AD55;border-radius:8px;padding:9px 14px;font-size:13px;color:#7B341E;margin-bottom:10px">
+      ✏️ <strong>수정 모드</strong> — 내용을 변경 후 <strong>수정 완료</strong>를 클릭하세요.
+    </div>
+    <div class="btn-group">
+      <button id="job-add-btn" class="btn btn-accent" onclick="addJob()">공고 등록</button>
+      <button class="btn btn-ghost" onclick="clearJobForm()">초기화 / 취소</button>
+    </div>
   </div>
   <div class="card">
     <div class="card-title">공고 목록</div>
@@ -612,19 +618,46 @@ function addJob(){
   const recVal=parseInt(document.getElementById('j-rec').value)||0;
   const filesRaw=document.getElementById('j-files').value.trim();
   const files=filesRaw?filesRaw.split(',').map(f=>{const[name,url]=f.split('|');return{name:name?.trim(),url:url?.trim()||'#'}}):[]; 
-  if(!DB.jobs) DB.jobs=[];
-  DB.jobs.unshift({
+  const jobData={
     co,job,loc:document.getElementById('j-loc').value,
     cnt:document.getElementById('j-cnt').value,
     dl:document.getElementById('j-dl').value,
     tags:document.getElementById('j-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
     rec:recVal>0,recCnt:recVal,
     desc:document.getElementById('j-desc').value,
-    files,date:today(),active:true
-  });
+    files
+  };
+  if(!DB.jobs) DB.jobs=[];
+  if(editingJobIdx>=0){
+    DB.jobs[editingJobIdx]={...DB.jobs[editingJobIdx],...jobData};
+  } else {
+    DB.jobs.unshift({...jobData,date:today(),active:true});
+  }
   save(); renderJobs(); clearJobForm(); updateDash();
 }
-function clearJobForm(){ ['j-co','j-job','j-loc','j-cnt','j-dl','j-tags','j-desc','j-files'].forEach(x=>document.getElementById(x).value=''); document.getElementById('j-rec').value='0'; }
+function editJob(i){
+  const j=DB.jobs[i];
+  editingJobIdx=i;
+  document.getElementById('j-co').value=j.co||'';
+  document.getElementById('j-job').value=j.job||'';
+  document.getElementById('j-loc').value=j.loc||'';
+  document.getElementById('j-cnt').value=j.cnt||'';
+  document.getElementById('j-dl').value=j.dl||'';
+  document.getElementById('j-tags').value=(j.tags||[]).join(',');
+  document.getElementById('j-rec').value=j.recCnt||0;
+  document.getElementById('j-desc').value=j.desc||'';
+  document.getElementById('j-files').value=(j.files||[]).map(f=>`${f.name}|${f.url}`).join(',');
+  document.getElementById('job-edit-banner').style.display='block';
+  document.getElementById('job-add-btn').textContent='수정 완료';
+  document.getElementById('tab-jobs').scrollIntoView({behavior:'smooth'});
+}
+function clearJobForm(){ 
+  ['j-co','j-job','j-loc','j-cnt','j-dl','j-tags','j-desc','j-files'].forEach(x=>document.getElementById(x).value=''); 
+  document.getElementById('j-rec').value='0';
+  editingJobIdx=-1;
+  document.getElementById('job-edit-banner').style.display='none';
+  document.getElementById('job-add-btn').textContent='공고 등록';
+}
 function toggleJob(i){ DB.jobs[i].active=!DB.jobs[i].active; save(); renderJobs(); }
 function delJob(i){ if(confirm('삭제?')){ DB.jobs.splice(i,1); save(); renderJobs(); updateDash(); } }
 function renderJobs(){
@@ -633,6 +666,7 @@ function renderJobs(){
     <td>${j.rec?`<span class="badge badge-orange">${j.recCnt}명</span>`:'—'}</td>
     <td><span class="badge ${j.active?'badge-green':'badge-red'}">${j.active?'진행중':'마감'}</span></td>
     <td style="display:flex;gap:4px">
+      <button class="btn btn-sm btn-ghost" onclick="editJob(${i})">수정</button>
       <button class="btn btn-sm btn-ghost" onclick="toggleJob(${i})">${j.active?'마감':'재개'}</button>
       <button class="btn btn-sm btn-danger" onclick="delJob(${i})">삭제</button>
     </td></tr>`
@@ -644,6 +678,9 @@ function renderJobs(){
     <td><span class="badge ${j.active?'badge-green':'badge-red'}">${j.active?'진행중':'마감'}</span></td></tr>`
   ).join('');
 }
+
+// ── 채용공고 수정 상태 ──
+let editingJobIdx = -1;
 
 // ── 배너 ──
 let pickedColor='#1A3A6B';
