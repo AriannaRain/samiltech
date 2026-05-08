@@ -160,6 +160,60 @@ tr:hover td{background:#fafbfd}
 /* 클릭 가능한 학생 행 */
 .clickable-row{cursor:pointer}
 .clickable-row:hover td{background:#EBF4FF !important}
+
+/* 학생 정보 탭 — 좌우 분할 레이아웃 */
+.stu-info-layout{display:flex;gap:14px;align-items:flex-start}
+.stu-list-panel{width:180px;flex-shrink:0;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;position:sticky;top:calc(var(--nav-h) + 12px)}
+.stu-list-search{padding:10px;border-bottom:1px solid var(--border)}
+.stu-list-search input{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit;outline:none}
+.stu-list-search input:focus{border-color:var(--primary-light)}
+.stu-list-items{max-height:calc(100vh - 200px);overflow-y:auto}
+.stu-list-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;display:flex;justify-content:space-between;align-items:center;transition:.15s}
+.stu-list-item:hover{background:var(--bg)}
+.stu-list-item.active{background:#EBF4FF;color:var(--primary);font-weight:700;border-left:3px solid var(--primary)}
+.stu-list-item .stu-id{font-size:11px;color:var(--text-sub)}
+.stu-list-item.active .stu-id{color:var(--primary-light)}
+.stu-list-toolbar{padding:8px 10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text-sub)}
+.stu-detail-panel{flex:1;min-width:0}
+/* 상세 섹션 */
+.detail-sec{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:12px}
+.detail-sec-title{font-size:14px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.detail-sec-title::before{content:'';width:4px;height:18px;background:var(--accent);border-radius:2px;flex-shrink:0}
+/* 출결 테이블 */
+.attend-tbl{width:100%;border-collapse:collapse;font-size:13px}
+.attend-tbl th{background:var(--bg);padding:9px 12px;text-align:center;font-weight:600;color:var(--text-sub);border-bottom:2px solid var(--border);font-size:12px}
+.attend-tbl td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:center}
+.attend-tbl td:first-child{font-weight:600;text-align:left}
+.num-red{color:var(--red);font-weight:700}
+/* 자격증 chip */
+.cert-chips{display:flex;flex-wrap:wrap;gap:8px}
+.cert-chip{display:inline-flex;align-items:center;gap:5px;background:#FFF3E0;border:1px solid #FBBF24;border-radius:20px;padding:5px 13px;font-size:13px;font-weight:600;color:#92400E}
+/* 동아리/임원 테이블 */
+.spec-tbl{width:100%;border-collapse:collapse;font-size:13px}
+.spec-tbl th{background:var(--bg);padding:9px 12px;text-align:left;font-weight:600;color:var(--text-sub);border-bottom:2px solid var(--border);font-size:12px}
+.spec-tbl td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.role-badge{display:inline-block;background:#EDE9FE;color:#7C3AED;border-radius:12px;padding:3px 10px;font-size:12px;font-weight:600}
+/* 성적요약 미니 */
+.grade-mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.grade-mini-card{background:var(--bg);border-radius:8px;padding:10px;text-align:center}
+.grade-mini-card.hl{background:#EBF4FF}
+.gmc-label{font-size:10px;color:var(--text-sub);margin-bottom:4px}
+.gmc-val{font-size:20px;font-weight:700;color:var(--primary)}
+.gmc-unit{font-size:10px;color:var(--text-sub);margin-top:2px}
+/* 선택 전 빈 화면 */
+.stu-empty{text-align:center;padding:60px 20px;color:var(--text-sub)}
+.stu-empty .empty-icon{font-size:40px;margin-bottom:12px}
+.stu-detail-header{background:var(--primary);color:#fff;border-radius:var(--radius);padding:16px 20px;margin-bottom:12px;display:flex;align-items:center;gap:14px}
+.sdh-avatar{width:44px;height:44px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0}
+.sdh-name{font-size:17px;font-weight:700}
+.sdh-meta{font-size:12px;opacity:.8;margin-top:2px}
+.sdh-actions{margin-left:auto;display:flex;gap:8px}
+@media(max-width:768px){
+  .stu-info-layout{flex-direction:column}
+  .stu-list-panel{width:100%;position:static}
+  .stu-list-items{max-height:160px}
+  .grade-mini-grid{grid-template-columns:1fr 1fr 1fr}
+}
 </style>
 </head>
 <body>
@@ -201,7 +255,7 @@ tr:hover td{background:#fafbfd}
       <div class="nav-section">내 반 관리</div>
       <div class="nav-item active" onclick="showTab('dashboard',this)"><span class="icon">📊</span>대시보드</div>
       <div class="nav-item" onclick="showTab('upload',this)"><span class="icon">📤</span>생기부 업로드</div>
-      <div class="nav-item" onclick="showTab('students',this)"><span class="icon">🎓</span>학생 목록</div>
+      <div class="nav-item" onclick="showTab('students',this)"><span class="icon">🎓</span>학생 정보</div>
       <div class="nav-section">채용 정보</div>
       <div class="nav-item" onclick="showTab('jobs',this)"><span class="icon">📋</span>채용공고 열람</div>
     </div>
@@ -271,19 +325,32 @@ tr:hover td{background:#fafbfd}
       </div>
     </div>
 
-    <!-- 학생 목록 -->
+    <!-- 학생 정보 -->
     <div class="tab-panel" id="tab-students">
-      <div class="page-header"><h1>학생 목록</h1><p id="studentSubTitle"></p></div>
-      <div class="card">
-        <div style="display:flex;gap:10px;margin-bottom:14px">
-          <input id="searchName" placeholder="이름 또는 학번 검색" oninput="renderStudentList()"
-            style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;flex:1">
-          <button class="btn btn-ghost btn-sm" onclick="exportCSV()">📥 목록 내보내기</button>
+      <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-end">
+        <div><h1>학생 정보</h1><p id="studentSubTitle"></p></div>
+        <div style="display:flex;gap:8px">
+          <input id="searchName" placeholder="이름/학번 검색" oninput="renderStudentList()"
+            style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;width:160px">
+          <button class="btn btn-ghost btn-sm" onclick="exportCSV()">📥 내보내기</button>
         </div>
-        <div class="tbl-wrap"><table>
-          <thead><tr><th>학번</th><th>이름</th><th>성별</th><th>자격증</th><th>미인정결석</th><th>동아리</th><th>임원</th><th>계정상태</th><th>관리</th></tr></thead>
-          <tbody id="studentListTb"></tbody>
-        </table></div>
+      </div>
+      <div class="stu-info-layout">
+        <!-- 좌: 학생 목록 -->
+        <div class="stu-list-panel">
+          <div class="stu-list-toolbar">
+            <span id="stuListCount">0명</span>
+            <button class="btn btn-sm btn-ghost" style="font-size:11px;padding:3px 8px" onclick="exportCSV()">CSV</button>
+          </div>
+          <div class="stu-list-items" id="stuListItems"></div>
+        </div>
+        <!-- 우: 학생 상세 -->
+        <div class="stu-detail-panel" id="stuDetailPanel">
+          <div class="stu-empty">
+            <div class="empty-icon">👈</div>
+            <p>왼쪽에서 학생을 선택하세요</p>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -438,7 +505,11 @@ function init(){
     <td><span class="badge ${s.uploaded?'badge-green':'badge-gray'}">${s.uploaded?'등록됨':'미등록'}</span></td></tr>
   `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-sub)">업로드된 학생이 없습니다</td></tr>';
 
+  _selectedStuId=null;
   renderStudentList();
+  // 첫 학생 자동 선택
+  const _first=getMyStudents()[0];
+  if(_first){setTimeout(()=>selectStudent(_first.id),50);}
   renderJobs();
 }
 
@@ -642,29 +713,133 @@ function showUploadAlert(type,msg){
   document.getElementById('uploadAlert').innerHTML=`<div class="alert alert-${type==='error'?'error':'success'}">${msg}</div>`;
 }
 
-// ── 학생 목록 ──
+// ── 학생 정보 탭 ──
+let _selectedStuId = null;
+
 function renderStudentList(){
   const q=(document.getElementById('searchName').value||'').toLowerCase();
   const list=getMyStudents().filter(s=>!q||s.name.includes(q)||s.id.includes(q));
-  document.getElementById('studentListTb').innerHTML=list.map(s=>{
+  document.getElementById('stuListCount').textContent=list.length+'명';
+  document.getElementById('stuListItems').innerHTML=list.map(s=>{
     const unauthAbs=(s.attend||[]).reduce((a,r)=>a+(r.abs?r.abs.unauth:0),0);
-    const certTip  =(s.certs||[]).map(c=>c.name).join('\n')||'';
-    const clubTip  =(s.clubs||[]).map(c=>c.name).join('\n')||'';
-    const roles    =(s.leaders||[]).map(l=>l.role).join(', ')||'—';
-    return `<tr class="clickable-row" onclick="openStudentModal('${s.id}')">
-      <td>${s.id}</td>
-      <td><strong>${s.name}</strong></td>
-      <td>${s.gender||'—'}</td>
-      <td title="${certTip}">${s.certCount?`<span class="badge badge-orange">${s.certCount}개</span>`:'—'}</td>
-      <td>${unauthAbs?`<span class="badge badge-red">${unauthAbs}일</span>`:'<span class="badge badge-green">없음</span>'}</td>
-      <td title="${clubTip}">${(s.clubs||[]).length?`<span class="badge badge-gray">${(s.clubs||[]).length}개</span>`:'—'}</td>
-      <td>${(s.leaders||[]).length?`<span class="badge badge-blue">${roles}</span>`:'—'}</td>
-      <td><span class="badge ${s.uploaded?'badge-green':'badge-gray'}">${s.uploaded?'등록됨':'미등록'}</span></td>
-      <td><button class="btn btn-sm btn-ghost" onclick="resetPw('${s.id}')">PW초기화</button></td>
-    </tr>`;
-  }).join('')||'<tr><td colspan="9" style="text-align:center;color:var(--text-sub)">학생 없음</td></tr>';
+    return `<div class="stu-list-item${_selectedStuId===s.id?' active':''}" onclick="selectStudent('${s.id}')">
+      <div>
+        <div>${s.name}</div>
+        <div class="stu-id">${s.id}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+        ${unauthAbs?`<span class="badge badge-red" style="font-size:10px">${unauthAbs}일</span>`:''}
+        ${s.certCount?`<span class="badge badge-orange" style="font-size:10px">${s.certCount}개</span>`:''}
+      </div>
+    </div>`;
+  }).join('')||'<div style="padding:20px;text-align:center;font-size:13px;color:var(--text-sub)">학생 없음</div>';
+  if(_selectedStuId) selectStudent(_selectedStuId);
 }
 
+function selectStudent(id){
+  _selectedStuId=id;
+  document.querySelectorAll('.stu-list-item').forEach(el=>{
+    const idEl=el.querySelector('.stu-id');
+    el.classList.toggle('active', idEl&&idEl.textContent===id);
+  });
+  const s=getMyStudents().find(x=>x.id===id);
+  if(!s){document.getElementById('stuDetailPanel').innerHTML='<div class="stu-empty"><p>학생 데이터 없음</p></div>';return;}
+
+  const unauthTotal=(s.attend||[]).reduce((a,r)=>a+(r.abs?r.abs.unauth:0),0);
+
+  // 출결
+  const attendHTML=(s.attend||[]).length
+    ?`<table class="attend-tbl">
+        <thead><tr><th>학년</th><th>수업일수</th><th>결석</th><th>지각</th><th>조퇴</th><th>결과</th><th>미인정결석</th></tr></thead>
+        <tbody>${(s.attend||[]).map(a=>{
+          const absT=(a.abs?a.abs.sick+a.abs.unauth+a.abs.etc:0);
+          const latT=(a.late?a.late.sick+a.late.unauth+a.late.etc:0);
+          const earT=(a.early?a.early.sick+a.early.unauth+a.early.etc:0);
+          const levT=(a.leave?a.leave.sick+a.leave.unauth+a.leave.etc:0);
+          const ua=(a.abs?a.abs.unauth:0);
+          return \`<tr>
+            <td>\${a.grade}학년</td><td>\${a.days}일</td>
+            <td class="\${absT>0?'num-red':''}">\${absT||0}</td>
+            <td class="\${latT>0?'num-red':''}">\${latT||0}</td>
+            <td>\${earT||0}</td><td>\${levT||0}</td>
+            <td class="\${ua>0?'num-red':''}">\${ua>0?'⚠ '+ua:'0'}</td>
+          </tr>\`;
+        }).join('')}</tbody>
+      </table>`
+    :'<p style="font-size:13px;color:var(--text-sub)">출결 데이터 없음 (생기부 미업로드)</p>';
+
+  // 성적요약
+  const sm=s.summary;
+  const gradeHTML=sm
+    ?`<div class="grade-mini-grid">
+        <div class="grade-mini-card hl">
+          <div class="gmc-label">전 과목 평균등급</div>
+          <div class="gmc-val">${sm.allGrade||'—'}</div>
+          <div class="gmc-unit">${sm.allUnit?`이수 ${sm.allUnit}학점`:''}</div>
+        </div>
+        <div class="grade-mini-card">
+          <div class="gmc-label">보통교과 평균등급</div>
+          <div class="gmc-val">${sm.genGrade||'—'}</div>
+          <div class="gmc-unit">${sm.genUnit?`이수 ${sm.genUnit}학점`:''}</div>
+        </div>
+        <div class="grade-mini-card">
+          <div class="gmc-label">전문교과 평균등급</div>
+          <div class="gmc-val">${sm.proGrade||'—'}</div>
+          <div class="gmc-unit">${sm.proUnit?`이수 ${sm.proUnit}학점`:''}</div>
+        </div>
+      </div>`
+    :'<p style="font-size:13px;color:var(--text-sub)">성적 데이터 없음 (생기부 미업로드)</p>';
+
+  // 자격증
+  const certsHTML=(s.certs||[]).length
+    ?`<div class="cert-chips">${(s.certs||[]).map(c=>
+        `<div class="cert-chip">🏅 ${c.name}<span style="font-size:11px;font-weight:400;margin-left:4px;opacity:.7">${c.date?'('+c.date+')':''}</span></div>`
+      ).join('')}</div>`
+    :'<p style="font-size:13px;color:var(--text-sub)">자격증 없음</p>';
+
+  // 동아리
+  const clubsHTML=(s.clubs||[]).length
+    ?`<table class="spec-tbl">
+        <thead><tr><th>학년</th><th>동아리명</th><th>구분</th><th>활동시간</th></tr></thead>
+        <tbody>${(s.clubs||[]).map(cl=>`<tr>
+          <td>${cl.grade}학년</td><td><strong>${cl.name}</strong></td>
+          <td><span class="badge badge-gray">${cl.type||'—'}</span></td>
+          <td>${cl.hours||0}시간</td>
+        </tr>`).join('')}</tbody>
+      </table>`
+    :'<p style="font-size:13px;color:var(--text-sub)">동아리 정보 없음</p>';
+
+  // 임원
+  const leadersHTML=(s.leaders||[]).length
+    ?`<table class="spec-tbl">
+        <thead><tr><th>시작연도</th><th>종료연도</th><th>직책</th></tr></thead>
+        <tbody>${(s.leaders||[]).map(l=>`<tr>
+          <td>${l.startYear}</td><td>${l.endYear}</td>
+          <td><span class="role-badge">${l.role}</span></td>
+        </tr>`).join('')}</tbody>
+      </table>`
+    :'<p style="font-size:13px;color:var(--text-sub)">임원 이력 없음</p>';
+
+  document.getElementById('stuDetailPanel').innerHTML=`
+    <div class="stu-detail-header">
+      <div class="sdh-avatar">${s.name?s.name[0]:'?'}</div>
+      <div>
+        <div class="sdh-name">${s.name}</div>
+        <div class="sdh-meta">${s.dept} ${s.grade}학년 ${s.cls}반 · 학번 ${s.id} · ${s.gender||''} · 생년월일 ${s.birth||'—'}</div>
+      </div>
+      <div class="sdh-actions">
+        <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border:none" onclick="resetPw('${s.id}')">🔑 PW초기화</button>
+      </div>
+    </div>
+    <div class="detail-sec"><div class="detail-sec-title">📅 출결 현황</div>${attendHTML}</div>
+    <div class="detail-sec"><div class="detail-sec-title">📊 성적요약</div>${gradeHTML}</div>
+    <div class="detail-sec"><div class="detail-sec-title">🏅 자격증</div>${certsHTML}</div>
+    <div class="detail-sec"><div class="detail-sec-title">🎯 동아리 활동</div>${clubsHTML}</div>
+    <div class="detail-sec">
+      <div class="detail-sec-title">🏆 학급임원 사항</div>${leadersHTML}
+      <div style="margin-top:12px;font-size:11px;color:var(--text-sub)">📌 출결·성적·동아리·임원 데이터는 생활기록부 PDF 업로드 후 자동 연계됩니다</div>
+    </div>`;
+}
 function resetPw(id){
   if(!confirm('초기 비밀번호(생년월일)로 초기화합니까?')) return;
   const s=DB.students.find(x=>x.id===id);
