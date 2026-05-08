@@ -135,80 +135,65 @@ tr:hover td{background:#fafbfd}
   .dash-grid{grid-template-columns:1fr 1fr}
 }
 
-/* 학생 상세 모달 */
-.student-modal{max-width:620px;max-height:88vh;overflow-y:auto}
-.student-modal .modal-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:1}
-.student-modal .modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-sub);line-height:1}
-.student-modal .modal-body{padding:18px 20px}
-.smtab-bar{display:flex;gap:4px;margin-bottom:16px;background:var(--bg);padding:4px;border-radius:10px}
-.smtab-bar button{flex:1;padding:7px 4px;border:none;background:none;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;color:var(--text-sub);font-family:inherit;transition:.15s}
-.smtab-bar button.active{background:#fff;color:var(--primary);box-shadow:var(--shadow);font-weight:700}
-.smtab{display:none}.smtab.active{display:block}
-.grade-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:4px}
-.grade-card{background:var(--bg);border-radius:10px;padding:14px;text-align:center}
-.grade-card .gc-label{font-size:11px;color:var(--text-sub);margin-bottom:6px}
-.grade-card .gc-grade{font-size:24px;font-weight:700;color:var(--primary);line-height:1}
-.grade-card .gc-unit{font-size:11px;color:var(--text-sub);margin-top:3px}
-.grade-card.highlight{background:#EBF4FF}
-.attend-row{display:grid;grid-template-columns:60px 60px repeat(3,1fr) repeat(3,1fr) repeat(3,1fr) repeat(3,1fr);gap:4px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px;text-align:center;align-items:center}
-.attend-hdr{font-weight:600;color:var(--text-sub);font-size:11px;background:var(--bg);border-radius:6px;padding:5px 0}
-.cert-item{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg);border-radius:8px;margin-bottom:6px}
-.cert-name{font-weight:600;font-size:13px;flex:1}
-.cert-meta{font-size:11px;color:var(--text-sub)}
-.club-item,.leader-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg);border-radius:8px;margin-bottom:6px;font-size:13px}
-.empty-msg{text-align:center;color:var(--text-sub);font-size:13px;padding:20px}
-/* 클릭 가능한 학생 행 */
-.clickable-row{cursor:pointer}
-.clickable-row:hover td{background:#EBF4FF !important}
-
-/* 학생 정보 탭 — 좌우 분할 레이아웃 */
+/* ── 홈으로 버튼 ── */
+.nav-btn-ghost:hover{background:rgba(255,255,255,.25)}
+/* ── 학생 정보 탭 ── */
 .stu-info-layout{display:flex;gap:14px;align-items:flex-start}
-.stu-list-panel{width:180px;flex-shrink:0;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;position:sticky;top:calc(var(--nav-h) + 12px)}
-.stu-list-search{padding:10px;border-bottom:1px solid var(--border)}
-.stu-list-search input{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit;outline:none}
-.stu-list-search input:focus{border-color:var(--primary-light)}
-.stu-list-items{max-height:calc(100vh - 200px);overflow-y:auto}
-.stu-list-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;display:flex;justify-content:space-between;align-items:center;transition:.15s}
+.stu-list-panel{width:190px;flex-shrink:0;background:var(--card);border-radius:var(--radius);
+  box-shadow:var(--shadow);overflow:hidden;position:sticky;top:calc(var(--nav-h)+12px)}
+.stu-list-toolbar{padding:8px 12px;border-bottom:1px solid var(--border);display:flex;
+  justify-content:space-between;align-items:center;font-size:11px;color:var(--text-sub);background:var(--bg)}
+.stu-list-items{max-height:calc(100vh - 220px);overflow-y:auto}
+.stu-list-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);
+  font-size:13px;display:flex;justify-content:space-between;align-items:center;transition:.15s}
 .stu-list-item:hover{background:var(--bg)}
 .stu-list-item.active{background:#EBF4FF;color:var(--primary);font-weight:700;border-left:3px solid var(--primary)}
-.stu-list-item .stu-id{font-size:11px;color:var(--text-sub)}
-.stu-list-item.active .stu-id{color:var(--primary-light)}
-.stu-list-toolbar{padding:8px 10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text-sub)}
+.stu-list-item .stu-sid{font-size:10px;color:var(--text-sub);margin-top:1px}
+.stu-list-item.active .stu-sid{color:var(--primary-light)}
 .stu-detail-panel{flex:1;min-width:0}
-/* 상세 섹션 */
-.detail-sec{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:12px}
+/* 상세 헤더 */
+.stu-detail-header{background:var(--primary);color:#fff;border-radius:var(--radius);
+  padding:16px 20px;margin-bottom:12px;display:flex;align-items:center;gap:14px}
+.sdh-avatar{width:44px;height:44px;border-radius:50%;background:var(--accent);display:flex;
+  align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0}
+.sdh-name{font-size:17px;font-weight:700}
+.sdh-meta{font-size:12px;opacity:.8;margin-top:2px}
+.sdh-actions{margin-left:auto}
+/* 섹션 카드 */
+.detail-sec{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:18px;margin-bottom:12px}
 .detail-sec-title{font-size:14px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
 .detail-sec-title::before{content:'';width:4px;height:18px;background:var(--accent);border-radius:2px;flex-shrink:0}
 /* 출결 테이블 */
 .attend-tbl{width:100%;border-collapse:collapse;font-size:13px}
-.attend-tbl th{background:var(--bg);padding:9px 12px;text-align:center;font-weight:600;color:var(--text-sub);border-bottom:2px solid var(--border);font-size:12px}
+.attend-tbl th{background:var(--bg);padding:9px 12px;text-align:center;font-size:12px;
+  font-weight:600;color:var(--text-sub);border-bottom:2px solid var(--border)}
 .attend-tbl td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:center}
-.attend-tbl td:first-child{font-weight:600;text-align:left}
+.attend-tbl td:first-child{text-align:left;font-weight:600}
 .num-red{color:var(--red);font-weight:700}
+/* 성적요약 미니 */
+.grade-mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.grade-mini-card{background:var(--bg);border-radius:8px;padding:14px;text-align:center}
+.grade-mini-card.hl{background:#EBF4FF;border:1px solid #BEE3F8}
+.gmc-label{font-size:11px;color:var(--text-sub);margin-bottom:6px}
+.gmc-val{font-size:24px;font-weight:700;color:var(--primary);line-height:1}
+.gmc-unit{font-size:11px;color:var(--text-sub);margin-top:3px}
 /* 자격증 chip */
 .cert-chips{display:flex;flex-wrap:wrap;gap:8px}
-.cert-chip{display:inline-flex;align-items:center;gap:5px;background:#FFF3E0;border:1px solid #FBBF24;border-radius:20px;padding:5px 13px;font-size:13px;font-weight:600;color:#92400E}
+.cert-chip{display:inline-flex;align-items:center;gap:5px;background:#FFF3E0;
+  border:1px solid #FBBF24;border-radius:20px;padding:5px 13px;font-size:13px;font-weight:600;color:#92400E}
 /* 동아리/임원 테이블 */
 .spec-tbl{width:100%;border-collapse:collapse;font-size:13px}
-.spec-tbl th{background:var(--bg);padding:9px 12px;text-align:left;font-weight:600;color:var(--text-sub);border-bottom:2px solid var(--border);font-size:12px}
+.spec-tbl th{background:var(--bg);padding:9px 12px;text-align:left;font-size:12px;
+  font-weight:600;color:var(--text-sub);border-bottom:2px solid var(--border)}
 .spec-tbl td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
-.role-badge{display:inline-block;background:#EDE9FE;color:#7C3AED;border-radius:12px;padding:3px 10px;font-size:12px;font-weight:600}
-/* 성적요약 미니 */
-.grade-mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.grade-mini-card{background:var(--bg);border-radius:8px;padding:10px;text-align:center}
-.grade-mini-card.hl{background:#EBF4FF}
-.gmc-label{font-size:10px;color:var(--text-sub);margin-bottom:4px}
-.gmc-val{font-size:20px;font-weight:700;color:var(--primary)}
-.gmc-unit{font-size:10px;color:var(--text-sub);margin-top:2px}
-/* 선택 전 빈 화면 */
-.stu-empty{text-align:center;padding:60px 20px;color:var(--text-sub)}
-.stu-empty .empty-icon{font-size:40px;margin-bottom:12px}
-.stu-detail-header{background:var(--primary);color:#fff;border-radius:var(--radius);padding:16px 20px;margin-bottom:12px;display:flex;align-items:center;gap:14px}
-.sdh-avatar{width:44px;height:44px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0}
-.sdh-name{font-size:17px;font-weight:700}
-.sdh-meta{font-size:12px;opacity:.8;margin-top:2px}
-.sdh-actions{margin-left:auto;display:flex;gap:8px}
+.role-badge{display:inline-block;background:#EDE9FE;color:#7C3AED;border-radius:12px;
+  padding:3px 10px;font-size:12px;font-weight:600}
+/* 빈 상태 */
+.stu-empty{text-align:center;padding:60px 20px;color:var(--text-sub);font-size:14px}
+.stu-empty .ei{font-size:36px;margin-bottom:10px}
 @media(max-width:768px){
+  .sidebar{display:none}.main{margin-left:0}
   .stu-info-layout{flex-direction:column}
   .stu-list-panel{width:100%;position:static}
   .stu-list-items{max-height:160px}
@@ -327,29 +312,24 @@ tr:hover td{background:#fafbfd}
 
     <!-- 학생 정보 -->
     <div class="tab-panel" id="tab-students">
-      <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-end">
+      <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px">
         <div><h1>학생 정보</h1><p id="studentSubTitle"></p></div>
         <div style="display:flex;gap:8px">
           <input id="searchName" placeholder="이름/학번 검색" oninput="renderStudentList()"
-            style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;width:160px">
+            style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;width:150px">
           <button class="btn btn-ghost btn-sm" onclick="exportCSV()">📥 내보내기</button>
         </div>
       </div>
       <div class="stu-info-layout">
-        <!-- 좌: 학생 목록 -->
         <div class="stu-list-panel">
           <div class="stu-list-toolbar">
             <span id="stuListCount">0명</span>
-            <button class="btn btn-sm btn-ghost" style="font-size:11px;padding:3px 8px" onclick="exportCSV()">CSV</button>
+            <span style="font-size:10px">클릭하여 조회</span>
           </div>
           <div class="stu-list-items" id="stuListItems"></div>
         </div>
-        <!-- 우: 학생 상세 -->
         <div class="stu-detail-panel" id="stuDetailPanel">
-          <div class="stu-empty">
-            <div class="empty-icon">👈</div>
-            <p>왼쪽에서 학생을 선택하세요</p>
-          </div>
+          <div class="stu-empty"><div class="ei">👈</div><p>학생을 선택하면 상세 정보가 표시됩니다</p></div>
         </div>
       </div>
     </div>
@@ -360,77 +340,6 @@ tr:hover td{background:#fafbfd}
       <div id="jobListWrap"></div>
     </div>
 
-  </div>
-</div>
-
-<!-- 학생 상세 모달 -->
-<div class="modal-overlay" id="studentModal" onclick="closeStudentModal(event)">
-  <div class="modal student-modal">
-    <div class="modal-header">
-      <div>
-        <div id="sm-name" style="font-size:18px;font-weight:700"></div>
-        <div id="sm-meta" style="font-size:12px;color:var(--text-sub);margin-top:2px"></div>
-      </div>
-      <button class="modal-close" onclick="document.getElementById('studentModal').classList.remove('open')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="smtab-bar">
-        <button class="active" onclick="smShowTab('summary',this)">📊 성적요약</button>
-        <button onclick="smShowTab('certs',this)">📜 자격증</button>
-        <button onclick="smShowTab('attend',this)">📅 출결</button>
-        <button onclick="smShowTab('clubs',this)">🎯 동아리</button>
-        <button onclick="smShowTab('leaders',this)">🏅 임원</button>
-      </div>
-
-      <!-- 성적요약 -->
-      <div class="smtab active" id="smt-summary">
-        <div class="grade-grid">
-          <div class="grade-card highlight">
-            <div class="gc-label">전 과목 평균등급</div>
-            <div class="gc-grade" id="sm-allGrade">—</div>
-            <div class="gc-unit" id="sm-allUnit"></div>
-          </div>
-          <div class="grade-card">
-            <div class="gc-label">보통교과 평균등급</div>
-            <div class="gc-grade" id="sm-genGrade">—</div>
-            <div class="gc-unit" id="sm-genUnit"></div>
-          </div>
-          <div class="grade-card">
-            <div class="gc-label">전문교과 평균등급</div>
-            <div class="gc-grade" id="sm-proGrade">—</div>
-            <div class="gc-unit" id="sm-proUnit"></div>
-          </div>
-        </div>
-        <div style="font-size:11px;color:var(--text-sub);margin-top:8px">※ 성적요약 시트 기준 (교과성적 상세는 Excel 파일 직접 확인)</div>
-      </div>
-
-      <!-- 자격증 -->
-      <div class="smtab" id="smt-certs">
-        <div id="sm-cert-list"></div>
-      </div>
-
-      <!-- 출결 -->
-      <div class="smtab" id="smt-attend">
-        <div class="attend-row attend-hdr">
-          <div>학년</div><div>수업일수</div>
-          <div>결석<br>질병</div><div>결석<br>미인정</div><div>결석<br>기타</div>
-          <div>지각<br>질병</div><div>지각<br>미인정</div><div>지각<br>기타</div>
-          <div>조퇴<br>질병</div><div>조퇴<br>미인정</div><div>조퇴<br>기타</div>
-          <div>결과<br>질병</div><div>결과<br>미인정</div><div>결과<br>기타</div>
-        </div>
-        <div id="sm-attend-list"></div>
-      </div>
-
-      <!-- 동아리 -->
-      <div class="smtab" id="smt-clubs">
-        <div id="sm-club-list"></div>
-      </div>
-
-      <!-- 임원 -->
-      <div class="smtab" id="smt-leaders">
-        <div id="sm-leader-list"></div>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -453,7 +362,8 @@ tr:hover td{background:#fafbfd}
 <script>
 // ── 상태 ──
 let DB = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
-let ME = null; // 현재 로그인 교사 정보
+let ME = null;
+let _selId = null; // 선택된 학생 ID
 let pendingStudents = []; // 업로드 미리보기 대기
 
 function saveDB(){ localStorage.setItem('samilAdmin', JSON.stringify(DB)); }
@@ -497,6 +407,7 @@ function init(){
   document.getElementById('d-uploaded').textContent= myStudents.filter(s=>s.uploaded).length;
   document.getElementById('d-jobs').textContent    = (DB.jobs||[]).filter(j=>j.active).length;
   document.getElementById('studentSubTitle').textContent = `${ME.dept} ${ME.grade}학년 ${ME.cls}반 | 총 ${myStudents.length}명`;
+  _selId=null;
 
   // 최근 학생
   document.getElementById('recentStudentTb').innerHTML = myStudents.slice(0,5).map(s=>`
@@ -505,11 +416,8 @@ function init(){
     <td><span class="badge ${s.uploaded?'badge-green':'badge-gray'}">${s.uploaded?'등록됨':'미등록'}</span></td></tr>
   `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-sub)">업로드된 학생이 없습니다</td></tr>';
 
-  _selectedStuId=null;
   renderStudentList();
-  // 첫 학생 자동 선택
-  const _first=getMyStudents()[0];
-  if(_first){setTimeout(()=>selectStudent(_first.id),50);}
+  const _fi=getMyStudents()[0]; if(_fi) setTimeout(()=>selectStudent(_fi.id),50);
   renderJobs();
 }
 
@@ -528,159 +436,79 @@ function handleDrop(e){
 }
 
 function handleFile(file){
-  if(!file||!file.name.match(/\.xlsx?$/i)){
-    showUploadAlert('error','xlsx 또는 xls 파일만 업로드 가능합니다.');
-    return;
-  }
-  const wrap=document.getElementById('progressWrap');
-  wrap.style.display='block';
+  if(!file||!file.name.match(/\.xlsx?$/i)){showUploadAlert('error','xlsx 파일만 가능합니다.');return;}
+  const wrap=document.getElementById('progressWrap');wrap.style.display='block';
   setProgress(10,'파일 읽는 중...');
-
   const reader=new FileReader();
-  reader.onload=function(e){
+  reader.onload=function(ev){
     try{
-      const wb=XLSX.read(e.target.result,{type:'array'});
-
-      // ① 학생기본정보
+      const wb=XLSX.read(ev.target.result,{type:'array'});
       setProgress(20,'기본정보 파싱 중...');
       const ws1=wb.Sheets['학생기본정보'];
-      if(!ws1){ showUploadAlert('error','학생기본정보 시트를 찾을 수 없습니다.'); wrap.style.display='none'; return; }
+      if(!ws1){showUploadAlert('error','학생기본정보 시트 없음');wrap.style.display='none';return;}
       const basicRows=XLSX.utils.sheet_to_json(ws1,{header:1});
-      const hdr=basicRows[0]||[];
-      const hIdx={};
-      hdr.forEach((h,i)=>{ hIdx[h]=i; });
-
-      // ② 출결현황
+      const hdr=basicRows[0]||[]; const hIdx={};
+      hdr.forEach((h,i)=>{hIdx[h]=i;});
       setProgress(35,'출결현황 파싱 중...');
       const ws2=wb.Sheets['출결현황'];
       const attendRows=ws2?XLSX.utils.sheet_to_json(ws2,{header:1}).slice(1):[];
-
-      // ③ 자격증
       setProgress(50,'자격증 파싱 중...');
       const ws3=wb.Sheets['자격증'];
       const certRows=ws3?XLSX.utils.sheet_to_json(ws3,{header:1}).slice(1):[];
-
-      // ④ 동아리활동
       setProgress(62,'동아리활동 파싱 중...');
       const ws4=wb.Sheets['동아리활동'];
       const clubRows=ws4?XLSX.utils.sheet_to_json(ws4,{header:1}).slice(1):[];
-
-      // ⑤ 임원활동
       setProgress(74,'임원활동 파싱 중...');
       const ws5=wb.Sheets['임원활동'];
       const leaderRows=ws5?XLSX.utils.sheet_to_json(ws5,{header:1}).slice(1):[];
-
-      // ⑥ 성적요약
       setProgress(85,'성적요약 파싱 중...');
       const ws6=wb.Sheets['성적요약'];
       const summaryRows=ws6?XLSX.utils.sheet_to_json(ws6,{header:1}).slice(1):[];
-
-      // 학번 기준 그룹핑 (컬럼1 = 학번)
-      function groupById(rows){
-        const map={};
-        rows.forEach(r=>{ const id=String(r[1]||''); if(!map[id])map[id]=[]; map[id].push(r); });
-        return map;
-      }
-      const attendMap=groupById(attendRows);
-      const certMap  =groupById(certRows);
-      const clubMap  =groupById(clubRows);
-      const leaderMap=groupById(leaderRows);
-      const summaryMap={};
-      summaryRows.forEach(r=>{ summaryMap[String(r[1]||'')]=r; });
-
+      function gid(rows){const m={};rows.forEach(r=>{const id=String(r[1]||'');if(!m[id])m[id]=[];m[id].push(r);});return m;}
+      const aMap=gid(attendRows),cMap=gid(certRows),clMap=gid(clubRows),lMap=gid(leaderRows);
+      const sMap={};summaryRows.forEach(r=>{sMap[String(r[1]||'')]=r;});
       setProgress(92,'데이터 조합 중...');
-
-      // 헤더: 학과,학번,이름,학년,수업일수,결석(질병),결석(미인정),결석(기타),
-      //        지각(질병),지각(미인정),지각(기타),조퇴(질병),조퇴(미인정),조퇴(기타),
-      //        결과(질병),결과(미인정),결과(기타),특기사항
-      function parseAttend(rows){
-        return rows.map(a=>({
-          grade:a[3]||0, days:a[4]||0,
-          abs:  {sick:a[5]||0, unauth:a[6]||0,  etc:a[7]||0},
-          late: {sick:a[8]||0, unauth:a[9]||0,  etc:a[10]||0},
-          early:{sick:a[11]||0,unauth:a[12]||0, etc:a[13]||0},
-          leave:{sick:a[14]||0,unauth:a[15]||0, etc:a[16]||0}
-        }));
-      }
-      // 헤더: 학과,학번,이름,자격증명,취득일,발급기관
-      function parseCerts(rows){
-        return rows.map(c=>({name:String(c[3]||''),date:String(c[4]||''),agency:String(c[5]||'')}))
-                   .filter(c=>c.name);
-      }
-      // 헤더: 학과,학번,이름,학년,동아리명,시간,구분
-      function parseClubs(rows){
-        return rows.map(c=>({grade:c[3]||0,name:String(c[4]||''),hours:c[5]||0,type:String(c[6]||'')}))
-                   .filter(c=>c.name);
-      }
-      // 헤더: 학과,학번,이름,직책,시작연도,종료연도
-      function parseLeaders(rows){
-        return rows.map(l=>({role:String(l[3]||''),startYear:String(l[4]||''),endYear:String(l[5]||'')}))
-                   .filter(l=>l.role);
-      }
-      // 헤더: 학과,학번,이름,전과목_이수학점,전과목_평균등급,보통교과_이수학점,보통교과_평균등급,전문교과_이수학점,전문교과_평균등급
-      function parseSummary(r){
-        if(!r) return null;
-        return {allUnit:r[3]||0,allGrade:r[4]||0,genUnit:r[5]||0,genGrade:r[6]||0,proUnit:r[7]||0,proGrade:r[8]||0};
-      }
-
       pendingStudents=basicRows.slice(1).filter(r=>r.length>2).map(r=>{
-        const 학과=String(r[hIdx['학과']]||'');
-        const 학번=String(r[hIdx['학번']]||'');
-        const 이름=String(r[hIdx['이름']]||'');
-        const 성별=String(r[hIdx['성별']]||'');
-        const 생년월일=String(r[hIdx['생년월일(YYMMDD)']]||r[hIdx['생년월일']]||'');
-        const 담임=String(r[hIdx['담임교사']]||'');
-        const certs  =parseCerts  (certMap  [학번]||[]);
-        const attend =parseAttend (attendMap[학번]||[]);
-        const clubs  =parseClubs  (clubMap  [학번]||[]);
-        const leaders=parseLeaders(leaderMap[학번]||[]);
-        const summary=parseSummary(summaryMap[학번]);
-        return {
-          dept:학과, id:학번, name:이름, gender:성별,
-          birth:생년월일, teacher:담임, pw:생년월일,
-          grade:String(ME.grade), cls:String(ME.cls),
-          uploaded:true,
-          certCount:certs.length,
-          certs, attend, clubs, leaders, summary
-        };
+        const dept=String(r[hIdx['학과']]||''),id=String(r[hIdx['학번']]||'');
+        const name=String(r[hIdx['이름']]||''),gender=String(r[hIdx['성별']]||'');
+        const birth=String(r[hIdx['생년월일(YYMMDD)']]||r[hIdx['생년월일']]||'');
+        const teacher=String(r[hIdx['담임교사']]||'');
+        const certs=(cMap[id]||[]).map(x=>({name:String(x[3]||''),date:String(x[4]||''),agency:String(x[5]||'')})).filter(x=>x.name);
+        const attend=(aMap[id]||[]).map(x=>({grade:x[3]||0,days:x[4]||0,
+          abs:{sick:x[5]||0,unauth:x[6]||0,etc:x[7]||0},
+          late:{sick:x[8]||0,unauth:x[9]||0,etc:x[10]||0},
+          early:{sick:x[11]||0,unauth:x[12]||0,etc:x[13]||0},
+          leave:{sick:x[14]||0,unauth:x[15]||0,etc:x[16]||0}}));
+        const clubs=(clMap[id]||[]).map(x=>({grade:x[3]||0,name:String(x[4]||''),hours:x[5]||0,type:String(x[6]||'')})).filter(x=>x.name);
+        const leaders=(lMap[id]||[]).map(x=>({role:String(x[3]||''),startYear:String(x[4]||''),endYear:String(x[5]||'')})).filter(x=>x.role);
+        const sr=sMap[id];
+        const summary=sr?{allUnit:sr[3]||0,allGrade:sr[4]||0,genUnit:sr[5]||0,genGrade:sr[6]||0,proUnit:sr[7]||0,proGrade:sr[8]||0}:null;
+        return{dept,id,name,gender,birth,teacher,pw:birth,grade:String(ME.grade),cls:String(ME.cls),
+               uploaded:true,certCount:certs.length,certs,attend,clubs,leaders,summary};
       }).filter(s=>s.name&&s.id);
-
       setProgress(100,'완료!');
-
-      // 미리보기 요약
-      const totCert  =pendingStudents.reduce((a,s)=>a+s.certs.length,0);
-      const totClub  =pendingStudents.reduce((a,s)=>a+s.clubs.length,0);
-      const totLeader=pendingStudents.reduce((a,s)=>a+s.leaders.length,0);
+      const tc=pendingStudents.reduce((a,s)=>a+s.certs.length,0);
+      const tl=pendingStudents.reduce((a,s)=>a+s.leaders.length,0);
+      const tk=pendingStudents.reduce((a,s)=>a+s.clubs.length,0);
       document.getElementById('previewAlert').innerHTML=
-        `총 <strong>${pendingStudents.length}명</strong> &nbsp;|&nbsp; `+
-        `자격증 <strong>${totCert}건</strong> &nbsp;|&nbsp; `+
-        `동아리 <strong>${totClub}건</strong> &nbsp;|&nbsp; `+
-        `임원 <strong>${totLeader}건</strong>`;
-
+        `총 <strong>${pendingStudents.length}명</strong> | 자격증 <strong>${tc}건</strong> | 동아리 <strong>${tk}건</strong> | 임원 <strong>${tl}건</strong>`;
       document.getElementById('previewTb').innerHTML=pendingStudents.map(s=>{
-        const unauthAbs=s.attend.reduce((a,r)=>a+r.abs.unauth,0);
+        const ua=s.attend.reduce((a,r)=>a+r.abs.unauth,0);
         const roles=s.leaders.map(l=>l.role).join(', ');
-        return `<tr>
-          <td>${s.dept}</td><td>${s.id}</td><td><strong>${s.name}</strong></td>
+        return `<tr><td>${s.dept}</td><td>${s.id}</td><td><strong>${s.name}</strong></td>
           <td>${s.gender}</td><td>${s.birth}</td>
           <td>${s.certs.length?`<span class="badge badge-orange">${s.certs.length}개</span>`:'—'}</td>
-          <td>${unauthAbs?`<span class="badge badge-red">${unauthAbs}일</span>`:'<span class="badge badge-green">없음</span>'}</td>
+          <td>${ua?`<span class="badge badge-red">${ua}일</span>`:'<span class="badge badge-green">없음</span>'}</td>
           <td>${s.clubs.length||'—'}</td>
           <td>${roles?`<span class="badge badge-blue">${roles}</span>`:'—'}</td>
-          <td><span class="badge badge-blue">${s.pw}</span></td>
-        </tr>`;
+          <td><span class="badge badge-blue">${s.pw}</span></td></tr>`;
       }).join('');
       document.getElementById('previewCard').style.display='block';
       setTimeout(()=>wrap.style.display='none',800);
-
-    } catch(err){
-      showUploadAlert('error','파일 파싱 오류: '+err.message);
-      wrap.style.display='none';
-    }
+    }catch(err){showUploadAlert('error','파일 파싱 오류: '+err.message);wrap.style.display='none';}
   };
   reader.readAsArrayBuffer(file);
 }
-
 function setProgress(pct,label){
   document.getElementById('progressFill').style.width=pct+'%';
   document.getElementById('progressLabel').textContent=label;
@@ -714,64 +542,75 @@ function showUploadAlert(type,msg){
 }
 
 // ── 학생 정보 탭 ──
-let _selectedStuId = null;
-
 function renderStudentList(){
   const q=(document.getElementById('searchName').value||'').toLowerCase();
   const list=getMyStudents().filter(s=>!q||s.name.includes(q)||s.id.includes(q));
   document.getElementById('stuListCount').textContent=list.length+'명';
-  document.getElementById('stuListItems').innerHTML=list.map(s=>{
-    const unauthAbs=(s.attend||[]).reduce((a,r)=>a+(r.abs?r.abs.unauth:0),0);
-    return `<div class="stu-list-item${_selectedStuId===s.id?' active':''}" onclick="selectStudent('${s.id}')">
+  const wrap=document.getElementById('stuListItems');
+  if(!list.length){
+    wrap.innerHTML='<div style="padding:20px;text-align:center;font-size:13px;color:var(--text-sub)">학생 없음</div>';
+    return;
+  }
+  wrap.innerHTML=list.map(s=>{
+    const ua=(s.attend||[]).reduce((a,r)=>a+(r.abs?r.abs.unauth:0),0);
+    const active=_selId===s.id?' active':'';
+    return `<div class="stu-list-item${active}" data-id="${s.id}">
       <div>
         <div>${s.name}</div>
-        <div class="stu-id">${s.id}</div>
+        <div class="stu-sid">${s.id}</div>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
-        ${unauthAbs?`<span class="badge badge-red" style="font-size:10px">${unauthAbs}일</span>`:''}
-        ${s.certCount?`<span class="badge badge-orange" style="font-size:10px">${s.certCount}개</span>`:''}
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+        ${ua?`<span class="badge badge-red" style="font-size:10px">결${ua}일</span>`:''}
+        ${s.certCount?`<span class="badge badge-orange" style="font-size:10px">📜${s.certCount}</span>`:''}
       </div>
     </div>`;
-  }).join('')||'<div style="padding:20px;text-align:center;font-size:13px;color:var(--text-sub)">학생 없음</div>';
-  if(_selectedStuId) selectStudent(_selectedStuId);
+  }).join('');
+  // 이벤트 위임 — onclick 인라인 제거, 따옴표 충돌 원천 차단
+  wrap.onclick=function(e){
+    const item=e.target.closest('.stu-list-item');
+    if(item) selectStudent(item.dataset.id);
+  };
+  if(_selId) selectStudent(_selId);
 }
 
 function selectStudent(id){
-  _selectedStuId=id;
+  _selId=id;
   document.querySelectorAll('.stu-list-item').forEach(el=>{
-    const idEl=el.querySelector('.stu-id');
-    el.classList.toggle('active', idEl&&idEl.textContent===id);
+    el.classList.toggle('active', el.dataset.id===id);
   });
   const s=getMyStudents().find(x=>x.id===id);
-  if(!s){document.getElementById('stuDetailPanel').innerHTML='<div class="stu-empty"><p>학생 데이터 없음</p></div>';return;}
-
-  const unauthTotal=(s.attend||[]).reduce((a,r)=>a+(r.abs?r.abs.unauth:0),0);
+  const panel=document.getElementById('stuDetailPanel');
+  if(!s){
+    panel.innerHTML='<div class="stu-empty"><div class="ei">😕</div><p>데이터 없음</p></div>';
+    return;
+  }
 
   // 출결
-  const attendHTML=(s.attend||[]).length
-    ?`<table class="attend-tbl">
+  const aRows=s.attend||[];
+  const attendHTML=aRows.length
+    ? `<table class="attend-tbl">
         <thead><tr><th>학년</th><th>수업일수</th><th>결석</th><th>지각</th><th>조퇴</th><th>결과</th><th>미인정결석</th></tr></thead>
-        <tbody>${(s.attend||[]).map(a=>{
+        <tbody>${aRows.map(a=>{
           const absT=(a.abs?a.abs.sick+a.abs.unauth+a.abs.etc:0);
           const latT=(a.late?a.late.sick+a.late.unauth+a.late.etc:0);
           const earT=(a.early?a.early.sick+a.early.unauth+a.early.etc:0);
           const levT=(a.leave?a.leave.sick+a.leave.unauth+a.leave.etc:0);
-          const ua=(a.abs?a.abs.unauth:0);
-          return \`<tr>
-            <td>\${a.grade}학년</td><td>\${a.days}일</td>
-            <td class="\${absT>0?'num-red':''}">\${absT||0}</td>
-            <td class="\${latT>0?'num-red':''}">\${latT||0}</td>
-            <td>\${earT||0}</td><td>\${levT||0}</td>
-            <td class="\${ua>0?'num-red':''}">\${ua>0?'⚠ '+ua:'0'}</td>
-          </tr>\`;
+          const ua=a.abs?a.abs.unauth:0;
+          return `<tr>
+            <td>${a.grade}학년</td><td>${a.days}일</td>
+            <td class="${absT>0?'num-red':''}">${absT}</td>
+            <td class="${latT>0?'num-red':''}">${latT}</td>
+            <td>${earT}</td><td>${levT}</td>
+            <td class="${ua>0?'num-red':''}">${ua>0?'⚠ '+ua:'0'}</td>
+          </tr>`;
         }).join('')}</tbody>
       </table>`
-    :'<p style="font-size:13px;color:var(--text-sub)">출결 데이터 없음 (생기부 미업로드)</p>';
+    : '<p style="font-size:13px;color:var(--text-sub)">출결 데이터 없음 (생기부 미업로드)</p>';
 
   // 성적요약
   const sm=s.summary;
   const gradeHTML=sm
-    ?`<div class="grade-mini-grid">
+    ? `<div class="grade-mini-grid">
         <div class="grade-mini-card hl">
           <div class="gmc-label">전 과목 평균등급</div>
           <div class="gmc-val">${sm.allGrade||'—'}</div>
@@ -787,48 +626,50 @@ function selectStudent(id){
           <div class="gmc-val">${sm.proGrade||'—'}</div>
           <div class="gmc-unit">${sm.proUnit?`이수 ${sm.proUnit}학점`:''}</div>
         </div>
-      </div>`
-    :'<p style="font-size:13px;color:var(--text-sub)">성적 데이터 없음 (생기부 미업로드)</p>';
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:var(--text-sub)">※ 성적요약 시트 기준 (교과성적 상세는 Excel 파일 직접 확인)</div>`
+    : '<p style="font-size:13px;color:var(--text-sub)">성적 데이터 없음 (생기부 미업로드)</p>';
 
   // 자격증
   const certsHTML=(s.certs||[]).length
-    ?`<div class="cert-chips">${(s.certs||[]).map(c=>
-        `<div class="cert-chip">🏅 ${c.name}<span style="font-size:11px;font-weight:400;margin-left:4px;opacity:.7">${c.date?'('+c.date+')':''}</span></div>`
+    ? `<div class="cert-chips">${(s.certs||[]).map(cert=>
+        `<div class="cert-chip">🏅 ${cert.name}${cert.date?` <span style="font-size:11px;font-weight:400;opacity:.7">(${cert.date})</span>`:''}</div>`
       ).join('')}</div>`
-    :'<p style="font-size:13px;color:var(--text-sub)">자격증 없음</p>';
+    : '<p style="font-size:13px;color:var(--text-sub)">자격증 없음</p>';
 
   // 동아리
   const clubsHTML=(s.clubs||[]).length
-    ?`<table class="spec-tbl">
-        <thead><tr><th>학년</th><th>동아리명</th><th>구분</th><th>활동시간</th></tr></thead>
-        <tbody>${(s.clubs||[]).map(cl=>`<tr>
-          <td>${cl.grade}학년</td><td><strong>${cl.name}</strong></td>
+    ? `<table class="spec-tbl">
+        <thead><tr><th>학년</th><th>동아리명</th><th>구분</th><th>시간</th></tr></thead>
+        <tbody>${(s.clubs||[]).map(cl=>
+          `<tr><td>${cl.grade}학년</td><td><strong>${cl.name}</strong></td>
           <td><span class="badge badge-gray">${cl.type||'—'}</span></td>
-          <td>${cl.hours||0}시간</td>
-        </tr>`).join('')}</tbody>
+          <td>${cl.hours||0}시간</td></tr>`
+        ).join('')}</tbody>
       </table>`
-    :'<p style="font-size:13px;color:var(--text-sub)">동아리 정보 없음</p>';
+    : '<p style="font-size:13px;color:var(--text-sub)">동아리 정보 없음</p>';
 
   // 임원
   const leadersHTML=(s.leaders||[]).length
-    ?`<table class="spec-tbl">
-        <thead><tr><th>시작연도</th><th>종료연도</th><th>직책</th></tr></thead>
-        <tbody>${(s.leaders||[]).map(l=>`<tr>
-          <td>${l.startYear}</td><td>${l.endYear}</td>
-          <td><span class="role-badge">${l.role}</span></td>
-        </tr>`).join('')}</tbody>
+    ? `<table class="spec-tbl">
+        <thead><tr><th>시작</th><th>종료</th><th>직책</th></tr></thead>
+        <tbody>${(s.leaders||[]).map(l=>
+          `<tr><td>${l.startYear}</td><td>${l.endYear}</td>
+          <td><span class="role-badge">${l.role}</span></td></tr>`
+        ).join('')}</tbody>
       </table>`
-    :'<p style="font-size:13px;color:var(--text-sub)">임원 이력 없음</p>';
+    : '<p style="font-size:13px;color:var(--text-sub)">임원 이력 없음</p>';
 
-  document.getElementById('stuDetailPanel').innerHTML=`
+  panel.innerHTML=`
     <div class="stu-detail-header">
       <div class="sdh-avatar">${s.name?s.name[0]:'?'}</div>
       <div>
         <div class="sdh-name">${s.name}</div>
-        <div class="sdh-meta">${s.dept} ${s.grade}학년 ${s.cls}반 · 학번 ${s.id} · ${s.gender||''} · 생년월일 ${s.birth||'—'}</div>
+        <div class="sdh-meta">${s.dept} ${s.grade}학년 ${s.cls}반 | 학번: ${s.id} | 생년월일: ${s.birth||'—'}</div>
       </div>
       <div class="sdh-actions">
-        <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border:none" onclick="resetPw('${s.id}')">🔑 PW초기화</button>
+        <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border:none"
+          onclick="resetPw('${s.id}')">🔑 PW초기화</button>
       </div>
     </div>
     <div class="detail-sec"><div class="detail-sec-title">📅 출결 현황</div>${attendHTML}</div>
@@ -837,7 +678,9 @@ function selectStudent(id){
     <div class="detail-sec"><div class="detail-sec-title">🎯 동아리 활동</div>${clubsHTML}</div>
     <div class="detail-sec">
       <div class="detail-sec-title">🏆 학급임원 사항</div>${leadersHTML}
-      <div style="margin-top:12px;font-size:11px;color:var(--text-sub)">📌 출결·성적·동아리·임원 데이터는 생활기록부 PDF 업로드 후 자동 연계됩니다</div>
+      <div style="margin-top:12px;font-size:11px;color:var(--text-sub)">
+        📌 출결·성적·동아리·임원 데이터는 생활기록부 PDF 업로드 후 자동 연계됩니다
+      </div>
     </div>`;
 }
 function resetPw(id){
@@ -848,20 +691,18 @@ function resetPw(id){
 
 function exportCSV(){
   const list=getMyStudents();
-  const header=['학번','이름','성별','생년월일','자격증수','자격증목록','미인정결석합','동아리수','임원이력','전과목평균등급','전문교과평균등급'];
+  const header=['학번','이름','성별','생년월일','자격증수','자격증목록','미인정결석','동아리수','임원이력','전과목등급','전문교과등급'];
   const rows=[header,...list.map(s=>{
-    const unauthAbs=(s.attend||[]).reduce((a,r)=>a+(r.abs?r.abs.unauth:0),0);
-    const certNames=(s.certs||[]).map(c=>c.name).join('|');
-    const clubs    =(s.clubs||[]).length;
-    const roles    =(s.leaders||[]).map(l=>l.role).join('|');
-    const allGrade =(s.summary?s.summary.allGrade:0)||0;
-    const proGrade =(s.summary?s.summary.proGrade:0)||0;
-    return [s.id,s.name,s.gender||'',s.birth||'',s.certCount||0,certNames,unauthAbs,clubs,roles,allGrade,proGrade];
+    const ua=(s.attend||[]).reduce((a,r)=>a+(r.abs?r.abs.unauth:0),0);
+    return[s.id,s.name,s.gender||'',s.birth||'',s.certCount||0,
+      (s.certs||[]).map(c=>c.name).join('|'),ua,
+      (s.clubs||[]).length,(s.leaders||[]).map(l=>l.role).join('|'),
+      (s.summary?s.summary.allGrade:0)||0,(s.summary?s.summary.proGrade:0)||0];
   })];
   const csv=rows.map(r=>r.join(',')).join('\n');
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download=`${ME.dept}_${ME.grade}학년${ME.cls}반_학생목록.csv`; a.click();
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`${ME.dept}_${ME.grade}학년${ME.cls}반_학생정보.csv`;a.click();
 }
 
 // ── 채용공고 ──
@@ -884,102 +725,6 @@ function renderJobs(){
       </div>
     </div>`;
   }).join('')||'<div class="card" style="text-align:center;color:var(--text-sub);padding:32px">진행중인 채용공고가 없습니다</div>';
-}
-
-
-// ── 학생 상세 모달 ──
-function openStudentModal(id){
-  const s=getMyStudents().find(x=>x.id===id);
-  if(!s) return;
-  document.getElementById('sm-name').textContent=s.name;
-  document.getElementById('sm-meta').textContent=
-    `${s.dept} ${s.grade}학년 ${s.cls}반 | 학번: ${s.id} | 생년월일: ${s.birth||'—'}`;
-
-  // 성적요약
-  const sm=s.summary;
-  if(sm){
-    document.getElementById('sm-allGrade').textContent=sm.allGrade||'—';
-    document.getElementById('sm-allUnit').textContent=sm.allUnit?`이수 ${sm.allUnit}학점`:'';
-    document.getElementById('sm-genGrade').textContent=sm.genGrade||'—';
-    document.getElementById('sm-genUnit').textContent=sm.genUnit?`이수 ${sm.genUnit}학점`:'';
-    document.getElementById('sm-proGrade').textContent=sm.proGrade||'—';
-    document.getElementById('sm-proUnit').textContent=sm.proUnit?`이수 ${sm.proUnit}학점`:'';
-  } else {
-    ['allGrade','genGrade','proGrade'].forEach(k=>document.getElementById('sm-'+k).textContent='—');
-    ['allUnit','genUnit','proUnit'].forEach(k=>document.getElementById('sm-'+k).textContent='생기부 미업로드');
-  }
-
-  // 자격증
-  const certs=s.certs||[];
-  document.getElementById('sm-cert-list').innerHTML=certs.length
-    ? certs.map(c=>`<div class="cert-item">
-        <div>📜</div>
-        <div class="cert-name">${c.name}</div>
-        <div class="cert-meta">${c.date||''}<br>${c.agency||''}</div>
-      </div>`).join('')
-    : '<div class="empty-msg">자격증 정보 없음</div>';
-
-  // 출결
-  const attend=s.attend||[];
-  document.getElementById('sm-attend-list').innerHTML=attend.length
-    ? attend.map(a=>{
-        const ua=a.abs?a.abs.unauth:0;
-        return `<div class="attend-row" style="${ua>0?'background:#FFF5F5':''}">
-          <div><strong>${a.grade}학년</strong></div>
-          <div>${a.days}일</div>
-          <div>${a.abs?a.abs.sick:0}</div>
-          <div style="${ua>0?'color:var(--red);font-weight:700':''}">
-            ${ua>0?'⚠ '+ua:0}</div>
-          <div>${a.abs?a.abs.etc:0}</div>
-          <div>${a.late?a.late.sick:0}</div>
-          <div>${a.late?a.late.unauth:0}</div>
-          <div>${a.late?a.late.etc:0}</div>
-          <div>${a.early?a.early.sick:0}</div>
-          <div>${a.early?a.early.unauth:0}</div>
-          <div>${a.early?a.early.etc:0}</div>
-          <div>${a.leave?a.leave.sick:0}</div>
-          <div>${a.leave?a.leave.unauth:0}</div>
-          <div>${a.leave?a.leave.etc:0}</div>
-        </div>`;
-      }).join('')
-    : '<div class="empty-msg">출결 정보 없음</div>';
-
-  // 동아리
-  const clubs=s.clubs||[];
-  document.getElementById('sm-club-list').innerHTML=clubs.length
-    ? clubs.map(c=>`<div class="club-item">
-        <span>🎯 <strong>${c.name}</strong></span>
-        <span style="display:flex;gap:8px;align-items:center">
-          <span class="badge badge-gray">${c.type||''}</span>
-          <span class="badge badge-blue">${c.grade}학년</span>
-          ${c.hours?`<span style="font-size:12px;color:var(--text-sub)">${c.hours}시간</span>`:''}
-        </span>
-      </div>`).join('')
-    : '<div class="empty-msg">동아리 정보 없음</div>';
-
-  // 임원
-  const leaders=s.leaders||[];
-  document.getElementById('sm-leader-list').innerHTML=leaders.length
-    ? leaders.map(l=>`<div class="leader-item">
-        <span>🏅 <strong>${l.role}</strong></span>
-        <span style="font-size:12px;color:var(--text-sub)">${l.startYear}~${l.endYear}</span>
-      </div>`).join('')
-    : '<div class="empty-msg">임원 이력 없음</div>';
-
-  // 첫 탭(성적요약) 활성화
-  smShowTab('summary', document.querySelector('.smtab-bar button'));
-  document.getElementById('studentModal').classList.add('open');
-}
-
-function smShowTab(id, btn){
-  document.querySelectorAll('.smtab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.smtab-bar button').forEach(b=>b.classList.remove('active'));
-  document.getElementById('smt-'+id).classList.add('active');
-  btn.classList.add('active');
-}
-
-function closeStudentModal(e){
-  if(e.target.id==='studentModal') document.getElementById('studentModal').classList.remove('open');
 }
 
 // ── 비밀번호 변경 ──
