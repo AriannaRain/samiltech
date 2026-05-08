@@ -149,15 +149,30 @@ tr:hover td{background:#fafbfd}
 .stu-summary-tbl tr.stu-row:hover td{background:#EBF4FF}
 .stu-summary-tbl tr.stu-row.active td{background:#DBEAFE;font-weight:600}
 .stu-summary-tbl tr.stu-row.active td:first-child{border-left:3px solid var(--primary)}
-/* 상세 패널 */
-.stu-detail-wrap{margin-top:16px;display:none}
-.stu-detail-wrap.open{display:block}
-.stu-detail-bar{display:flex;justify-content:space-between;align-items:center;
-  margin-bottom:10px;padding:0 2px}
-.stu-detail-bar-title{font-size:15px;font-weight:700;color:var(--primary)}
-.stu-detail-bar-close{background:none;border:1px solid var(--border);border-radius:8px;
-  padding:5px 12px;font-size:12px;cursor:pointer;color:var(--text-sub);transition:.15s}
-.stu-detail-bar-close:hover{border-color:var(--red);color:var(--red)}
+/* 학생 상세 모달 */
+.stu-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);
+  z-index:500;align-items:center;justify-content:center;padding:16px}
+.stu-modal-overlay.open{display:flex}
+.stu-modal{background:#fff;border-radius:16px;width:100%;max-width:680px;
+  max-height:88vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.25)}
+.stu-modal-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:flex-start;
+  position:sticky;top:0;background:#fff;z-index:1;border-radius:16px 16px 0 0}
+.stu-modal-header-info{display:flex;align-items:center;gap:12px}
+.stu-modal-avatar{width:42px;height:42px;border-radius:50%;background:var(--primary);
+  display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;font-weight:700;flex-shrink:0}
+.stu-modal-name{font-size:17px;font-weight:700;color:var(--text)}
+.stu-modal-meta{font-size:12px;color:var(--text-sub);margin-top:2px}
+.stu-modal-close{background:none;border:none;font-size:22px;cursor:pointer;
+  color:var(--text-sub);line-height:1;padding:4px;transition:.15s}
+.stu-modal-close:hover{color:var(--red)}
+.stu-modal-body{padding:18px 20px 24px}
+/* 탭 네비 */
+.stu-modal-tabs{display:flex;gap:4px;margin-bottom:18px;background:var(--bg);padding:4px;border-radius:10px}
+.stu-modal-tab{flex:1;padding:8px 4px;border:none;background:none;border-radius:7px;
+  font-size:12px;font-weight:500;cursor:pointer;color:var(--text-sub);font-family:inherit;transition:.15s}
+.stu-modal-tab.active{background:#fff;color:var(--primary);font-weight:700;box-shadow:0 1px 6px rgba(0,0,0,.1)}
+.stu-modal-section{display:none}.stu-modal-section.active{display:block}
 /* 상세 헤더 */
 .stu-detail-header{background:var(--primary);color:#fff;border-radius:var(--radius);
   padding:16px 20px;margin-bottom:12px;display:flex;align-items:center;gap:14px}
@@ -347,14 +362,6 @@ tr:hover td{background:#fafbfd}
         </div>
       </div>
 
-      <!-- 선택 학생 상세 (클릭 시 표시) -->
-      <div class="stu-detail-wrap" id="stuDetailWrap">
-        <div class="stu-detail-bar">
-          <div class="stu-detail-bar-title" id="stuDetailBarTitle"></div>
-          <button class="stu-detail-bar-close" onclick="closeDetail()">✕ 닫기</button>
-        </div>
-        <div id="stuDetailPanel"></div>
-      </div>
     </div>
 
     <!-- 채용공고 열람 -->
@@ -363,6 +370,52 @@ tr:hover td{background:#fafbfd}
       <div id="jobListWrap"></div>
     </div>
 
+  </div>
+</div>
+
+<!-- 학생 상세 모달 -->
+<div class="stu-modal-overlay" id="stuModal" onclick="if(event.target===this)closeStuModal()">
+  <div class="stu-modal">
+    <div class="stu-modal-header">
+      <div class="stu-modal-header-info">
+        <div class="stu-modal-avatar" id="sm-avatar">?</div>
+        <div>
+          <div class="stu-modal-name" id="sm-name"></div>
+          <div class="stu-modal-meta" id="sm-meta"></div>
+        </div>
+      </div>
+      <button class="stu-modal-close" onclick="closeStuModal()">✕</button>
+    </div>
+    <div class="stu-modal-body">
+      <!-- 탭 -->
+      <div class="stu-modal-tabs">
+        <button class="stu-modal-tab active" onclick="smTab('attend',this)">📅 출결</button>
+        <button class="stu-modal-tab" onclick="smTab('grade',this)">📊 성적요약</button>
+        <button class="stu-modal-tab" onclick="smTab('certs',this)">🏅 자격증</button>
+        <button class="stu-modal-tab" onclick="smTab('clubs',this)">🎯 동아리</button>
+        <button class="stu-modal-tab" onclick="smTab('leaders',this)">🏆 임원</button>
+      </div>
+      <!-- 출결 -->
+      <div class="stu-modal-section active" id="sm-attend"></div>
+      <!-- 성적요약 -->
+      <div class="stu-modal-section" id="sm-grade"></div>
+      <!-- 자격증 -->
+      <div class="stu-modal-section" id="sm-certs"></div>
+      <!-- 동아리 -->
+      <div class="stu-modal-section" id="sm-clubs"></div>
+      <!-- 임원 -->
+      <div class="stu-modal-section" id="sm-leaders">
+        <div id="sm-leaders-content"></div>
+        <div style="margin-top:14px;font-size:11px;color:var(--text-sub)">
+          📌 출결·성적·동아리·임원 데이터는 생활기록부 PDF 업로드 후 자동 연계됩니다
+        </div>
+      </div>
+    </div>
+    <!-- 모달 하단 버튼 -->
+    <div style="padding:0 20px 18px;display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn btn-ghost btn-sm" id="sm-pw-btn" onclick="">🔑 PW 초기화</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeStuModal()">닫기</button>
+    </div>
   </div>
 </div>
 
@@ -610,43 +663,48 @@ function renderStudentList(){
   if(_selId) selectStudent(_selId);
 }
 
-function closeDetail(){
-  _selId = null;
-  document.getElementById('stuDetailWrap').classList.remove('open');
+function closeStuModal(){
+  document.getElementById('stuModal').classList.remove('open');
+  _selId=null;
   document.querySelectorAll('.stu-row').forEach(r=>r.classList.remove('active'));
 }
 
+function smTab(id, btn){
+  document.querySelectorAll('.stu-modal-section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.stu-modal-tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sm-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
 function selectStudent(id){
-  _selId = id;
+  _selId=id;
   document.querySelectorAll('.stu-row').forEach(r=>{
     r.classList.toggle('active', r.dataset.id===id);
   });
-  const s = getMyStudents().find(x=>x.id===id);
+  const s=getMyStudents().find(x=>x.id===id);
   if(!s) return;
 
-  // 상세 패널 열기
-  document.getElementById('stuDetailBarTitle').textContent =
-    `${s.name} (${s.dept} ${s.grade}학년 ${s.cls}반 · 학번 ${s.id})`;
-  const wrap = document.getElementById('stuDetailWrap');
-  wrap.classList.add('open');
+  // 모달 헤더
+  document.getElementById('sm-avatar').textContent = s.name?s.name[0]:'?';
+  document.getElementById('sm-name').textContent   = s.name;
+  document.getElementById('sm-meta').textContent   =
+    `${s.dept} ${s.grade}학년 ${s.cls}반 | 학번: ${s.id} | 생년월일: ${s.birth||'—'}`;
+  document.getElementById('sm-pw-btn').onclick = ()=>resetPw(s.id);
 
-  // 클릭한 행으로 스크롤
-  setTimeout(()=>wrap.scrollIntoView({behavior:'smooth',block:'start'}), 50);
-
-  // 출결
+  // ── 출결 ──
   const aRows = s.attend||[];
-  const attendHTML = aRows.length
+  document.getElementById('sm-attend').innerHTML = aRows.length
     ? `<table class="attend-tbl">
         <thead><tr>
           <th>학년</th><th>수업일수</th>
           <th>결석</th><th>지각</th><th>조퇴</th><th>결과</th><th>미인정결석</th>
         </tr></thead>
         <tbody>${aRows.map(a=>{
-          const absT = (a.abs ?a.abs.sick +a.abs.unauth +a.abs.etc :0);
-          const latT = (a.late?a.late.sick+a.late.unauth+a.late.etc:0);
-          const earT = (a.early?a.early.sick+a.early.unauth+a.early.etc:0);
-          const levT = (a.leave?a.leave.sick+a.leave.unauth+a.leave.etc:0);
-          const ua   = a.abs?a.abs.unauth:0;
+          const absT=(a.abs ?a.abs.sick +a.abs.unauth +a.abs.etc :0);
+          const latT=(a.late?a.late.sick+a.late.unauth+a.late.etc:0);
+          const earT=(a.early?a.early.sick+a.early.unauth+a.early.etc:0);
+          const levT=(a.leave?a.leave.sick+a.leave.unauth+a.leave.etc:0);
+          const ua  =(a.abs?a.abs.unauth:0);
           return `<tr>
             <td>${a.grade}학년</td><td>${a.days}일</td>
             <td class="${absT>0?'num-red':''}">${absT}</td>
@@ -656,11 +714,11 @@ function selectStudent(id){
           </tr>`;
         }).join('')}</tbody>
       </table>`
-    : '<p style="font-size:13px;color:var(--text-sub)">출결 데이터 없음 (생기부 미업로드)</p>';
+    : '<p style="color:var(--text-sub);font-size:13px">출결 데이터 없음 (생기부 미업로드)</p>';
 
-  // 성적요약
-  const sm = s.summary;
-  const gradeHTML = sm
+  // ── 성적요약 ──
+  const sm=s.summary;
+  document.getElementById('sm-grade').innerHTML = sm
     ? `<div class="grade-mini-grid">
         <div class="grade-mini-card hl">
           <div class="gmc-label">전 과목 평균등급</div>
@@ -678,21 +736,21 @@ function selectStudent(id){
           <div class="gmc-unit">${sm.proUnit?`이수 ${sm.proUnit}학점`:''}</div>
         </div>
       </div>
-      <div style="margin-top:8px;font-size:11px;color:var(--text-sub)">
+      <div style="margin-top:10px;font-size:11px;color:var(--text-sub)">
         ※ 성적요약 시트 기준 (교과성적 상세는 Excel 파일 직접 확인)
       </div>`
-    : '<p style="font-size:13px;color:var(--text-sub)">성적 데이터 없음 (생기부 미업로드)</p>';
+    : '<p style="color:var(--text-sub);font-size:13px">성적 데이터 없음 (생기부 미업로드)</p>';
 
-  // 자격증
-  const certsHTML = (s.certs||[]).length
+  // ── 자격증 ──
+  document.getElementById('sm-certs').innerHTML = (s.certs||[]).length
     ? `<div class="cert-chips">${(s.certs||[]).map(cert=>
         `<div class="cert-chip">🏅 ${cert.name}${cert.date
           ?` <span style="font-size:11px;font-weight:400;opacity:.7">(${cert.date})</span>`:''
         }</div>`).join('')}</div>`
-    : '<p style="font-size:13px;color:var(--text-sub)">자격증 없음</p>';
+    : '<p style="color:var(--text-sub);font-size:13px">자격증 없음</p>';
 
-  // 동아리
-  const clubsHTML = (s.clubs||[]).length
+  // ── 동아리 ──
+  document.getElementById('sm-clubs').innerHTML = (s.clubs||[]).length
     ? `<table class="spec-tbl">
         <thead><tr><th>학년</th><th>동아리명</th><th>구분</th><th>시간</th></tr></thead>
         <tbody>${(s.clubs||[]).map(cl=>
@@ -701,10 +759,10 @@ function selectStudent(id){
            <td>${cl.hours||0}시간</td></tr>`
         ).join('')}</tbody>
       </table>`
-    : '<p style="font-size:13px;color:var(--text-sub)">동아리 정보 없음</p>';
+    : '<p style="color:var(--text-sub);font-size:13px">동아리 정보 없음</p>';
 
-  // 임원
-  const leadersHTML = (s.leaders||[]).length
+  // ── 임원 ──
+  document.getElementById('sm-leaders-content').innerHTML = (s.leaders||[]).length
     ? `<table class="spec-tbl">
         <thead><tr><th>시작</th><th>종료</th><th>직책</th></tr></thead>
         <tbody>${(s.leaders||[]).map(l=>
@@ -712,30 +770,11 @@ function selectStudent(id){
            <td><span class="role-badge">${l.role}</span></td></tr>`
         ).join('')}</tbody>
       </table>`
-    : '<p style="font-size:13px;color:var(--text-sub)">임원 이력 없음</p>';
+    : '<p style="color:var(--text-sub);font-size:13px">임원 이력 없음</p>';
 
-  document.getElementById('stuDetailPanel').innerHTML = `
-    <div class="stu-detail-header">
-      <div class="sdh-avatar">${s.name?s.name[0]:'?'}</div>
-      <div>
-        <div class="sdh-name">${s.name}</div>
-        <div class="sdh-meta">${s.dept} ${s.grade}학년 ${s.cls}반 | 학번: ${s.id} | 생년월일: ${s.birth||'—'}</div>
-      </div>
-      <div class="sdh-actions">
-        <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border:none"
-          onclick="resetPw('${s.id}')">🔑 PW초기화</button>
-      </div>
-    </div>
-    <div class="detail-sec"><div class="detail-sec-title">📅 출결 현황</div>${attendHTML}</div>
-    <div class="detail-sec"><div class="detail-sec-title">📊 성적요약</div>${gradeHTML}</div>
-    <div class="detail-sec"><div class="detail-sec-title">🏅 자격증</div>${certsHTML}</div>
-    <div class="detail-sec"><div class="detail-sec-title">🎯 동아리 활동</div>${clubsHTML}</div>
-    <div class="detail-sec">
-      <div class="detail-sec-title">🏆 학급임원 사항</div>${leadersHTML}
-      <div style="margin-top:12px;font-size:11px;color:var(--text-sub)">
-        📌 출결·성적·동아리·임원 데이터는 생활기록부 PDF 업로드 후 자동 연계됩니다
-      </div>
-    </div>`;
+  // 첫 탭(출결) 활성화 후 모달 오픈
+  smTab('attend', document.querySelector('.stu-modal-tab'));
+  document.getElementById('stuModal').classList.add('open');
 }
 function resetPw(id){
   if(!confirm('초기 비밀번호(생년월일)로 초기화합니까?')) return;
