@@ -221,6 +221,61 @@ tr:hover td{background:#fafbfd}
   .stu-list-items{max-height:160px}
   .grade-mini-grid{grid-template-columns:1fr 1fr 1fr}
 }
+
+/* ── 학생 채용 추천 탭 ── */
+.rec-layout{display:grid;grid-template-columns:260px 1fr;gap:14px;align-items:start}
+.rec-student-panel{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;position:sticky;top:calc(var(--nav-h)+12px)}
+.rec-student-panel h3{font-size:13px;font-weight:700;color:var(--text-sub);margin-bottom:10px;letter-spacing:.3px}
+.rec-select{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;
+  font-size:13px;font-family:inherit;outline:none;cursor:pointer}
+.rec-select:focus{border-color:var(--primary-light)}
+.rec-spec-card{margin-top:12px;background:var(--bg);border-radius:10px;padding:12px}
+.rec-spec-row{display:flex;justify-content:space-between;align-items:center;
+  padding:5px 0;border-bottom:1px solid var(--border);font-size:12px}
+.rec-spec-row:last-child{border-bottom:none}
+.rec-spec-label{color:var(--text-sub)}
+.rec-spec-val{font-weight:600}
+/* 추천 결과 */
+.rec-result-panel{}
+.rec-empty{text-align:center;padding:48px;color:var(--text-sub)}
+.rec-empty .rei{font-size:36px;margin-bottom:10px}
+.rec-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:16px;margin-bottom:12px;border:1.5px solid var(--border);transition:.2s}
+.rec-card:hover{border-color:var(--primary-light);transform:translateY(-1px)}
+.rec-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.rec-card-co{font-size:12px;color:var(--text-sub);margin-bottom:3px;display:flex;gap:6px;align-items:center}
+.rec-card-title{font-size:15px;font-weight:700}
+.rec-score-badge{display:flex;flex-direction:column;align-items:center;flex-shrink:0;
+  width:54px;height:54px;border-radius:50%;justify-content:center;font-weight:700}
+.rec-score-badge.high{background:#DCFCE7;color:#166534;border:2px solid #86EFAC}
+.rec-score-badge.mid{background:#EBF4FF;color:#1A3A6B;border:2px solid #93C5FD}
+.rec-score-badge.low{background:#F4F6FA;color:var(--text-sub);border:2px solid var(--border)}
+.rec-score-num{font-size:17px;line-height:1}
+.rec-score-lbl{font-size:9px;margin-top:1px}
+.rec-reasons{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.rec-reason{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.rec-reason.pos{background:#DCFCE7;color:#166534}
+.rec-reason.neg{background:#FEF2F2;color:#991B1B}
+.rec-reason.neu{background:#F4F6FA;color:var(--text-sub)}
+.rec-card-footer{display:flex;justify-content:space-between;align-items:center;
+  border-top:1px solid var(--border);padding-top:8px;font-size:12px;color:var(--text-sub)}
+.rec-tag{background:var(--bg);color:var(--text-sub);font-size:11px;padding:2px 7px;
+  border-radius:12px;border:1px solid var(--border)}
+.rec-fit-label{font-size:11px;font-weight:700}
+.rec-fit-label.high{color:#166534}
+.rec-fit-label.mid{color:var(--primary)}
+.rec-fit-label.low{color:var(--text-sub)}
+.rec-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.rec-header h2{font-size:16px;font-weight:700}
+.rec-count{font-size:13px;color:var(--text-sub)}
+/* 미래 연동 안내 배너 */
+.rec-future-banner{background:linear-gradient(135deg,#EBF4FF,#F0FFF4);border:1px solid #BEE3F8;
+  border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--primary-light);
+  display:flex;align-items:center;gap:8px}
+@media(max-width:900px){
+  .rec-layout{grid-template-columns:1fr}
+  .rec-student-panel{position:static}
+}
 </style>
 </head>
 <body>
@@ -265,6 +320,7 @@ tr:hover td{background:#fafbfd}
       <div class="nav-item" onclick="showTab('students',this)"><span class="icon">🎓</span>학생 정보</div>
       <div class="nav-section">채용 정보</div>
       <div class="nav-item" onclick="showTab('jobs',this)"><span class="icon">📋</span>채용공고 열람</div>
+      <div class="nav-item" onclick="showTab('recommend',this)"><span class="icon">🎯</span>학생 채용 추천</div>
     </div>
   </div>
 
@@ -368,6 +424,36 @@ tr:hover td{background:#fafbfd}
     <div class="tab-panel" id="tab-jobs">
       <div class="page-header"><h1>채용공고 열람</h1><p>현재 진행중인 채용공고를 확인하세요.</p></div>
       <div id="jobListWrap"></div>
+    </div>
+
+    <!-- 학생 채용 추천 -->
+    <div class="tab-panel" id="tab-recommend">
+      <div class="page-header"><h1>학생 채용 추천</h1><p>학생 스펙 기반으로 적합한 채용공고를 추천합니다.</p></div>
+      <div class="rec-future-banner">
+        🔗 현재는 localStorage 데이터 기준입니다. Google Sheets 연동 후 실시간 스펙 반영이 가능합니다.
+      </div>
+      <div class="rec-layout">
+        <!-- 좌: 학생 선택 + 스펙 요약 -->
+        <div class="rec-student-panel">
+          <h3>학생 선택</h3>
+          <select class="rec-select" id="recStudentSel" onchange="renderRecommend()">
+            <option value="">-- 학생을 선택하세요 --</option>
+          </select>
+          <div id="recSpecCard" style="display:none">
+            <div class="rec-spec-card" id="recSpecContent"></div>
+            <div style="margin-top:10px;font-size:11px;color:var(--text-sub);line-height:1.6">
+              📌 스펙 점수는 업로드된 생기부 데이터를 기준으로 합니다.
+            </div>
+          </div>
+        </div>
+        <!-- 우: 추천 결과 -->
+        <div class="rec-result-panel" id="recResultPanel">
+          <div class="rec-empty">
+            <div class="rei">🎯</div>
+            <p>학생을 선택하면<br>적합한 채용공고를 추천합니다</p>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -843,7 +929,186 @@ function showTab(id,el){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
   el.classList.add('active');
+  if(id==='recommend') initRecommendTab();
 }
+
+
+// ══════════════════════════════════════════
+// ── 학생 채용 추천 ──
+// ══════════════════════════════════════════
+function initRecommendTab(){
+  const sel = document.getElementById('recStudentSel');
+  const students = getMyStudents();
+  // 학생 목록 채우기 (중복 방지)
+  if(sel.options.length <= 1){
+    students.forEach(s=>{
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = `${s.name} (${s.id})`;
+      sel.appendChild(opt);
+    });
+  }
+}
+
+function getActiveJobs(){
+  // DB.jobs 없으면 샘플 데이터
+  const live = (DB.jobs||[]).filter(j=>j.active);
+  if(live.length) return live;
+  return [
+    {id:0,co:'(주)삼성전자',title:'전자기기 생산',job:'생산관리',loc:'수원',cnt:3,
+     dl:'2026.09.30',tags:['전자과','반도체과'],rec:true,recCnt:2},
+    {id:1,co:'LG이노텍',title:'PCB 생산',job:'생산',loc:'평택',cnt:5,
+     dl:'2026.09.10',tags:['전자과'],rec:false,recCnt:0},
+    {id:2,co:'(주)현대모비스',title:'자동차 부품 제조',job:'제조',loc:'화성',cnt:4,
+     dl:'2026.09.20',tags:['기계과'],rec:true,recCnt:3},
+    {id:3,co:'(주)LS일렉트릭',title:'전기 시공',job:'시공',loc:'안양',cnt:6,
+     dl:'2026.10.20',tags:['전기과'],rec:true,recCnt:4},
+    {id:4,co:'KT&G',title:'설비 유지보수',job:'유지보수',loc:'수원',cnt:2,
+     dl:'2026.10.01',tags:['기계과','전기과'],rec:false,recCnt:0},
+    {id:5,co:'(주)SK하이닉스',title:'반도체 공정',job:'공정관리',loc:'이천',cnt:4,
+     dl:'2026.10.15',tags:['반도체과','전자과'],rec:true,recCnt:2},
+    {id:6,co:'삼성SDI',title:'배터리 생산',job:'생산',loc:'수원',cnt:5,
+     dl:'2026.09.15',tags:['화학공업과','전자과'],rec:false,recCnt:0},
+    {id:7,co:'(주)현대건설',title:'현장 시공 관리',job:'시공관리',loc:'서울',cnt:3,
+     dl:'2026.10.10',tags:['건설과'],rec:false,recCnt:0},
+  ];
+}
+
+function calcMatchScore(s, job){
+  let score = 0;
+  const reasons = [];
+
+  // ① 학과 일치 (40점)
+  const deptKeyword = s.dept.replace('과','');
+  const deptMatch = (job.tags||[]).some(t=>
+    t.includes(deptKeyword) || s.dept.includes(t.replace('과',''))
+  );
+  if(deptMatch){
+    score += 40;
+    reasons.push({type:'pos', text:`✅ 학과 일치 (${s.dept})`});
+  } else {
+    reasons.push({type:'neg', text:`❌ 학과 불일치`});
+  }
+
+  // ② 학교장 추천 가능 (20점)
+  if(job.rec && deptMatch){
+    score += 20;
+    reasons.push({type:'pos', text:`🏫 학교장 추천 가능 (${job.recCnt}명)`});
+  } else if(job.rec && !deptMatch){
+    reasons.push({type:'neu', text:'🏫 추천전형 있음 (학과 미일치)'});
+  }
+
+  // ③ 자격증 보유 (최대 20점)
+  const certCnt = s.certCount||0;
+  if(certCnt >= 2){ score += 20; reasons.push({type:'pos', text:`📜 자격증 ${certCnt}개 보유`}); }
+  else if(certCnt === 1){ score += 10; reasons.push({type:'neu', text:`📜 자격증 ${certCnt}개 보유`}); }
+  else { reasons.push({type:'neg', text:'📜 자격증 없음'}); }
+
+  // ④ 출결 청결 (10점)
+  const ua = (s.attend||[]).reduce((a,r)=>a+(r.abs?r.abs.unauth:0), 0);
+  if(ua === 0){ score += 10; reasons.push({type:'pos', text:'📅 미인정결석 없음'}); }
+  else { reasons.push({type:'neg', text:`📅 미인정결석 ${ua}일`}); }
+
+  // ⑤ 전문교과 성적 (10점)
+  const pg = s.summary?.proGrade || 0;
+  if(pg > 0 && pg <= 2){ score += 10; reasons.push({type:'pos', text:`📊 전문교과 ${pg}등급`}); }
+  else if(pg > 0 && pg <= 4){ score += 5; reasons.push({type:'neu', text:`📊 전문교과 ${pg}등급`}); }
+  else if(pg > 4){ reasons.push({type:'neg', text:`📊 전문교과 ${pg}등급`}); }
+  else { reasons.push({type:'neu', text:'📊 성적 데이터 없음'}); }
+
+  return { score, reasons };
+}
+
+function renderRecommend(){
+  const id = document.getElementById('recStudentSel').value;
+  const resultPanel = document.getElementById('recResultPanel');
+  const specCard = document.getElementById('recSpecCard');
+
+  if(!id){
+    specCard.style.display='none';
+    resultPanel.innerHTML=`<div class="rec-empty"><div class="rei">🎯</div><p>학생을 선택하면<br>적합한 채용공고를 추천합니다</p></div>`;
+    return;
+  }
+
+  const s = getMyStudents().find(x=>x.id===id);
+  if(!s){ resultPanel.innerHTML='<p>학생 데이터 없음</p>'; return; }
+
+  // 스펙 요약 표시
+  const ua = (s.attend||[]).reduce((a,r)=>a+(r.abs?r.abs.unauth:0), 0);
+  const pg = s.summary?.proGrade||'—';
+  const ag = s.summary?.allGrade||'—';
+  document.getElementById('recSpecContent').innerHTML = `
+    <div style="font-weight:700;font-size:13px;margin-bottom:8px;color:var(--primary)">${s.name}</div>
+    <div class="rec-spec-row"><span class="rec-spec-label">학과</span><span class="rec-spec-val">${s.dept}</span></div>
+    <div class="rec-spec-row"><span class="rec-spec-label">자격증</span>
+      <span class="rec-spec-val">${s.certCount?`<span class="badge badge-orange">${s.certCount}개</span>`:'없음'}</span></div>
+    <div class="rec-spec-row"><span class="rec-spec-label">미인정결석</span>
+      <span class="rec-spec-val">${ua>0?`<span class="badge badge-red">${ua}일</span>`:'<span class="badge badge-green">없음</span>'}</span></div>
+    <div class="rec-spec-row"><span class="rec-spec-label">전과목 등급</span>
+      <span class="rec-spec-val">${ag}</span></div>
+    <div class="rec-spec-row"><span class="rec-spec-label">전문교과 등급</span>
+      <span class="rec-spec-val">${pg}</span></div>
+    <div class="rec-spec-row"><span class="rec-spec-label">동아리</span>
+      <span class="rec-spec-val">${(s.clubs||[]).length}개</span></div>
+    <div class="rec-spec-row"><span class="rec-spec-label">임원</span>
+      <span class="rec-spec-val">${(s.leaders||[]).map(l=>l.role).join(', ')||'없음'}</span></div>`;
+  specCard.style.display='block';
+
+  // 매칭 계산
+  const jobs = getActiveJobs();
+  const scored = jobs.map(job=>{
+    const {score, reasons} = calcMatchScore(s, job);
+    return {...job, score, reasons};
+  }).sort((a,b)=>b.score-a.score);
+
+  // 결과 렌더
+  const fitLabel = score => score>=70?'매우 적합':score>=50?'적합':'참고';
+  const fitClass = score => score>=70?'high':score>=50?'mid':'low';
+  const badgeClass = score => score>=70?'high':score>=50?'mid':'low';
+
+  const top = scored.filter(j=>j.score>=50);
+  const rest = scored.filter(j=>j.score<50);
+
+  resultPanel.innerHTML = `
+    <div class="rec-header">
+      <h2>추천 채용공고</h2>
+      <span class="rec-count">
+        <strong style="color:var(--primary)">${top.length}개</strong> 적합 &nbsp;|&nbsp;
+        <strong>${rest.length}개</strong> 참고
+      </span>
+    </div>
+    ${scored.length===0?'<div class="rec-empty"><div class="rei">📭</div><p>진행중인 채용공고가 없습니다</p></div>':''}
+    ${scored.map(job=>`
+      <div class="rec-card">
+        <div class="rec-card-top">
+          <div>
+            <div class="rec-card-co">
+              ${job.co}
+              ${job.rec?`<span style="background:var(--accent);color:#fff;font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600">학교장추천</span>`:''}
+            </div>
+            <div class="rec-card-title">${job.title||job.job}</div>
+          </div>
+          <div class="rec-score-badge ${badgeClass(job.score)}">
+            <div class="rec-score-num">${job.score}</div>
+            <div class="rec-score-lbl">점</div>
+          </div>
+        </div>
+        <div class="rec-reasons">
+          ${job.reasons.map(r=>`<span class="rec-reason ${r.type}">${r.text}</span>`).join('')}
+        </div>
+        <div class="rec-card-footer">
+          <div style="display:flex;gap:5px;flex-wrap:wrap">
+            ${(job.tags||[]).map(t=>`<span class="rec-tag">${t}</span>`).join('')}
+            <span class="rec-tag">📍${job.loc}</span>
+            <span class="rec-tag">👤${job.cnt}명</span>
+            <span class="rec-tag">마감 ${job.dl}</span>
+          </div>
+          <span class="rec-fit-label ${fitClass(job.score)}">${fitLabel(job.score)}</span>
+        </div>
+      </div>`).join('')}
+    ${rest.length>0&&top.length>0?`<div style="text-align:center;font-size:12px;color:var(--text-sub);padding:8px 0;border-top:1px dashed var(--border);margin-top:4px">▲ 적합 ${top.length}개 · 아래는 참고용 ${rest.length}개</div>`:''}`;
+}
+// ══════════════════════════════════════════
 
 // 세션 자동 로그인
 window.addEventListener('DOMContentLoaded',()=>{
