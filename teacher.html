@@ -235,7 +235,7 @@ tr:hover td{background:#fafbfd}
         <div class="card-title">업로드 미리보기</div>
         <div id="previewAlert" class="alert alert-success" style="margin-bottom:12px"></div>
         <div class="tbl-wrap"><table>
-          <thead><tr><th>학과</th><th>학번</th><th>이름</th><th>성별</th><th>생년월일</th><th>담임</th><th>초기PW</th></tr></thead>
+          <thead><tr><th>학과</th><th>학번</th><th>이름</th><th>성별</th><th>생년월일</th><th>자격증</th><th>미인정결석</th><th>동아리</th><th>임원</th><th>초기PW</th></tr></thead>
           <tbody id="previewTb"></tbody>
         </table></div>
         <div class="btn-group">
@@ -255,7 +255,7 @@ tr:hover td{background:#fafbfd}
           <button class="btn btn-ghost btn-sm" onclick="exportCSV()">📥 목록 내보내기</button>
         </div>
         <div class="tbl-wrap"><table>
-          <thead><tr><th>학번</th><th>이름</th><th>성별</th><th>생년월일</th><th>자격증</th><th>계정상태</th><th>관리</th></tr></thead>
+          <thead><tr><th>학번</th><th>이름</th><th>성별</th><th>자격증</th><th>미인정결석</th><th>동아리</th><th>임원</th><th>계정상태</th><th>관리</th></tr></thead>
           <tbody id="studentListTb"></tbody>
         </table></div>
       </div>
@@ -366,52 +366,142 @@ function handleFile(file){
   }
   const wrap=document.getElementById('progressWrap');
   wrap.style.display='block';
-  setProgress(20,'파일 읽는 중...');
+  setProgress(10,'파일 읽는 중...');
 
   const reader=new FileReader();
   reader.onload=function(e){
     try{
-      setProgress(50,'데이터 분석 중...');
       const wb=XLSX.read(e.target.result,{type:'array'});
 
-      // 학생기본정보 시트 파싱
-      const ws=wb.Sheets['학생기본정보'];
-      if(!ws){ showUploadAlert('error','학생기본정보 시트를 찾을 수 없습니다.'); wrap.style.display='none'; return; }
-      const rows=XLSX.utils.sheet_to_json(ws,{header:1});
+      // ① 학생기본정보
+      setProgress(20,'기본정보 파싱 중...');
+      const ws1=wb.Sheets['학생기본정보'];
+      if(!ws1){ showUploadAlert('error','학생기본정보 시트를 찾을 수 없습니다.'); wrap.style.display='none'; return; }
+      const basicRows=XLSX.utils.sheet_to_json(ws1,{header:1});
+      const hdr=basicRows[0]||[];
+      const hIdx={};
+      hdr.forEach((h,i)=>{ hIdx[h]=i; });
 
-      // 헤더 확인 (row 0)
-      const header=rows[0]||[];
-      const idxMap={};
-      header.forEach((h,i)=>{ idxMap[h]=i; });
+      // ② 출결현황
+      setProgress(35,'출결현황 파싱 중...');
+      const ws2=wb.Sheets['출결현황'];
+      const attendRows=ws2?XLSX.utils.sheet_to_json(ws2,{header:1}).slice(1):[];
 
-      setProgress(80,'계정 생성 준비 중...');
+      // ③ 자격증
+      setProgress(50,'자격증 파싱 중...');
+      const ws3=wb.Sheets['자격증'];
+      const certRows=ws3?XLSX.utils.sheet_to_json(ws3,{header:1}).slice(1):[];
 
-      // 자격증 시트도 파싱
-      const certWs=wb.Sheets['자격증'];
-      const certRows=certWs?XLSX.utils.sheet_to_json(certWs,{header:1}).slice(1):[];
+      // ④ 동아리활동
+      setProgress(62,'동아리활동 파싱 중...');
+      const ws4=wb.Sheets['동아리활동'];
+      const clubRows=ws4?XLSX.utils.sheet_to_json(ws4,{header:1}).slice(1):[];
 
-      pendingStudents=rows.slice(1).filter(r=>r.length>2).map(r=>{
-        const 학과=r[idxMap['학과']]||'';
-        const 학번=String(r[idxMap['학번']]||'');
-        const 이름=r[idxMap['이름']]||'';
-        const 성별=r[idxMap['성별']]||'';
-        const 생년월일=String(r[idxMap['생년월일(YYMMDD)']]||r[idxMap['생년월일']]||'');
-        const 담임=r[idxMap['담임교사']]||'';
-        const pw=생년월일;
-        // 자격증 수
-        const certs=certRows.filter(cr=>String(cr[idxMap['학번']||1])===학번).length;
-        return {dept:학과,id:학번,name:이름,gender:성별,birth:생년월일,teacher:담임,pw,
-                grade:String(ME.grade),cls:String(ME.cls),certCount:certs,uploaded:true};
+      // ⑤ 임원활동
+      setProgress(74,'임원활동 파싱 중...');
+      const ws5=wb.Sheets['임원활동'];
+      const leaderRows=ws5?XLSX.utils.sheet_to_json(ws5,{header:1}).slice(1):[];
+
+      // ⑥ 성적요약
+      setProgress(85,'성적요약 파싱 중...');
+      const ws6=wb.Sheets['성적요약'];
+      const summaryRows=ws6?XLSX.utils.sheet_to_json(ws6,{header:1}).slice(1):[];
+
+      // 학번 기준 그룹핑 (컬럼1 = 학번)
+      function groupById(rows){
+        const map={};
+        rows.forEach(r=>{ const id=String(r[1]||''); if(!map[id])map[id]=[]; map[id].push(r); });
+        return map;
+      }
+      const attendMap=groupById(attendRows);
+      const certMap  =groupById(certRows);
+      const clubMap  =groupById(clubRows);
+      const leaderMap=groupById(leaderRows);
+      const summaryMap={};
+      summaryRows.forEach(r=>{ summaryMap[String(r[1]||'')]=r; });
+
+      setProgress(92,'데이터 조합 중...');
+
+      // 헤더: 학과,학번,이름,학년,수업일수,결석(질병),결석(미인정),결석(기타),
+      //        지각(질병),지각(미인정),지각(기타),조퇴(질병),조퇴(미인정),조퇴(기타),
+      //        결과(질병),결과(미인정),결과(기타),특기사항
+      function parseAttend(rows){
+        return rows.map(a=>({
+          grade:a[3]||0, days:a[4]||0,
+          abs:  {sick:a[5]||0, unauth:a[6]||0,  etc:a[7]||0},
+          late: {sick:a[8]||0, unauth:a[9]||0,  etc:a[10]||0},
+          early:{sick:a[11]||0,unauth:a[12]||0, etc:a[13]||0},
+          leave:{sick:a[14]||0,unauth:a[15]||0, etc:a[16]||0}
+        }));
+      }
+      // 헤더: 학과,학번,이름,자격증명,취득일,발급기관
+      function parseCerts(rows){
+        return rows.map(c=>({name:String(c[3]||''),date:String(c[4]||''),agency:String(c[5]||'')}))
+                   .filter(c=>c.name);
+      }
+      // 헤더: 학과,학번,이름,학년,동아리명,시간,구분
+      function parseClubs(rows){
+        return rows.map(c=>({grade:c[3]||0,name:String(c[4]||''),hours:c[5]||0,type:String(c[6]||'')}))
+                   .filter(c=>c.name);
+      }
+      // 헤더: 학과,학번,이름,직책,시작연도,종료연도
+      function parseLeaders(rows){
+        return rows.map(l=>({role:String(l[3]||''),startYear:String(l[4]||''),endYear:String(l[5]||'')}))
+                   .filter(l=>l.role);
+      }
+      // 헤더: 학과,학번,이름,전과목_이수학점,전과목_평균등급,보통교과_이수학점,보통교과_평균등급,전문교과_이수학점,전문교과_평균등급
+      function parseSummary(r){
+        if(!r) return null;
+        return {allUnit:r[3]||0,allGrade:r[4]||0,genUnit:r[5]||0,genGrade:r[6]||0,proUnit:r[7]||0,proGrade:r[8]||0};
+      }
+
+      pendingStudents=basicRows.slice(1).filter(r=>r.length>2).map(r=>{
+        const 학과=String(r[hIdx['학과']]||'');
+        const 학번=String(r[hIdx['학번']]||'');
+        const 이름=String(r[hIdx['이름']]||'');
+        const 성별=String(r[hIdx['성별']]||'');
+        const 생년월일=String(r[hIdx['생년월일(YYMMDD)']]||r[hIdx['생년월일']]||'');
+        const 담임=String(r[hIdx['담임교사']]||'');
+        const certs  =parseCerts  (certMap  [학번]||[]);
+        const attend =parseAttend (attendMap[학번]||[]);
+        const clubs  =parseClubs  (clubMap  [학번]||[]);
+        const leaders=parseLeaders(leaderMap[학번]||[]);
+        const summary=parseSummary(summaryMap[학번]);
+        return {
+          dept:학과, id:학번, name:이름, gender:성별,
+          birth:생년월일, teacher:담임, pw:생년월일,
+          grade:String(ME.grade), cls:String(ME.cls),
+          uploaded:true,
+          certCount:certs.length,
+          certs, attend, clubs, leaders, summary
+        };
       }).filter(s=>s.name&&s.id);
 
       setProgress(100,'완료!');
 
-      // 미리보기
-      document.getElementById('previewAlert').textContent=`총 ${pendingStudents.length}명 확인되었습니다. 저장을 확정하세요.`;
-      document.getElementById('previewTb').innerHTML=pendingStudents.map(s=>`
-        <tr><td>${s.dept}</td><td>${s.id}</td><td><strong>${s.name}</strong></td>
-        <td>${s.gender}</td><td>${s.birth}</td><td>${s.teacher}</td>
-        <td><span class="badge badge-blue">${s.pw}</span></td></tr>`).join('');
+      // 미리보기 요약
+      const totCert  =pendingStudents.reduce((a,s)=>a+s.certs.length,0);
+      const totClub  =pendingStudents.reduce((a,s)=>a+s.clubs.length,0);
+      const totLeader=pendingStudents.reduce((a,s)=>a+s.leaders.length,0);
+      document.getElementById('previewAlert').innerHTML=
+        `총 <strong>${pendingStudents.length}명</strong> &nbsp;|&nbsp; `+
+        `자격증 <strong>${totCert}건</strong> &nbsp;|&nbsp; `+
+        `동아리 <strong>${totClub}건</strong> &nbsp;|&nbsp; `+
+        `임원 <strong>${totLeader}건</strong>`;
+
+      document.getElementById('previewTb').innerHTML=pendingStudents.map(s=>{
+        const unauthAbs=s.attend.reduce((a,r)=>a+r.abs.unauth,0);
+        const roles=s.leaders.map(l=>l.role).join(', ');
+        return `<tr>
+          <td>${s.dept}</td><td>${s.id}</td><td><strong>${s.name}</strong></td>
+          <td>${s.gender}</td><td>${s.birth}</td>
+          <td>${s.certs.length?`<span class="badge badge-orange">${s.certs.length}개</span>`:'—'}</td>
+          <td>${unauthAbs?`<span class="badge badge-red">${unauthAbs}일</span>`:'<span class="badge badge-green">없음</span>'}</td>
+          <td>${s.clubs.length||'—'}</td>
+          <td>${roles?`<span class="badge badge-blue">${roles}</span>`:'—'}</td>
+          <td><span class="badge badge-blue">${s.pw}</span></td>
+        </tr>`;
+      }).join('');
       document.getElementById('previewCard').style.display='block';
       setTimeout(()=>wrap.style.display='none',800);
 
@@ -459,17 +549,23 @@ function showUploadAlert(type,msg){
 function renderStudentList(){
   const q=(document.getElementById('searchName').value||'').toLowerCase();
   const list=getMyStudents().filter(s=>!q||s.name.includes(q)||s.id.includes(q));
-  document.getElementById('studentListTb').innerHTML=list.map((s,i)=>`
-    <tr>
+  document.getElementById('studentListTb').innerHTML=list.map(s=>{
+    const unauthAbs=(s.attend||[]).reduce((a,r)=>a+(r.abs?r.abs.unauth:0),0);
+    const certTip  =(s.certs||[]).map(c=>c.name).join('\n')||'';
+    const clubTip  =(s.clubs||[]).map(c=>c.name).join('\n')||'';
+    const roles    =(s.leaders||[]).map(l=>l.role).join(', ')||'—';
+    return `<tr>
       <td>${s.id}</td>
       <td><strong>${s.name}</strong></td>
       <td>${s.gender||'—'}</td>
-      <td>${s.birth||'—'}</td>
-      <td>${s.certCount?`<span class="badge badge-orange">${s.certCount}개</span>`:'—'}</td>
+      <td title="${certTip}">${s.certCount?`<span class="badge badge-orange">${s.certCount}개</span>`:'—'}</td>
+      <td>${unauthAbs?`<span class="badge badge-red">${unauthAbs}일</span>`:'<span class="badge badge-green">없음</span>'}</td>
+      <td title="${clubTip}">${(s.clubs||[]).length?`<span class="badge badge-gray">${(s.clubs||[]).length}개</span>`:'—'}</td>
+      <td>${(s.leaders||[]).length?`<span class="badge badge-blue">${roles}</span>`:'—'}</td>
       <td><span class="badge ${s.uploaded?'badge-green':'badge-gray'}">${s.uploaded?'등록됨':'미등록'}</span></td>
       <td><button class="btn btn-sm btn-ghost" onclick="resetPw('${s.id}')">PW초기화</button></td>
-    </tr>`
-  ).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--text-sub)">학생 없음</td></tr>';
+    </tr>`;
+  }).join('')||'<tr><td colspan="9" style="text-align:center;color:var(--text-sub)">학생 없음</td></tr>';
 }
 
 function resetPw(id){
@@ -480,8 +576,16 @@ function resetPw(id){
 
 function exportCSV(){
   const list=getMyStudents();
-  const header=['학번','이름','성별','생년월일','자격증수'];
-  const rows=[header,...list.map(s=>[s.id,s.name,s.gender||'',s.birth||'',s.certCount||0])];
+  const header=['학번','이름','성별','생년월일','자격증수','자격증목록','미인정결석합','동아리수','임원이력','전과목평균등급','전문교과평균등급'];
+  const rows=[header,...list.map(s=>{
+    const unauthAbs=(s.attend||[]).reduce((a,r)=>a+(r.abs?r.abs.unauth:0),0);
+    const certNames=(s.certs||[]).map(c=>c.name).join('|');
+    const clubs    =(s.clubs||[]).length;
+    const roles    =(s.leaders||[]).map(l=>l.role).join('|');
+    const allGrade =(s.summary?s.summary.allGrade:0)||0;
+    const proGrade =(s.summary?s.summary.proGrade:0)||0;
+    return [s.id,s.name,s.gender||'',s.birth||'',s.certCount||0,certNames,unauthAbs,clubs,roles,allGrade,proGrade];
+  })];
   const csv=rows.map(r=>r.join(',')).join('\n');
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
