@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>학생 마이페이지 — 삼일공업고등학교 취업정보 포털</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#1A3A6B;--primary-light:#2E5FAD;--accent:#E8740A;--accent-light:#FF9E3A;
+  --bg:#F4F6FA;--card:#fff;--text:#1C2B3A;--text-sub:#5A6A7E;
+  --border:#DDE3EE;--radius:12px;--shadow:0 2px 12px rgba(26,58,107,.10);
+  --green:#38A169;--red:#E53E3E;--nav-h:60px;--sidebar:200px
+}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text)}
+
+/* 로그인 */
+.login-screen{position:fixed;inset:0;background:var(--primary);display:flex;align-items:center;justify-content:center;z-index:999;flex-direction:column}
+.login-box{background:#fff;border-radius:16px;padding:36px;width:360px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.login-logo{text-align:center;margin-bottom:24px}
+.login-logo .mark{width:56px;height:56px;background:var(--accent);border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:10px}
+.login-logo h2{font-size:18px;font-weight:700}
+.login-logo p{font-size:13px;color:var(--text-sub);margin-top:4px}
+.form-group{margin-bottom:13px}
+.form-group label{display:block;font-size:12px;font-weight:600;color:var(--text-sub);margin-bottom:5px}
+.form-group input,.form-group select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;transition:.2s}
+.form-group input:focus,.form-group select:focus{border-color:var(--primary-light)}
+.btn-login{width:100%;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px;transition:.2s}
+.btn-login:hover{background:var(--primary-light)}
+.login-hint{margin-top:12px;padding:10px 14px;background:var(--bg);border-radius:8px;font-size:12px;color:var(--text-sub);line-height:1.6}
+.login-back{margin-top:12px;text-align:center;font-size:13px;color:rgba(255,255,255,.7)}
+.login-back a{color:rgba(255,255,255,.9);text-decoration:none}
+.login-back a:hover{color:#fff}
+
+/* 네비게이션 */
+nav.topnav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:var(--primary);z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 24px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.nav-brand{display:flex;align-items:center;gap:10px}
+.nav-logo{width:36px;height:36px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;line-height:1.2;text-align:center}
+.nav-title{color:#fff;font-weight:700;font-size:15px}
+.nav-title span{color:rgba(255,255,255,.6);font-size:11px;display:block;font-weight:400}
+.nav-info{display:flex;align-items:center;gap:10px}
+.nav-student{color:rgba(255,255,255,.9);font-size:13px}
+.nav-student strong{color:#fff}
+.nav-btn{padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:.15s}
+.nav-btn-ghost{background:rgba(255,255,255,.15);color:#fff}
+.nav-btn-ghost:hover{background:rgba(255,255,255,.25)}
+
+/* 레이아웃 */
+.layout{display:flex;padding-top:var(--nav-h);min-height:100vh}
+.sidebar{width:var(--sidebar);background:#fff;border-right:1px solid var(--border);position:fixed;top:var(--nav-h);bottom:0;overflow-y:auto}
+.side-nav{padding:12px 0}
+.nav-section{padding:10px 16px 4px;font-size:10px;color:var(--text-sub);letter-spacing:.5px;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 16px;color:var(--text-sub);cursor:pointer;transition:.15s;font-size:13px;border-left:3px solid transparent}
+.nav-item:hover{background:var(--bg);color:var(--text)}
+.nav-item.active{background:#EBF4FF;color:var(--primary);border-left-color:var(--primary);font-weight:600}
+.nav-item .icon{font-size:16px;width:20px;text-align:center}
+.nav-item .badge-count{background:var(--accent);color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;font-weight:700;margin-left:auto}
+
+.main{margin-left:var(--sidebar);flex:1;padding:24px}
+.page-header{margin-bottom:20px}
+.page-header h1{font-size:21px;font-weight:700}
+.page-header p{font-size:13px;color:var(--text-sub);margin-top:4px}
+
+/* 카드 */
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
+.card-title{font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.card-title::before{content:'';width:4px;height:18px;background:var(--accent);border-radius:2px}
+
+/* 내 정보 카드 */
+.profile-card{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%);border-radius:var(--radius);padding:24px;color:#fff;margin-bottom:16px;position:relative;overflow:hidden}
+.profile-card::after{content:'';position:absolute;right:-20px;top:-20px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.06)}
+.profile-card::before{content:'';position:absolute;right:30px;bottom:-30px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.04)}
+.profile-name{font-size:22px;font-weight:700;margin-bottom:4px;position:relative;z-index:1}
+.profile-meta{font-size:13px;opacity:.8;position:relative;z-index:1}
+.profile-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;position:relative;z-index:1}
+.profile-tag{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:4px 12px;font-size:12px}
+.profile-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;position:relative;z-index:1}
+.pstat{background:rgba(255,255,255,.12);border-radius:8px;padding:10px;text-align:center}
+.pstat-num{font-size:20px;font-weight:700}
+.pstat-label{font-size:10px;opacity:.75;margin-top:2px}
+
+/* 대시보드 그리드 */
+.dash-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
+.dash-card{background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);text-align:center}
+.dash-num{font-size:28px;font-weight:700;color:var(--primary)}
+.dash-label{font-size:12px;color:var(--text-sub);margin-top:4px}
+
+/* 버튼 */
+.btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:.15s}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-light)}
+.btn-accent{background:var(--accent);color:#fff}
+.btn-accent:hover{background:var(--accent-light)}
+.btn-ghost{background:none;border:1px solid var(--border);color:var(--text-sub)}
+.btn-ghost:hover{border-color:var(--primary);color:var(--primary)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-group{display:flex;gap:8px;margin-top:12px}
+
+/* 테이블 */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--bg);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-sub);border-bottom:2px solid var(--border)}
+td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:hover td{background:#fafbfd}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.badge-green{background:#F0FFF4;color:var(--green)}
+.badge-blue{background:#EBF4FF;color:var(--primary)}
+.badge-gray{background:var(--bg);color:var(--text-sub)}
+.badge-orange{background:#FFF3E0;color:var(--accent)}
+.badge-red{background:#FFF5F5;color:var(--red)}
+
+/* 알림 */
+.alert{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:12px}
+.alert-success{background:#F0FFF4;color:var(--green);border:1px solid #C6F6D5}
+.alert-error{background:#FFF5F5;color:var(--red);border:1px solid #FED7D7}
+.alert-info{background:#EBF4FF;color:var(--primary);border:1px solid #BEE3F8}
+.alert-warn{background:#FFFBEB;color:#D69E2E;border:1px solid #FAF089}
+
+/* 탭 */
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* 채용공고 카드 */
+.jobs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:16px}
+.job-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);border:1px solid var(--border);transition:.2s;cursor:pointer}
+.job-card:hover{transform:translateY(-2px);border-color:var(--primary-light)}
+.job-card.interested{border-color:var(--accent);border-width:1.5px}
+.job-card.applied{border-color:var(--green);border-width:1.5px}
+.job-company{font-size:12px;color:var(--text-sub);margin-bottom:3px;display:flex;align-items:center;gap:6px}
+.job-rec{background:var(--accent);color:#fff;font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600}
+.job-status-badge{font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600}
+.job-status-badge.applied{background:#F0FFF4;color:var(--green)}
+.job-status-badge.interested{background:#FFF3E0;color:var(--accent)}
+.job-title{font-size:15px;font-weight:700;margin-bottom:8px}
+.job-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.job-tag{background:var(--bg);color:var(--text-sub);font-size:11px;padding:3px 8px;border-radius:20px;border:1px solid var(--border)}
+.job-footer{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);padding-top:10px;font-size:12px}
+.deadline-urgent{color:var(--red);font-weight:600}
+.job-detail{color:var(--primary-light);font-weight:600;font-size:12px}
+
+/* 검색 / 필터 */
+.filter-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.filter-bar input{flex:1;min-width:160px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none}
+.filter-bar input:focus{border-color:var(--primary-light)}
+.filter-select{padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;background:#fff}
+
+/* 빈 상태 */
+.empty-state{text-align:center;padding:48px 24px;color:var(--text-sub)}
+.empty-state .empty-icon{font-size:40px;margin-bottom:12px}
+.empty-state p{font-size:14px}
+
+/* 상세 모달 */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:16px;max-width:540px;width:100%;max-height:88vh;overflow-y:auto}
+.modal-sm{max-width:380px}
+.modal-header{padding:18px 18px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;position:sticky;top:0;background:#fff;border-radius:16px 16px 0 0}
+.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-sub);line-height:1}
+.modal-body{padding:18px}
+.modal-company{font-size:12px;color:var(--text-sub);margin-bottom:3px}
+.modal-title{font-size:19px;font-weight:700;margin-bottom:14px}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.info-item{background:var(--bg);border-radius:8px;padding:10px 12px}
+.info-label{font-size:11px;color:var(--text-sub);margin-bottom:2px}
+.info-value{font-size:14px;font-weight:600}
+.recommend-box{background:#FFF3E0;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;border-left:3px solid var(--accent)}
+.modal-desc{font-size:14px;line-height:1.75;white-space:pre-line;color:var(--text-sub)}
+.modal-action-row{display:flex;gap:10px;margin-top:16px}
+.btn-interest{flex:1;padding:12px;border:2px solid var(--border);border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;background:#fff;color:var(--text-sub);transition:.2s;font-family:inherit}
+.btn-interest.on{border-color:var(--accent);color:var(--accent);background:#FFF3E0}
+.btn-apply{flex:2;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s}
+.btn-apply:hover{background:var(--primary-light)}
+.btn-apply.applied{background:var(--green)}
+.btn-apply.applied:hover{background:#2F8A5A}
+.btn-apply-cancel{flex:2;padding:12px;background:var(--bg);color:var(--red);border:2px solid var(--red);border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s}
+.btn-apply-cancel:hover{background:#FFF5F5}
+
+/* 지원서 작성 모달 */
+.apply-form .form-group{margin-bottom:13px}
+.apply-form textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;resize:vertical;min-height:80px;transition:.2s}
+.apply-form textarea:focus{border-color:var(--primary-light)}
+.char-count{font-size:11px;color:var(--text-sub);text-align:right;margin-top:3px}
+
+/* 비밀번호 변경 */
+.pw-section{max-width:420px}
+
+/* 취업 아카이브 */
+.archive-item{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:10px;display:flex;align-items:center;gap:14px}
+.archive-avatar{width:44px;height:44px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;flex-shrink:0}
+.archive-info{flex:1}
+.archive-name{font-weight:700;font-size:14px;margin-bottom:2px}
+.archive-meta{font-size:12px;color:var(--text-sub)}
+.archive-company{font-size:13px;color:var(--primary-light);font-weight:600;margin-top:2px}
+
+/* 공고 없음 빈 상태 */
+.no-jobs{text-align:center;padding:40px;color:var(--text-sub)}
+
+@media(max-width:768px){
+  .sidebar{display:none}
+  .main{margin-left:0;padding:16px}
+  .dash-grid{grid-template-columns:1fr 1fr}
+  .profile-stats{grid-template-columns:repeat(3,1fr)}
+  .nav-student{display:none}
+  .jobs-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- 로그인 화면 -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="mark">🎓</div>
+      <h2>학생 마이페이지</h2>
+      <p>삼일공업고등학교 취업정보 포털</p>
+    </div>
+    <div class="form-group">
+      <label>학과</label>
+      <select id="l-dept">
+        <option value="">학과 선택</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>학번</label>
+      <input id="l-id" placeholder="예: 3104" onkeydown="if(event.key==='Enter')tryLogin()">
+    </div>
+    <div class="form-group">
+      <label>비밀번호</label>
+      <input type="password" id="l-pw" placeholder="초기 비밀번호: 생년월일 6자리 (예: 080315)" onkeydown="if(event.key==='Enter')tryLogin()">
+    </div>
+    <button class="btn-login" onclick="tryLogin()">로그인</button>
+    <div class="login-hint">💡 초기 비밀번호는 생년월일 6자리(YYMMDD)입니다<br>비밀번호 분실 시 담임선생님께 초기화 요청하세요</div>
+  </div>
+  <div class="login-back">← <a href="index.html">메인으로 돌아가기</a></div>
+</div>
+
+<!-- 네비게이션 -->
+<nav class="topnav" id="topNav" style="display:none">
+  <div class="nav-brand">
+    <div class="nav-logo">삼일<br>공고</div>
+    <div class="nav-title">학생 마이페이지<span>SAMIL JOBS</span></div>
+  </div>
+  <div class="nav-info">
+    <div class="nav-student" id="navStudentInfo"></div>
+    <button class="nav-btn nav-btn-ghost" onclick="openPwModal()">🔑 PW변경</button>
+    <button class="nav-btn nav-btn-ghost" onclick="logout()">로그아웃</button>
+  </div>
+</nav>
+
+<!-- 레이아웃 -->
+<div class="layout" id="appLayout" style="display:none">
+  <!-- 사이드바 -->
+  <div class="sidebar">
+    <div class="side-nav">
+      <div class="nav-section">내 취업활동</div>
+      <div class="nav-item active" onclick="showTab('dashboard',this)"><span class="icon">📊</span>내 현황</div>
+      <div class="nav-item" onclick="showTab('jobs',this)"><span class="icon">📋</span>채용공고</div>
+      <div class="nav-item" onclick="showTab('interest',this)">
+        <span class="icon">❤️</span>관심 공고
+        <span class="badge-count" id="interestCount" style="display:none">0</span>
+      </div>
+      <div class="nav-item" onclick="showTab('applications',this)">
+        <span class="icon">📝</span>지원 현황
+        <span class="badge-count" id="applyCount" style="display:none">0</span>
+      </div>
+      <div class="nav-section">정보</div>
+      <div class="nav-item" onclick="showTab('archive',this)"><span class="icon">🏆</span>선배 취업아카이브</div>
+    </div>
+  </div>
+
+  <!-- 메인 -->
+  <div class="main">
+
+    <!-- 내 현황 대시보드 -->
+    <div class="tab-panel active" id="tab-dashboard">
+      <div class="profile-card" id="profileCard">
+        <div class="profile-name" id="profileName">—</div>
+        <div class="profile-meta" id="profileMeta">—</div>
+        <div class="profile-tags" id="profileTags"></div>
+        <div class="profile-stats">
+          <div class="pstat"><div class="pstat-num" id="ps-interest">0</div><div class="pstat-label">관심 공고</div></div>
+          <div class="pstat"><div class="pstat-num" id="ps-apply">0</div><div class="pstat-label">지원 공고</div></div>
+          <div class="pstat"><div class="pstat-num" id="ps-certs">0</div><div class="pstat-label">자격증</div></div>
+        </div>
+      </div>
+
+      <div class="dash-grid">
+        <div class="dash-card"><div class="dash-num" id="d-active">0</div><div class="dash-label">진행중 공고</div></div>
+        <div class="dash-card"><div class="dash-num" id="d-rec">0</div><div class="dash-label">우리학과 추천</div></div>
+        <div class="dash-card"><div class="dash-num" id="d-close">0</div><div class="dash-label">마감임박(7일내)</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">내 정보</div>
+        <table>
+          <tbody id="myInfoTb"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">내 학과 관련 최신 공고</div>
+        <div id="dashJobList"></div>
+      </div>
+    </div>
+
+    <!-- 채용공고 -->
+    <div class="tab-panel" id="tab-jobs">
+      <div class="page-header">
+        <h1>채용공고</h1>
+        <p>현재 진행 중인 채용공고를 확인하고 지원하세요.</p>
+      </div>
+      <div class="filter-bar">
+        <input id="jobSearch" placeholder="기업명 또는 직무 검색" oninput="renderJobs()">
+        <select class="filter-select" id="jobFilter" onchange="renderJobs()">
+          <option value="all">전체 공고</option>
+          <option value="my">우리 학과</option>
+          <option value="rec">학교장 추천</option>
+        </select>
+      </div>
+      <div class="jobs-grid" id="jobGrid"></div>
+      <div id="jobEmpty" class="no-jobs" style="display:none">
+        <div style="font-size:36px;margin-bottom:10px">📭</div>
+        <p>조건에 맞는 채용공고가 없습니다.</p>
+      </div>
+    </div>
+
+    <!-- 관심 공고 -->
+    <div class="tab-panel" id="tab-interest">
+      <div class="page-header">
+        <h1>관심 공고</h1>
+        <p>관심 등록한 채용공고 목록입니다.</p>
+      </div>
+      <div id="interestList"></div>
+    </div>
+
+    <!-- 지원 현황 -->
+    <div class="tab-panel" id="tab-applications">
+      <div class="page-header">
+        <h1>지원 현황</h1>
+        <p>지원한 채용공고의 현황을 확인하세요.</p>
+      </div>
+      <div class="card">
+        <div class="alert alert-info">📌 Google Sheets 연동 후 실제 지원 현황이 반영됩니다. 현재는 시뮬레이션 데이터입니다.</div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>기업명</th><th>직무</th><th>지원일</th><th>상태</th><th>관리</th></tr></thead>
+            <tbody id="applyTb"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 선배 취업아카이브 -->
+    <div class="tab-panel" id="tab-archive">
+      <div class="page-header">
+        <h1>선배 취업아카이브</h1>
+        <p>우리 학교 졸업생들의 취업 사례를 확인하세요.</p>
+      </div>
+      <div class="alert alert-info" style="margin-bottom:16px">📌 Google Sheets 연동 후 실제 데이터가 표시됩니다. 아래는 샘플 데이터입니다.</div>
+      <div id="archiveList"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 채용공고 상세 모달 -->
+<div class="modal-overlay" id="jobModal" onclick="closeModal('jobModal',event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-company" id="m-co"></div>
+        <div class="modal-title" id="m-title"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('jobModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="info-grid">
+        <div class="info-item"><div class="info-label">직무</div><div class="info-value" id="m-job"></div></div>
+        <div class="info-item"><div class="info-label">근무지</div><div class="info-value" id="m-loc"></div></div>
+        <div class="info-item"><div class="info-label">모집인원</div><div class="info-value" id="m-cnt"></div></div>
+        <div class="info-item"><div class="info-label">마감일</div><div class="info-value" id="m-dl"></div></div>
+      </div>
+      <div id="m-rec" style="display:none" class="recommend-box">🏫 <strong>학교장 추천전형</strong> — 추천 인원: <span id="m-reccnt"></span>명</div>
+      <div class="modal-desc" id="m-desc"></div>
+      <div id="m-files" style="display:none;margin-top:14px">
+        <div style="font-size:13px;font-weight:600;color:var(--text-sub);margin-bottom:8px">📎 붙임파일</div>
+        <div id="m-file-list"></div>
+      </div>
+      <div class="modal-action-row" id="m-actions"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 지원하기 확인 모달 -->
+<div class="modal-overlay" id="applyModal" onclick="closeModal('applyModal',event)">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div style="font-size:16px;font-weight:700">✍️ 지원하기</div>
+      <button class="modal-close" onclick="closeModal('applyModal')">✕</button>
+    </div>
+    <div class="modal-body apply-form">
+      <div class="alert alert-warn">📌 학교장 추천전형은 담임선생님의 확인이 필요합니다.</div>
+      <div id="applyTargetInfo" style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px"></div>
+      <div class="form-group">
+        <label>자기소개 (선택)</label>
+        <textarea id="applyMsg" placeholder="지원 동기나 간단한 자기소개를 입력하세요." oninput="updateCharCount()"></textarea>
+        <div class="char-count"><span id="charCount">0</span> / 300자</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-accent" style="flex:1" onclick="confirmApply()">✅ 지원 확정</button>
+        <button class="btn btn-ghost" style="flex:1" onclick="closeModal('applyModal')">취소</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 비밀번호 변경 모달 -->
+<div class="modal-overlay" id="pwModal" onclick="closeModal('pwModal',event)">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div style="font-size:16px;font-weight:700">🔑 비밀번호 변경</div>
+      <button class="modal-close" onclick="closeModal('pwModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>현재 비밀번호</label><input type="password" id="pw-cur"></div>
+      <div class="form-group"><label>새 비밀번호</label><input type="password" id="pw-new"></div>
+      <div class="form-group"><label>비밀번호 확인</label><input type="password" id="pw-cf"></div>
+      <div id="pw-alert" style="margin-top:8px"></div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn btn-accent" style="flex:1" onclick="changePw()">변경</button>
+        <button class="btn btn-ghost" style="flex:1" onclick="closeModal('pwModal')">취소</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── 상태 ──
+let DB  = {};
+let ME  = null;   // 현재 로그인 학생
+let currentJobIdx = null;
+
+function saveDB(){ localStorage.setItem('samilAdmin', JSON.stringify(DB)); }
+
+// ── 관심/지원 헬퍼 (학생별 분리) ──
+function getInterests(){
+  if(!ME) return [];
+  return JSON.parse(localStorage.getItem('interests_'+ME.id)||'[]');
+}
+function setInterests(arr){
+  if(!ME) return;
+  localStorage.setItem('interests_'+ME.id, JSON.stringify(arr));
+}
+function getApplications(){
+  if(!ME) return [];
+  return (DB.applications||[]).filter(a=>a.studentId===ME.id);
+}
+function hasApplied(jobId){
+  return getApplications().some(a=>a.jobId===jobId);
+}
+
+// ── 로그인 ──
+window.addEventListener('DOMContentLoaded',()=>{
+  DB = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
+
+  // 학과 목록 채우기 (DB 또는 기본값)
+  const depts = [...new Set((DB.students||[]).map(s=>s.dept))];
+  const defaults = ['전자과','기계과','전기과','화학공업과','건설과','정보통신과','반도체과','사물인터넷과'];
+  const allDepts = depts.length ? depts : defaults;
+  const sel = document.getElementById('l-dept');
+  allDepts.forEach(d=>{ const o=document.createElement('option'); o.value=d; o.textContent=d; sel.appendChild(o); });
+
+  // 세션 자동 로그인
+  const saved = sessionStorage.getItem('samilStudentAuth');
+  if(saved){
+    DB = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
+    const found = (DB.students||[]).find(s=>s.id===saved);
+    if(found){ ME=found; enterApp(); return; }
+  }
+  document.getElementById('loginScreen').style.display='flex';
+});
+
+function tryLogin(){
+  const dept = document.getElementById('l-dept').value;
+  const id   = document.getElementById('l-id').value.trim();
+  const pw   = document.getElementById('l-pw').value;
+  if(!dept){ alert('학과를 선택하세요'); return; }
+  if(!id||!pw){ alert('학번과 비밀번호를 입력하세요'); return; }
+
+  DB = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
+  const found = (DB.students||[]).find(s=>s.id===id && s.pw===pw && s.dept===dept);
+
+  if(!found){
+    // 학번+PW만으로도 시도 (학과 미일치 허용 — Sheets 연동 전 유연성)
+    const byIdPw = (DB.students||[]).find(s=>s.id===id && s.pw===pw);
+    if(byIdPw){ ME=byIdPw; }
+    else {
+      // 샘플 학생으로 로그인 허용 (개발/테스트용)
+      ME = {
+        id, name: '학생', dept,
+        grade: id.length>=4 ? id[0] : '3',
+        cls:   id.length>=4 ? id[1] : '1',
+        birth: pw, pw,
+        gender:'—', certCount:0, uploaded:false,
+        teacher:'—'
+      };
+    }
+  } else { ME = found; }
+
+  sessionStorage.setItem('samilStudentAuth', ME.id);
+  document.getElementById('loginScreen').style.display='none';
+  enterApp();
+}
+
+function logout(){
+  ME = null;
+  sessionStorage.removeItem('samilStudentAuth');
+  document.getElementById('topNav').style.display='none';
+  document.getElementById('appLayout').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('l-pw').value='';
+}
+
+function enterApp(){
+  document.getElementById('topNav').style.display='flex';
+  document.getElementById('appLayout').style.display='flex';
+  document.getElementById('navStudentInfo').innerHTML =
+    `<strong>${ME.name}</strong> | ${ME.dept} ${ME.grade||''}학년 ${ME.cls||''}반`;
+  initDashboard();
+  renderJobs();
+  renderInterest();
+  renderApplications();
+  renderArchive();
+  updateBadges();
+}
+
+// ── 대시보드 ──
+function initDashboard(){
+  const interests = getInterests();
+  const apps      = getApplications();
+  const jobs      = getActiveJobs();
+
+  // 프로필 카드
+  document.getElementById('profileName').textContent = ME.name + ' 학생';
+  document.getElementById('profileMeta').textContent =
+    `${ME.dept} ${ME.grade||''}학년 ${ME.cls||''}반 | 학번: ${ME.id}`;
+  document.getElementById('profileTags').innerHTML =
+    `<span class="profile-tag">🎓 ${ME.dept}</span>` +
+    (ME.certCount ? `<span class="profile-tag">📜 자격증 ${ME.certCount}개</span>` : '') +
+    (ME.teacher && ME.teacher!=='—' ? `<span class="profile-tag">👩‍🏫 담임: ${ME.teacher}</span>` : '');
+
+  document.getElementById('ps-interest').textContent = interests.length;
+  document.getElementById('ps-apply').textContent    = apps.length;
+  document.getElementById('ps-certs').textContent    = ME.certCount||0;
+
+  // 요약 카드
+  const myJobs = jobs.filter(j=>(j.tags||[]).some(t=>ME.dept.includes(t)||t.includes(ME.dept.replace('과',''))));
+  const closeJobs = jobs.filter(j=>{ const d=new Date(j.dl); const diff=Math.ceil((d-new Date())/86400000); return diff>=0&&diff<=7; });
+  const recJobs = myJobs.filter(j=>j.rec);
+  document.getElementById('d-active').textContent = jobs.length;
+  document.getElementById('d-rec').textContent    = recJobs.length;
+  document.getElementById('d-close').textContent  = closeJobs.length;
+
+  // 내 정보 테이블
+  document.getElementById('myInfoTb').innerHTML = `
+    <tr><th style="width:100px;color:var(--text-sub);font-weight:500;font-size:13px">이름</th><td style="font-size:13px">${ME.name}</td><th style="width:100px;color:var(--text-sub);font-weight:500;font-size:13px">학번</th><td style="font-size:13px">${ME.id}</td></tr>
+    <tr><th style="color:var(--text-sub);font-weight:500;font-size:13px">학과</th><td style="font-size:13px">${ME.dept}</td><th style="color:var(--text-sub);font-weight:500;font-size:13px">학년/반</th><td style="font-size:13px">${ME.grade||'—'}학년 ${ME.cls||'—'}반</td></tr>
+    <tr><th style="color:var(--text-sub);font-weight:500;font-size:13px">담임교사</th><td style="font-size:13px">${ME.teacher||'—'}</td><th style="color:var(--text-sub);font-weight:500;font-size:13px">자격증</th><td style="font-size:13px">${ME.certCount||0}개</td></tr>
+    <tr><th style="color:var(--text-sub);font-weight:500;font-size:13px">성별</th><td style="font-size:13px">${ME.gender||'—'}</td><th style="color:var(--text-sub);font-weight:500;font-size:13px">생년월일</th><td style="font-size:13px">${ME.birth||'—'}</td></tr>`;
+
+  // 내 학과 최신 공고 (최대 3개)
+  const related = getActiveJobs().filter(j=>(j.tags||[]).some(t=>ME.dept.includes(t)||t.includes(ME.dept.replace('과','')))).slice(0,3);
+  if(!related.length){
+    document.getElementById('dashJobList').innerHTML='<div style="color:var(--text-sub);font-size:13px;padding:8px 0">관련 채용공고가 없습니다.</div>';
+  } else {
+    document.getElementById('dashJobList').innerHTML = related.map((j,i)=>jobCardHTML(j,i,'dash')).join('');
+  }
+}
+
+// ── 채용공고 ──
+function getActiveJobs(){
+  const sample = [
+    {id:0,co:'(주)삼성전자',title:'전자기기 생산',job:'생산관리',loc:'수원',cnt:3,dl:'2026.03.31',tags:['전자과'],rec:true,recCnt:2,desc:'전자기기 생산 및 품질 관리 업무\n\n• 근무형태: 정규직\n• 급여: 협의\n• 복리후생: 4대보험, 식대'},
+    {id:1,co:'LG이노텍',title:'PCB 생산',job:'생산',loc:'평택',cnt:5,dl:'2026.06.10',tags:['전자과','반도체과'],rec:false,recCnt:0,desc:'PCB 생산 라인 운영 및 품질 검사'},
+    {id:2,co:'(주)현대모비스',title:'자동차 부품 제조',job:'제조',loc:'화성',cnt:4,dl:'2026.06.20',tags:['기계과'],rec:true,recCnt:3,desc:'자동차 부품 제조 및 조립 업무'},
+    {id:3,co:'(주)LS일렉트릭',title:'전기 시공',job:'시공',loc:'안양',cnt:6,dl:'2026.07.20',tags:['전기과'],rec:true,recCnt:4,desc:'전기 시공 및 유지보수 업무'},
+    {id:4,co:'KT&G',title:'설비 유지보수',job:'유지보수',loc:'수원',cnt:2,dl:'2026.08.01',tags:['기계과','전기과'],rec:false,recCnt:0,desc:'생산 설비 유지보수 및 점검'},
+    {id:5,co:'KCC건설',title:'현장 관리',job:'현장관리',loc:'서울',cnt:3,dl:'2026.05.25',tags:['건설과'],rec:false,recCnt:0,desc:'건설 현장 관리 및 안전 감독'},
+    {id:6,co:'(주)SK하이닉스',title:'반도체 공정',job:'공정관리',loc:'이천',cnt:4,dl:'2026.07.01',tags:['반도체과','전자과'],rec:true,recCnt:2,desc:'반도체 생산 공정 운영 및 관리'},
+    {id:7,co:'삼성SDI',title:'배터리 생산',job:'생산',loc:'수원',cnt:5,dl:'2026.06.15',tags:['화학공업과','전자과'],rec:false,recCnt:0,desc:'배터리 셀 생산 및 품질 검사'},
+  ];
+  // DB에 jobs 있으면 우선, 없으면 샘플
+  const live = (DB.jobs||[]).filter(j=>j.active);
+  return live.length ? live.map((j,i)=>({...j,id:i})) : sample;
+}
+
+function renderJobs(){
+  const q      = (document.getElementById('jobSearch').value||'').toLowerCase();
+  const filter = document.getElementById('jobFilter').value;
+  const interests = getInterests();
+  let jobs = getActiveJobs();
+
+  if(q) jobs = jobs.filter(j=>(j.co||'').toLowerCase().includes(q)||(j.title||'').toLowerCase().includes(q)||(j.job||'').toLowerCase().includes(q));
+  if(filter==='my') jobs = jobs.filter(j=>(j.tags||[]).some(t=>ME.dept.includes(t)||t.includes(ME.dept.replace('과',''))));
+  if(filter==='rec') jobs = jobs.filter(j=>j.rec);
+
+  if(!jobs.length){
+    document.getElementById('jobGrid').innerHTML='';
+    document.getElementById('jobEmpty').style.display='block';
+  } else {
+    document.getElementById('jobEmpty').style.display='none';
+    document.getElementById('jobGrid').innerHTML = jobs.map((j,i)=>jobCardHTML(j,i,'grid')).join('');
+  }
+}
+
+function jobCardHTML(j,i,mode){
+  const today = new Date();
+  const dl    = new Date((j.dl||'').replace(/\./g,'-'));
+  const diff  = Math.ceil((dl-today)/86400000);
+  const urg   = diff>=0&&diff<=7;
+  const interests = getInterests();
+  const onInterest = interests.includes(j.id!=null?j.id:i);
+  const onApply    = hasApplied(j.id!=null?j.id:i);
+  const jid = j.id!=null?j.id:i;
+
+  return `<div class="job-card${onInterest?' interested':''}${onApply?' applied':''}" onclick="openJob(${jid})">
+    <div class="job-company">${j.co}
+      ${j.rec?'<span class="job-rec">학교장추천</span>':''}
+      ${onApply?'<span class="job-status-badge applied">✅ 지원완료</span>':''}
+      ${onInterest&&!onApply?'<span class="job-status-badge interested">❤️ 관심</span>':''}
+    </div>
+    <div class="job-title">${j.title||j.job}</div>
+    <div class="job-tags">
+      ${(j.tags||[]).map(t=>`<span class="job-tag">${t}</span>`).join('')}
+      <span class="job-tag">📍${j.loc}</span>
+      <span class="job-tag">👤${j.cnt}명</span>
+    </div>
+    <div class="job-footer">
+      <span class="${urg?'deadline-urgent':'job-deadline'}">마감 ${j.dl}${urg?' ⚠':''}</span>
+      <span class="job-detail">상세보기 →</span>
+    </div>
+  </div>`;
+}
+
+function openJob(jid){
+  currentJobIdx = jid;
+  const jobs = getActiveJobs();
+  const j = jobs.find(x=>x.id===jid)||jobs[jid]||jobs[0];
+  if(!j) return;
+
+  document.getElementById('m-co').textContent = j.co;
+  document.getElementById('m-title').textContent = j.title||j.job;
+  document.getElementById('m-job').textContent = j.job;
+  document.getElementById('m-loc').textContent = j.loc;
+  document.getElementById('m-cnt').textContent = (j.cnt||'—')+'명';
+  document.getElementById('m-dl').textContent  = j.dl;
+  document.getElementById('m-desc').textContent = j.desc||'상세 정보 없음';
+  document.getElementById('m-rec').style.display = j.rec?'block':'none';
+  if(j.rec) document.getElementById('m-reccnt').textContent = j.recCnt;
+
+  // 파일
+  const fWrap = document.getElementById('m-files');
+  const fList = document.getElementById('m-file-list');
+  if(j.files&&j.files.length){
+    fList.innerHTML = j.files.map(f=>`<a style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg);border-radius:8px;margin-bottom:6px;font-size:13px;text-decoration:none;color:var(--text)" href="${f.url}" target="_blank">📄 ${f.name}</a>`).join('');
+    fWrap.style.display='block';
+  } else fWrap.style.display='none';
+
+  // 액션 버튼
+  const interests   = getInterests();
+  const onInterest  = interests.includes(jid);
+  const onApply     = hasApplied(jid);
+  document.getElementById('m-actions').innerHTML = onApply
+    ? `<button class="btn-interest" onclick="toggleInterest(${jid})" style="flex:1">${onInterest?'❤️ 관심':'🤍 관심'}</button>
+       <button class="btn-apply applied" onclick="cancelApply(${jid})" style="flex:2">✅ 지원완료 (취소)</button>`
+    : `<button class="btn-interest${onInterest?' on':''}" onclick="toggleInterest(${jid})" style="flex:1">${onInterest?'❤️ 관심됨':'🤍 관심등록'}</button>
+       <button class="btn-apply" onclick="openApplyModal(${jid})" style="flex:2">📝 지원하기</button>`;
+
+  document.getElementById('jobModal').classList.add('open');
+}
+
+function toggleInterest(jid){
+  let arr = getInterests();
+  if(arr.includes(jid)) arr = arr.filter(x=>x!==jid);
+  else arr.push(jid);
+  setInterests(arr);
+  updateBadges();
+  renderInterest();
+  renderJobs();
+  // 모달 내 버튼 갱신
+  if(currentJobIdx===jid) openJob(jid);
+}
+
+// ── 지원하기 ──
+function openApplyModal(jid){
+  const jobs = getActiveJobs();
+  const j = jobs.find(x=>x.id===jid)||jobs[jid]||{};
+  document.getElementById('applyTargetInfo').innerHTML =
+    `<strong>${j.co}</strong> — ${j.title||j.job}<br>` +
+    `<span style="color:var(--text-sub)">모집인원 ${j.cnt}명 | 근무지 ${j.loc} | 마감 ${j.dl}</span>`;
+  document.getElementById('applyMsg').value='';
+  document.getElementById('charCount').textContent='0';
+  document.getElementById('applyModal').classList.add('open');
+}
+
+function updateCharCount(){
+  const v = document.getElementById('applyMsg').value;
+  document.getElementById('charCount').textContent = v.length;
+  if(v.length>300) document.getElementById('applyMsg').value = v.slice(0,300);
+}
+
+function confirmApply(){
+  const jid = currentJobIdx;
+  if(jid===null) return;
+  if(!DB.applications) DB.applications=[];
+  if(hasApplied(jid)){ alert('이미 지원한 공고입니다.'); return; }
+  const jobs = getActiveJobs();
+  const j = jobs.find(x=>x.id===jid)||jobs[jid]||{};
+  DB.applications.push({
+    studentId: ME.id,
+    jobId: jid,
+    company: j.co,
+    title: j.title||j.job,
+    date: new Date().toLocaleDateString('ko-KR'),
+    msg: document.getElementById('applyMsg').value,
+    status: '검토중'
+  });
+  saveDB();
+  closeModal('applyModal');
+  closeModal('jobModal');
+  renderApplications();
+  renderJobs();
+  updateBadges();
+  initDashboard();
+  alert(`✅ ${j.co} 지원이 완료되었습니다!\n담임선생님께서 확인 후 진행됩니다.`);
+}
+
+function cancelApply(jid){
+  if(!confirm('지원을 취소하시겠습니까?')) return;
+  DB.applications = (DB.applications||[]).filter(a=>!(a.studentId===ME.id&&a.jobId===jid));
+  saveDB();
+  closeModal('jobModal');
+  renderApplications();
+  renderJobs();
+  updateBadges();
+  initDashboard();
+}
+
+// ── 관심 공고 ──
+function renderInterest(){
+  const interests = getInterests();
+  const jobs = getActiveJobs();
+  const list = interests.map(id=>jobs.find(j=>j.id===id)).filter(Boolean);
+
+  if(!list.length){
+    document.getElementById('interestList').innerHTML=`
+      <div class="empty-state"><div class="empty-icon">🤍</div><p>관심 등록한 공고가 없습니다.<br>채용공고에서 ❤️ 버튼을 눌러 관심 공고를 저장하세요.</p></div>`;
+    return;
+  }
+  document.getElementById('interestList').innerHTML = `<div class="jobs-grid">` +
+    list.map((j,i)=>jobCardHTML(j,i,'interest')).join('') + `</div>`;
+}
+
+// ── 지원 현황 ──
+function renderApplications(){
+  const apps = getApplications();
+  if(!apps.length){
+    document.getElementById('applyTb').innerHTML =
+      '<tr><td colspan="5" style="text-align:center;color:var(--text-sub);padding:24px">지원한 공고가 없습니다</td></tr>';
+    return;
+  }
+  document.getElementById('applyTb').innerHTML = apps.map(a=>`
+    <tr>
+      <td><strong>${a.company||'—'}</strong></td>
+      <td>${a.title||'—'}</td>
+      <td>${a.date||'—'}</td>
+      <td><span class="badge badge-blue">${a.status||'검토중'}</span></td>
+      <td><button class="btn btn-sm btn-ghost" onclick="cancelApply(${a.jobId})">취소</button></td>
+    </tr>`).join('');
+}
+
+// ── 선배 취업아카이브 ──
+function renderArchive(){
+  const sample = [
+    {name:'김○현',dept:'전자과',year:'2025',company:'삼성전자',job:'생산관리',gpa:'3.8',certs:'산업기사 1개'},
+    {name:'이○준',dept:'기계과',year:'2025',company:'현대모비스',job:'부품 제조',gpa:'3.5',certs:'기사 1개'},
+    {name:'박○지',dept:'전기과',year:'2024',company:'LS일렉트릭',job:'전기 시공',gpa:'4.0',certs:'산업기사 2개'},
+    {name:'최○민',dept:'반도체과',year:'2025',company:'SK하이닉스',job:'공정관리',gpa:'3.9',certs:'기능사 2개'},
+    {name:'정○서',dept:'화학공업과',year:'2024',company:'삼성SDI',job:'품질관리',gpa:'3.7',certs:'기사 1개'},
+  ];
+  const archive = (DB.archive||[]).length ? DB.archive : sample;
+  const myDept  = archive.filter(a=>a.dept===ME.dept);
+  const others  = archive.filter(a=>a.dept!==ME.dept);
+  const sorted  = [...myDept, ...others];
+
+  document.getElementById('archiveList').innerHTML = sorted.map(a=>{
+    const initial = a.name ? a.name[0] : '?';
+    const isMyDept = a.dept===ME.dept;
+    return `<div class="archive-item" style="${isMyDept?'border-color:var(--primary-light);':''}">
+      <div class="archive-avatar" style="${isMyDept?'background:var(--accent)':''}">${initial}</div>
+      <div class="archive-info">
+        <div class="archive-name">${a.name} <span class="badge ${isMyDept?'badge-orange':'badge-gray'}">${a.dept}</span></div>
+        <div class="archive-meta">${a.year}년도 졸업 | 자격증: ${a.certs||'—'}</div>
+        <div class="archive-company">🏢 ${a.company} — ${a.job}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── 뱃지 업데이트 ──
+function updateBadges(){
+  const ic = document.getElementById('interestCount');
+  const ac = document.getElementById('applyCount');
+  const iLen = getInterests().length;
+  const aLen = getApplications().length;
+  if(iLen){ ic.style.display='inline'; ic.textContent=iLen; } else ic.style.display='none';
+  if(aLen){ ac.style.display='inline'; ac.textContent=aLen; } else ac.style.display='none';
+  // 대시보드 프로필 통계도
+  document.getElementById('ps-interest').textContent = iLen;
+  document.getElementById('ps-apply').textContent    = aLen;
+}
+
+// ── 비밀번호 변경 ──
+function openPwModal(){ document.getElementById('pwModal').classList.add('open'); }
+function changePw(){
+  const cur = document.getElementById('pw-cur').value;
+  const nw  = document.getElementById('pw-new').value;
+  const cf  = document.getElementById('pw-cf').value;
+  const al  = document.getElementById('pw-alert');
+  if(cur!==ME.pw){ al.innerHTML='<div class="alert alert-error">현재 비밀번호가 틀렸습니다.</div>'; return; }
+  if(nw.length<4){ al.innerHTML='<div class="alert alert-error">4자 이상 입력하세요.</div>'; return; }
+  if(nw!==cf){ al.innerHTML='<div class="alert alert-error">새 비밀번호가 일치하지 않습니다.</div>'; return; }
+  const idx = (DB.students||[]).findIndex(s=>s.id===ME.id);
+  if(idx>-1){ DB.students[idx].pw=nw; ME.pw=nw; saveDB(); }
+  al.innerHTML='<div class="alert alert-success">✅ 변경되었습니다.</div>';
+  setTimeout(()=>{ closeModal('pwModal'); ['pw-cur','pw-new','pw-cf'].forEach(x=>document.getElementById(x).value=''); al.innerHTML=''; }, 1200);
+}
+
+// ── 탭 ──
+function showTab(id,el){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  el.classList.add('active');
+  // 탭 전환 시 리렌더
+  if(id==='jobs')         renderJobs();
+  if(id==='interest')     renderInterest();
+  if(id==='applications') renderApplications();
+  if(id==='archive')      renderArchive();
+  if(id==='dashboard')    initDashboard();
+}
+
+// ── 모달 ──
+function closeModal(id,e){
+  if(!e||e.target.id===id) document.getElementById(id).classList.remove('open');
+}
+</script>
+</body>
+</html>

@@ -22,6 +22,13 @@ nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:var(--pri
 .nav-menu a{color:rgba(255,255,255,.8);text-decoration:none;padding:7px 14px;border-radius:8px;font-size:14px;font-weight:500;transition:.2s}
 .nav-menu a:hover,.nav-menu a.active{background:rgba(255,255,255,.15);color:#fff}
 .nav-login{background:var(--accent) !important;color:#fff !important}
+.nav-user{display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.9);font-size:13px}
+.nav-user-name{font-weight:600;color:#fff}
+.nav-user-role{background:rgba(255,255,255,.15);border-radius:6px;padding:2px 8px;font-size:11px}
+.nav-user-goto{background:var(--accent);color:#fff !important;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;text-decoration:none;transition:.2s}
+.nav-user-goto:hover{background:var(--accent-light) !important}
+.nav-user-logout{background:rgba(255,255,255,.12);color:rgba(255,255,255,.85) !important;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;text-decoration:none;transition:.2s}
+.nav-user-logout:hover{background:rgba(255,255,255,.22) !important;color:#fff !important}
 .hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:4px}
 .hamburger span{width:22px;height:2px;background:#fff;border-radius:2px}
 @media(max-width:768px){
@@ -119,7 +126,15 @@ footer strong{color:#fff}
     <a href="#home" class="active" onclick="closeMenu()">홈</a>
     <a href="#jobs" onclick="closeMenu()">채용공고</a>
     <a href="#status" onclick="closeMenu()">취업현황</a>
-    <a href="#" class="nav-login" onclick="openLogin();closeMenu();return false">로그인</a>
+    <!-- 로그아웃 상태 -->
+    <a href="#" class="nav-login" id="navLoginBtn" onclick="openLogin();closeMenu();return false">로그인</a>
+    <!-- 로그인 상태 (동적 교체) -->
+    <div class="nav-user" id="navUser" style="display:none">
+      <span class="nav-user-role" id="navUserRole"></span>
+      <span class="nav-user-name" id="navUserName"></span>
+      <a href="#" class="nav-user-goto" id="navUserGoto"></a>
+      <a href="#" class="nav-user-logout" onclick="logoutIndex();return false">로그아웃</a>
+    </div>
   </div>
 </nav>
 
@@ -353,7 +368,7 @@ function loginStudent(){
   if(found){
     sessionStorage.setItem('samilStudentAuth',found.id);
     closeModal('loginModal');
-    alert('학생 마이페이지 준비중입니다.');
+    window.location.href='student.html';
   } else { document.getElementById('l-pw').value=''; alert('아이디 또는 비밀번호가 틀렸습니다.'); }
 }
 function loginTeacher(){
@@ -365,7 +380,7 @@ function loginTeacher(){
   if(found){
     sessionStorage.setItem('samilTeacherAuth',found.id);
     closeModal('loginModal');
-    window.location.href='teacher.html';
+    setNavUser('teacher',found.name+' 선생님','담임교사 페이지 →','teacher.html');
   } else { document.getElementById('t-pw').value=''; alert('아이디 또는 비밀번호가 틀렸습니다.'); }
 }
 function tryAdmin(){
@@ -375,14 +390,39 @@ function tryAdmin(){
   if(pw===masterPw||pw===commonPw){
     sessionStorage.setItem('samilAdminAuth','1');
     closeModal('loginModal');
-    window.location.href='admin.html';
+    setNavUser('admin','관리자','관리자 페이지 →','admin.html');
   } else {
     document.getElementById('a-pw').value='';
     alert('비밀번호가 틀렸습니다.');
   }
 }
+function setNavUser(role,name,linkText,href){
+  document.getElementById('navLoginBtn').style.display='none';
+  const nu=document.getElementById('navUser');
+  nu.style.display='flex';
+  document.getElementById('navUserRole').textContent=role==='admin'?'🔧 관리자':'👨‍🏫 담임교사';
+  document.getElementById('navUserName').textContent=name;
+  const g=document.getElementById('navUserGoto');
+  g.textContent=linkText; g.href=href;
+}
+function logoutIndex(){
+  sessionStorage.removeItem('samilAdminAuth');
+  sessionStorage.removeItem('samilTeacherAuth');
+  document.getElementById('navLoginBtn').style.display='';
+  document.getElementById('navUser').style.display='none';
+}
 function toggleMenu(){document.getElementById('navMenu').classList.toggle('open');}
 function closeMenu(){document.getElementById('navMenu').classList.remove('open');}
+// 새로고침 후 로그인 상태 복원
+(function(){
+  if(sessionStorage.getItem('samilAdminAuth')){
+    setNavUser('admin','관리자','관리자 페이지 →','admin.html');
+  } else if(sessionStorage.getItem('samilTeacherAuth')){
+    const _DB=JSON.parse(localStorage.getItem('samilAdmin')||'{}');
+    const _f=(_DB.teachers||[]).find(t=>t.id===sessionStorage.getItem('samilTeacherAuth'));
+    if(_f) setNavUser('teacher',_f.name+' 선생님','담임교사 페이지 →','teacher.html');
+  }
+})();
 </script>
 </body>
 </html>
