@@ -244,6 +244,7 @@ tr:hover td{background:#fafbfd}
   <div class="nav-info">
     <div class="nav-student" id="navStudentInfo"></div>
     <button class="nav-btn nav-btn-ghost" onclick="openPwModal()">🔑 PW변경</button>
+    <a href="index.html" class="nav-btn nav-btn-ghost" style="text-decoration:none">🏠 홈으로</a>
     <button class="nav-btn nav-btn-ghost" onclick="logout()">로그아웃</button>
   </div>
 </nav>
@@ -472,11 +473,14 @@ window.addEventListener('DOMContentLoaded',()=>{
   allDepts.forEach(d=>{ const o=document.createElement('option'); o.value=d; o.textContent=d; sel.appendChild(o); });
 
   // 세션 자동 로그인
-  const saved = sessionStorage.getItem('samilStudentAuth');
-  if(saved){
-    DB = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
-    const found = (DB.students||[]).find(s=>s.id===saved);
+  const savedId = sessionStorage.getItem('samilStudentAuth');
+  if(savedId){
+    // 1순위: DB에서 학생 조회
+    const found = (DB.students||[]).find(s=>s.id===savedId);
     if(found){ ME=found; enterApp(); return; }
+    // 2순위: sessionStorage에 저장된 ME 객체 복원 (샘플 로그인 등)
+    const savedME = sessionStorage.getItem('samilStudentME');
+    if(savedME){ try{ ME=JSON.parse(savedME); enterApp(); return; }catch(e){} }
   }
   document.getElementById('loginScreen').style.display='flex';
 });
@@ -509,6 +513,7 @@ function tryLogin(){
   } else { ME = found; }
 
   sessionStorage.setItem('samilStudentAuth', ME.id);
+  sessionStorage.setItem('samilStudentME', JSON.stringify(ME));
   document.getElementById('loginScreen').style.display='none';
   enterApp();
 }
@@ -516,6 +521,7 @@ function tryLogin(){
 function logout(){
   ME = null;
   sessionStorage.removeItem('samilStudentAuth');
+  sessionStorage.removeItem('samilStudentME');
   document.getElementById('topNav').style.display='none';
   document.getElementById('appLayout').style.display='none';
   document.getElementById('loginScreen').style.display='flex';
@@ -833,6 +839,8 @@ function changePw(){
   if(nw!==cf){ al.innerHTML='<div class="alert alert-error">새 비밀번호가 일치하지 않습니다.</div>'; return; }
   const idx = (DB.students||[]).findIndex(s=>s.id===ME.id);
   if(idx>-1){ DB.students[idx].pw=nw; ME.pw=nw; saveDB(); }
+  else { ME.pw=nw; }
+  sessionStorage.setItem('samilStudentME', JSON.stringify(ME));
   al.innerHTML='<div class="alert alert-success">✅ 변경되었습니다.</div>';
   setTimeout(()=>{ closeModal('pwModal'); ['pw-cur','pw-new','pw-cf'].forEach(x=>document.getElementById(x).value=''); al.innerHTML=''; }, 1200);
 }
