@@ -348,6 +348,7 @@ function tryAdmin(){
   const masterPw=localStorage.getItem('samilMasterPw')||'samil_master';
   const commonPw=localStorage.getItem('samilCommonPw')||'samil2024';
   if(pw===masterPw||pw===commonPw){
+    sessionStorage.setItem('samilAdminAuth','1');
     closeModal('loginModal');
     window.location.href='admin.html';
   } else {

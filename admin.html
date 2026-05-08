@@ -502,10 +502,18 @@ function changeCommonPw(){
 // ── 로그인 ──
 function tryLogin(){
   const pw = document.getElementById('adminPw').value;
-  if(pw===getMasterPw()||pw===getCommonPw()){ document.getElementById('loginScreen').style.display='none'; init(); }
-  else alert('비밀번호가 틀렸습니다.');
+  if(pw===getMasterPw()||pw===getCommonPw()){
+    sessionStorage.setItem('samilAdminAuth','1');
+    document.getElementById('loginScreen').style.display='none'; init();
+  } else alert('비밀번호가 틀렸습니다.');
 }
-function logout(){ document.getElementById('loginScreen').style.display='flex'; }
+// 이미 로그인된 경우 스킵
+window.addEventListener('DOMContentLoaded',()=>{
+  if(sessionStorage.getItem('samilAdminAuth')==='1'){
+    document.getElementById('loginScreen').style.display='none'; init();
+  }
+});
+function logout(){ sessionStorage.removeItem('samilAdminAuth'); document.getElementById('loginScreen').style.display='flex'; }
 
 // ── 초기화 ──
 function init(){
