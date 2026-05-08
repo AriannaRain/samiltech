@@ -685,19 +685,36 @@ function initDashboard(){
 
 // ── 채용공고 ──
 function getActiveJobs(){
-  const sample = [
-    {id:0,co:'(주)삼성전자',title:'전자기기 생산',job:'생산관리',loc:'수원',cnt:3,dl:'2026.03.31',tags:['전자과'],rec:true,recCnt:2,desc:'전자기기 생산 및 품질 관리 업무\n\n• 근무형태: 정규직\n• 급여: 협의\n• 복리후생: 4대보험, 식대'},
-    {id:1,co:'LG이노텍',title:'PCB 생산',job:'생산',loc:'평택',cnt:5,dl:'2026.06.10',tags:['전자과','반도체과'],rec:false,recCnt:0,desc:'PCB 생산 라인 운영 및 품질 검사'},
-    {id:2,co:'(주)현대모비스',title:'자동차 부품 제조',job:'제조',loc:'화성',cnt:4,dl:'2026.06.20',tags:['기계과'],rec:true,recCnt:3,desc:'자동차 부품 제조 및 조립 업무'},
-    {id:3,co:'(주)LS일렉트릭',title:'전기 시공',job:'시공',loc:'안양',cnt:6,dl:'2026.07.20',tags:['전기과'],rec:true,recCnt:4,desc:'전기 시공 및 유지보수 업무'},
-    {id:4,co:'KT&G',title:'설비 유지보수',job:'유지보수',loc:'수원',cnt:2,dl:'2026.08.01',tags:['기계과','전기과'],rec:false,recCnt:0,desc:'생산 설비 유지보수 및 점검'},
-    {id:5,co:'KCC건설',title:'현장 관리',job:'현장관리',loc:'서울',cnt:3,dl:'2026.05.25',tags:['건설과'],rec:false,recCnt:0,desc:'건설 현장 관리 및 안전 감독'},
-    {id:6,co:'(주)SK하이닉스',title:'반도체 공정',job:'공정관리',loc:'이천',cnt:4,dl:'2026.07.01',tags:['반도체과','전자과'],rec:true,recCnt:2,desc:'반도체 생산 공정 운영 및 관리'},
-    {id:7,co:'삼성SDI',title:'배터리 생산',job:'생산',loc:'수원',cnt:5,dl:'2026.06.15',tags:['화학공업과','전자과'],rec:false,recCnt:0,desc:'배터리 셀 생산 및 품질 검사'},
+  const _db=JSON.parse(localStorage.getItem('samilAdmin')||'{}');
+  const live=(_db.jobs||[]).filter(j=>j.active).map((j,i)=>({...j,id:j.id!=null?j.id:i}));
+  if(live.length) return live;
+  // 샘플 데이터 (admin에서 공고 등록 전)
+  return [
+    {id:0,co:'(주)삼성전자',title:'전자기기 생산',job:'전자기기 생산',loc:'수원',cnt:3,
+     dl:'2026.09.30',tags:['전자과','반도체과'],rec:true,recCnt:2,
+     desc:'전자기기 생산 및 품질 관리 업무',active:true},
+    {id:1,co:'LG이노텍',title:'PCB 생산',job:'PCB 생산',loc:'평택',cnt:5,
+     dl:'2026.09.10',tags:['전자과'],rec:false,recCnt:0,
+     desc:'PCB 생산 라인 운영 및 품질 검사',active:true},
+    {id:2,co:'(주)현대모비스',title:'자동차 부품 제조',job:'자동차 부품 제조',loc:'화성',cnt:4,
+     dl:'2026.09.20',tags:['기계과'],rec:true,recCnt:3,
+     desc:'자동차 부품 제조 및 조립 업무',active:true},
+    {id:3,co:'(주)LS일렉트릭',title:'전기 시공',job:'전기 시공',loc:'안양',cnt:6,
+     dl:'2026.10.20',tags:['전기과'],rec:true,recCnt:4,
+     desc:'전기 시공 및 유지보수 업무',active:true},
+    {id:4,co:'KT&G',title:'설비 유지보수',job:'설비 유지보수',loc:'수원',cnt:2,
+     dl:'2026.10.01',tags:['기계과','전기과'],rec:false,recCnt:0,
+     desc:'생산 설비 유지보수 및 점검',active:true},
+    {id:5,co:'(주)SK하이닉스',title:'반도체 공정',job:'반도체 공정',loc:'이천',cnt:4,
+     dl:'2026.10.15',tags:['반도체과','전자과'],rec:true,recCnt:2,
+     desc:'반도체 생산 공정 운영 및 관리',active:true},
+    {id:6,co:'삼성SDI',title:'배터리 생산',job:'배터리 생산',loc:'수원',cnt:5,
+     dl:'2026.09.15',tags:['화학공업과','전자과'],rec:false,recCnt:0,
+     desc:'배터리 셀 생산 및 품질 검사',active:true},
+    {id:7,co:'(주)현대건설',title:'현장 시공 관리',job:'현장 시공 관리',loc:'서울',cnt:3,
+     dl:'2026.10.10',tags:['건설과'],rec:false,recCnt:0,
+     desc:'건설 현장 관리 및 안전 감독',active:true},
   ];
-  // DB에 jobs 있으면 우선, 없으면 샘플
-  const live = (DB.jobs||[]).filter(j=>j.active);
-  return live.length ? live.map((j,i)=>({...j,id:i})) : sample;
 }
 
 function renderJobs(){

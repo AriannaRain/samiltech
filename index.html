@@ -22,13 +22,6 @@ nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:var(--pri
 .nav-menu a{color:rgba(255,255,255,.8);text-decoration:none;padding:7px 14px;border-radius:8px;font-size:14px;font-weight:500;transition:.2s}
 .nav-menu a:hover,.nav-menu a.active{background:rgba(255,255,255,.15);color:#fff}
 .nav-login{background:var(--accent) !important;color:#fff !important}
-.nav-user{display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.9);font-size:13px}
-.nav-user-name{font-weight:600;color:#fff}
-.nav-user-role{background:rgba(255,255,255,.15);border-radius:6px;padding:2px 8px;font-size:11px}
-.nav-user-goto{background:var(--accent);color:#fff !important;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;text-decoration:none;transition:.2s}
-.nav-user-goto:hover{background:var(--accent-light) !important}
-.nav-user-logout{background:rgba(255,255,255,.12);color:rgba(255,255,255,.85) !important;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;text-decoration:none;transition:.2s}
-.nav-user-logout:hover{background:rgba(255,255,255,.22) !important;color:#fff !important}
 .hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:4px}
 .hamburger span{width:22px;height:2px;background:#fff;border-radius:2px}
 @media(max-width:768px){
@@ -126,15 +119,7 @@ footer strong{color:#fff}
     <a href="#home" class="active" onclick="closeMenu()">홈</a>
     <a href="#jobs" onclick="closeMenu()">채용공고</a>
     <a href="#status" onclick="closeMenu()">취업현황</a>
-    <!-- 로그아웃 상태 -->
-    <a href="#" class="nav-login" id="navLoginBtn" onclick="openLogin();closeMenu();return false">로그인</a>
-    <!-- 로그인 상태 (동적 교체) -->
-    <div class="nav-user" id="navUser" style="display:none">
-      <span class="nav-user-role" id="navUserRole"></span>
-      <span class="nav-user-name" id="navUserName"></span>
-      <a href="#" class="nav-user-goto" id="navUserGoto"></a>
-      <a href="#" class="nav-user-logout" onclick="logoutIndex();return false">로그아웃</a>
-    </div>
+    <a href="#" class="nav-login" onclick="openLogin();closeMenu();return false">로그인</a>
   </div>
 </nav>
 
@@ -237,8 +222,8 @@ footer strong{color:#fff}
 <footer><strong>삼일공업고등학교</strong> 특성화취창업지원부 | 경기도 수원시</footer>
 
 <script>
-// ── 샘플 데이터 (Google Sheets 연동 전) ──
-const DATA = {
+// ── 데이터 로드 (localStorage 우선, 없으면 샘플) ──
+const SAMPLE = {
   stats:{grad:'312명',rate:'78%',active:'8개',closing:'3개',done:'24개'},
   banners:[
     {title:'2026 상반기 현장실습 기업 모집',url:'#',deadline:'2026.03.31',color:'#1A3A6B'},
@@ -247,12 +232,12 @@ const DATA = {
     {title:'2026 수원 취업박람회 사전 신청',url:'#',deadline:'2026.05.10',color:'#1D6A4A'},
   ],
   jobs:[
-    {co:'(주)삼성전자',title:'전자기기 생산',job:'생산관리',loc:'수원',cnt:3,dl:'2026.03.31',tags:['전자과','정규직'],rec:true,recCnt:2,desc:'전자기기 생산 및 품질 관리 업무\n\n• 근무형태: 정규직\n• 급여: 협의\n• 복리후생: 4대보험, 식대'},
-    {co:'LG이노텍',title:'PCB 생산',job:'생산',loc:'평택',cnt:5,dl:'2026.04.10',tags:['전자과'],rec:false,recCnt:0,desc:'PCB 생산 라인 운영 및 품질 검사'},
-    {co:'(주)현대모비스',title:'자동차 부품 제조',job:'제조',loc:'화성',cnt:4,dl:'2026.03.20',tags:['기계과','정규직'],rec:true,recCnt:3,desc:'자동차 부품 제조 및 조립 업무'},
-    {co:'(주)LS일렉트릭',title:'전기 시공',job:'시공',loc:'안양',cnt:6,dl:'2026.04.20',tags:['전기과'],rec:true,recCnt:4,desc:'전기 시공 및 유지보수 업무'},
-    {co:'KT&G',title:'설비 유지보수',job:'유지보수',loc:'수원',cnt:2,dl:'2026.05.01',tags:['기계과','전기과'],rec:false,recCnt:0,desc:'생산 설비 유지보수 및 점검'},
-    {co:'KCC건설',title:'현장 관리',job:'현장관리',loc:'서울',cnt:3,dl:'2026.03.25',tags:['건설과'],rec:false,recCnt:0,desc:'건설 현장 관리 및 안전 감독'},
+    {co:'(주)삼성전자',job:'전자기기 생산',loc:'수원',cnt:3,dl:'2026.09.30',tags:['전자과'],rec:true,recCnt:2,desc:'전자기기 생산 및 품질 관리 업무',active:true},
+    {co:'LG이노텍',job:'PCB 생산',loc:'평택',cnt:5,dl:'2026.09.10',tags:['전자과'],rec:false,recCnt:0,desc:'PCB 생산 라인 운영 및 품질 검사',active:true},
+    {co:'(주)현대모비스',job:'자동차 부품 제조',loc:'화성',cnt:4,dl:'2026.09.20',tags:['기계과'],rec:true,recCnt:3,desc:'자동차 부품 제조 및 조립 업무',active:true},
+    {co:'(주)LS일렉트릭',job:'전기 시공',loc:'안양',cnt:6,dl:'2026.10.20',tags:['전기과'],rec:true,recCnt:4,desc:'전기 시공 및 유지보수 업무',active:true},
+    {co:'KT&G',job:'설비 유지보수',loc:'수원',cnt:2,dl:'2026.10.01',tags:['기계과','전기과'],rec:false,recCnt:0,desc:'생산 설비 유지보수 및 점검',active:true},
+    {co:'KCC건설',job:'현장 관리',loc:'서울',cnt:3,dl:'2026.10.25',tags:['건설과'],rec:false,recCnt:0,desc:'건설 현장 관리 및 안전 감독',active:true},
   ],
   depts:[
     {dept:'전자과',g:68,e:54,a:8},{dept:'기계과',g:72,e:58,a:6},
@@ -261,9 +246,57 @@ const DATA = {
   ]
 };
 
+function loadData(){
+  const DB = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
+  return {
+    jobs:   (DB.jobs||[]).length   ? DB.jobs.filter(j=>j.active)   : SAMPLE.jobs,
+    banners:(DB.banners||[]).length ? DB.banners                    : SAMPLE.banners,
+    depts:  (DB.employs||[]).length ? buildDeptStats(DB)            : SAMPLE.depts,
+    stats:  buildStats(DB)
+  };
+}
+
+function buildStats(DB){
+  const jobs=(DB.jobs||[]);
+  const today=new Date();
+  const active=jobs.filter(j=>j.active).length;
+  const closing=jobs.filter(j=>{
+    if(!j.active) return false;
+    const d=new Date(j.dl); const diff=Math.ceil((d-today)/86400000);
+    return diff>=0&&diff<=7;
+  }).length;
+  const done=jobs.filter(j=>!j.active).length;
+  // 취업현황 통계
+  const employs=DB.employs||[];
+  const latestYear=employs.length?Math.max(...employs.map(e=>e.year)):null;
+  const yearData=latestYear?employs.filter(e=>e.year==latestYear):[];
+  const totalGrad=yearData.reduce((a,e)=>a+(e.grad||0),0)||312;
+  const totalEmp =yearData.reduce((a,e)=>a+(e.emp||0),0)||244;
+  return {
+    grad:totalGrad+'명',
+    rate:totalGrad?Math.round(totalEmp/totalGrad*100)+'%':'78%',
+    active:active||'8개',
+    closing:closing||'3개',
+    done:done||'24개'
+  };
+}
+
+function buildDeptStats(DB){
+  const employs=DB.employs||[];
+  if(!employs.length) return SAMPLE.depts;
+  const latestYear=Math.max(...employs.map(e=>e.year));
+  return employs.filter(e=>e.year==latestYear).map(e=>({
+    dept:e.dept, g:e.grad||0, e:e.emp||0, a:e.adv||0
+  }));
+}
+
 let showN = 4;
+let DATA = {jobs:[],banners:[],depts:[],stats:{}};
 
 window.addEventListener('DOMContentLoaded',()=>{
+  // localStorage에서 데이터 로드
+  DATA = loadData();
+
   // 통계
   document.getElementById('s-grad').textContent = DATA.stats.grad;
   document.getElementById('s-rate').textContent = DATA.stats.rate;
@@ -273,8 +306,8 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   // 배너
   document.getElementById('banners').innerHTML = DATA.banners.map(b=>
-    `<a class="banner-item" href="${b.url}" style="background:${b.color}">
-      <div><div class="banner-title">${b.title}</div><div class="banner-date">마감 ${b.deadline}</div></div>
+    `<a class="banner-item" href="${b.url||'#'}" style="background:${b.color||'#1A3A6B'}">
+      <div><div class="banner-title">${b.title}</div><div class="banner-date">마감 ${b.deadline||b.dl||''}</div></div>
       <div class="banner-arrow">→</div></a>`).join('');
 
   renderJobs();
@@ -290,13 +323,15 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   // 학과 옵션
   const sel=document.getElementById('l-dept');
-  DATA.depts.forEach(d=>{const o=document.createElement('option');o.value=d.dept;o.textContent=d.dept;sel.appendChild(o);});
+  const deptList=[...new Set([...DATA.depts.map(d=>d.dept),...SAMPLE.depts.map(d=>d.dept)])];
+  deptList.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;sel.appendChild(o);});
 });
 
 function renderJobs(){
   const today=new Date();
   document.getElementById('jobList').innerHTML = DATA.jobs.slice(0,showN).map((j,i)=>{
-    const dl=new Date(j.dl.replace(/\./g,'-'));
+    const dlStr=(j.dl||'').replace(/\./g,'-');
+    const dl=new Date(dlStr);
     const diff=Math.ceil((dl-today)/86400000);
     const urg=diff<=7&&diff>=0;
     return `<div class="job-card" onclick="openJob(${i})">
@@ -317,8 +352,8 @@ function loadMore(){showN+=4;renderJobs();}
 function openJob(i){
   const j=DATA.jobs[i];
   document.getElementById('m-co').textContent=j.co;
-  document.getElementById('m-title').textContent=j.title;
-  document.getElementById('m-job').textContent=j.job;
+  document.getElementById('m-title').textContent=j.title||j.job;
+  document.getElementById('m-job').textContent=j.job||j.title;
   document.getElementById('m-loc').textContent=j.loc;
   document.getElementById('m-cnt').textContent=j.cnt+'명';
   document.getElementById('m-dl').textContent=j.dl;
@@ -368,7 +403,7 @@ function loginStudent(){
   if(found){
     sessionStorage.setItem('samilStudentAuth',found.id);
     closeModal('loginModal');
-    window.location.href='student.html';
+    alert('학생 마이페이지 준비중입니다.');
   } else { document.getElementById('l-pw').value=''; alert('아이디 또는 비밀번호가 틀렸습니다.'); }
 }
 function loginTeacher(){
@@ -380,7 +415,7 @@ function loginTeacher(){
   if(found){
     sessionStorage.setItem('samilTeacherAuth',found.id);
     closeModal('loginModal');
-    setNavUser('teacher',found.name+' 선생님','담임교사 페이지 →','teacher.html');
+    window.location.href='teacher.html';
   } else { document.getElementById('t-pw').value=''; alert('아이디 또는 비밀번호가 틀렸습니다.'); }
 }
 function tryAdmin(){
@@ -390,39 +425,14 @@ function tryAdmin(){
   if(pw===masterPw||pw===commonPw){
     sessionStorage.setItem('samilAdminAuth','1');
     closeModal('loginModal');
-    setNavUser('admin','관리자','관리자 페이지 →','admin.html');
+    window.location.href='admin.html';
   } else {
     document.getElementById('a-pw').value='';
     alert('비밀번호가 틀렸습니다.');
   }
 }
-function setNavUser(role,name,linkText,href){
-  document.getElementById('navLoginBtn').style.display='none';
-  const nu=document.getElementById('navUser');
-  nu.style.display='flex';
-  document.getElementById('navUserRole').textContent=role==='admin'?'🔧 관리자':'👨‍🏫 담임교사';
-  document.getElementById('navUserName').textContent=name;
-  const g=document.getElementById('navUserGoto');
-  g.textContent=linkText; g.href=href;
-}
-function logoutIndex(){
-  sessionStorage.removeItem('samilAdminAuth');
-  sessionStorage.removeItem('samilTeacherAuth');
-  document.getElementById('navLoginBtn').style.display='';
-  document.getElementById('navUser').style.display='none';
-}
 function toggleMenu(){document.getElementById('navMenu').classList.toggle('open');}
 function closeMenu(){document.getElementById('navMenu').classList.remove('open');}
-// 새로고침 후 로그인 상태 복원
-(function(){
-  if(sessionStorage.getItem('samilAdminAuth')){
-    setNavUser('admin','관리자','관리자 페이지 →','admin.html');
-  } else if(sessionStorage.getItem('samilTeacherAuth')){
-    const _DB=JSON.parse(localStorage.getItem('samilAdmin')||'{}');
-    const _f=(_DB.teachers||[]).find(t=>t.id===sessionStorage.getItem('samilTeacherAuth'));
-    if(_f) setNavUser('teacher',_f.name+' 선생님','담임교사 페이지 →','teacher.html');
-  }
-})();
 </script>
 </body>
 </html>

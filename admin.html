@@ -121,6 +121,19 @@ input:checked+.slider:before{transform:translateX(18px)}
   .main{margin-left:60px}
   .dash-grid{grid-template-columns:1fr 1fr}
 }
+
+.edit-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);
+  z-index:600;align-items:center;justify-content:center;padding:16px}
+.edit-modal-overlay.open{display:flex}
+.edit-modal{background:#fff;border-radius:16px;width:100%;max-width:600px;
+  max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.edit-modal-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+  position:sticky;top:0;background:#fff;z-index:1}
+.edit-modal-header h3{font-size:16px;font-weight:700}
+.edit-modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:#999}
+.edit-modal-body{padding:20px}
+.edit-modal-footer{padding:0 20px 18px;display:flex;gap:8px;justify-content:flex-end}
 </style>
 </head>
 <body>
@@ -164,7 +177,6 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div class="nav-item" onclick="showTab('student',this)"><span class="icon">🎓</span><span>학생 데이터</span></div>
   </nav>
   <div class="nav-logout" onclick="logout()">로그아웃</div>
-  <a href="index.html" style="display:block;margin:0 16px 16px;padding:10px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:rgba(255,255,255,.75);font-size:13px;text-align:center;text-decoration:none;transition:.2s" onmouseover="this.style.background='rgba(255,255,255,.13)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">🏠 홈으로</a>
 </div>
 
 <!-- 메인 -->
@@ -279,13 +291,7 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div class="form-row">
       <div class="form-group"><label>붙임파일 URL (쉼표로 구분, 파일명|URL 형식)</label><input id="j-files" placeholder="채용공고문.pdf|https://..., 지원서.hwp|https://..."></div>
     </div>
-    <div id="job-edit-banner" style="display:none;background:#FFF3E0;border:1px solid #F6AD55;border-radius:8px;padding:9px 14px;font-size:13px;color:#7B341E;margin-bottom:10px">
-      ✏️ <strong>수정 모드</strong> — 내용을 변경 후 <strong>수정 완료</strong>를 클릭하세요.
-    </div>
-    <div class="btn-group">
-      <button id="job-add-btn" class="btn btn-accent" onclick="addJob()">공고 등록</button>
-      <button class="btn btn-ghost" onclick="clearJobForm()">초기화 / 취소</button>
-    </div>
+    <div class="btn-group"><button class="btn btn-accent" onclick="addJob()">공고 등록</button><button class="btn btn-ghost" onclick="clearJobForm()">초기화</button></div>
   </div>
   <div class="card">
     <div class="card-title">공고 목록</div>
@@ -618,46 +624,68 @@ function addJob(){
   const recVal=parseInt(document.getElementById('j-rec').value)||0;
   const filesRaw=document.getElementById('j-files').value.trim();
   const files=filesRaw?filesRaw.split(',').map(f=>{const[name,url]=f.split('|');return{name:name?.trim(),url:url?.trim()||'#'}}):[]; 
-  const jobData={
+  if(!DB.jobs) DB.jobs=[];
+  DB.jobs.unshift({
     co,job,loc:document.getElementById('j-loc').value,
     cnt:document.getElementById('j-cnt').value,
     dl:document.getElementById('j-dl').value,
     tags:document.getElementById('j-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
     rec:recVal>0,recCnt:recVal,
     desc:document.getElementById('j-desc').value,
-    files
-  };
-  if(!DB.jobs) DB.jobs=[];
-  if(editingJobIdx>=0){
-    DB.jobs[editingJobIdx]={...DB.jobs[editingJobIdx],...jobData};
-  } else {
-    DB.jobs.unshift({...jobData,date:today(),active:true});
-  }
+    files,date:today(),active:true
+  });
   save(); renderJobs(); clearJobForm(); updateDash();
 }
+function clearJobForm(){
+  ['j-co','j-job','j-loc','j-cnt','j-tags','j-desc','j-files'].forEach(x=>document.getElementById(x).value='');
+  document.getElementById('j-rec').value='0';
+  // 마감일 기본값: 30일 후
+  const d=new Date(); d.setDate(d.getDate()+30);
+  document.getElementById('j-dl').value=d.toISOString().split('T')[0];
+}
+
 function editJob(i){
   const j=DB.jobs[i];
-  editingJobIdx=i;
-  document.getElementById('j-co').value=j.co||'';
-  document.getElementById('j-job').value=j.job||'';
-  document.getElementById('j-loc').value=j.loc||'';
-  document.getElementById('j-cnt').value=j.cnt||'';
-  document.getElementById('j-dl').value=j.dl||'';
-  document.getElementById('j-tags').value=(j.tags||[]).join(',');
-  document.getElementById('j-rec').value=j.recCnt||0;
-  document.getElementById('j-desc').value=j.desc||'';
-  document.getElementById('j-files').value=(j.files||[]).map(f=>`${f.name}|${f.url}`).join(',');
-  document.getElementById('job-edit-banner').style.display='block';
-  document.getElementById('job-add-btn').textContent='수정 완료';
-  document.getElementById('tab-jobs').scrollIntoView({behavior:'smooth'});
+  document.getElementById('ej-idx').value=i;
+  document.getElementById('ej-co').value=j.co||'';
+  document.getElementById('ej-job').value=j.job||'';
+  document.getElementById('ej-loc').value=j.loc||'';
+  document.getElementById('ej-cnt').value=j.cnt||'';
+  document.getElementById('ej-dl').value=j.dl||'';
+  document.getElementById('ej-tags').value=(j.tags||[]).join(',');
+  document.getElementById('ej-rec').value=j.recCnt||0;
+  document.getElementById('ej-desc').value=j.desc||'';
+  document.getElementById('ej-files').value=(j.files||[]).map(f=>f.name+'|'+f.url).join(', ');
+  document.getElementById('jobEditModal').classList.add('open');
 }
-function clearJobForm(){ 
-  ['j-co','j-job','j-loc','j-cnt','j-dl','j-tags','j-desc','j-files'].forEach(x=>document.getElementById(x).value=''); 
-  document.getElementById('j-rec').value='0';
-  editingJobIdx=-1;
-  document.getElementById('job-edit-banner').style.display='none';
-  document.getElementById('job-add-btn').textContent='공고 등록';
+function closeJobEdit(){
+  document.getElementById('jobEditModal').classList.remove('open');
 }
+function saveJobEdit(){
+  const i=parseInt(document.getElementById('ej-idx').value);
+  if(isNaN(i)||!DB.jobs[i]){alert('오류: 인덱스 없음');return;}
+  const recVal=parseInt(document.getElementById('ej-rec').value)||0;
+  const filesRaw=document.getElementById('ej-files').value.trim();
+  const files=filesRaw?filesRaw.split(',').map(f=>{
+    const[name,url]=f.split('|');
+    return{name:(name||'').trim(),url:(url||'#').trim()};
+  }).filter(f=>f.name):[];
+  DB.jobs[i]={
+    ...DB.jobs[i],
+    co:document.getElementById('ej-co').value.trim(),
+    job:document.getElementById('ej-job').value.trim(),
+    loc:document.getElementById('ej-loc').value,
+    cnt:document.getElementById('ej-cnt').value,
+    dl:document.getElementById('ej-dl').value,
+    tags:document.getElementById('ej-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
+    rec:recVal>0, recCnt:recVal,
+    desc:document.getElementById('ej-desc').value,
+    files
+  };
+  save(); renderJobs(); updateDash(); closeJobEdit();
+  alert('수정되었습니다.');
+}
+
 function toggleJob(i){ DB.jobs[i].active=!DB.jobs[i].active; save(); renderJobs(); }
 function delJob(i){ if(confirm('삭제?')){ DB.jobs.splice(i,1); save(); renderJobs(); updateDash(); } }
 function renderJobs(){
@@ -678,9 +706,6 @@ function renderJobs(){
     <td><span class="badge ${j.active?'badge-green':'badge-red'}">${j.active?'진행중':'마감'}</span></td></tr>`
   ).join('');
 }
-
-// ── 채용공고 수정 상태 ──
-let editingJobIdx = -1;
 
 // ── 배너 ──
 let pickedColor='#1A3A6B';
@@ -820,5 +845,41 @@ function showTab(id,el){
   if(id==='dashboard') updateDash();
 }
 </script>
+
+<!-- 채용공고 수정 모달 -->
+<div class="edit-modal-overlay" id="jobEditModal" onclick="if(event.target===this)closeJobEdit()">
+  <div class="edit-modal">
+    <div class="edit-modal-header">
+      <h3>✏️ 채용공고 수정</h3>
+      <button class="edit-modal-close" onclick="closeJobEdit()">✕</button>
+    </div>
+    <div class="edit-modal-body">
+      <input type="hidden" id="ej-idx">
+      <div class="form-row cols2">
+        <div class="form-group"><label>업체명</label><input id="ej-co" placeholder="(주)삼성전자"></div>
+        <div class="form-group"><label>직무</label><input id="ej-job" placeholder="전자기기 생산"></div>
+      </div>
+      <div class="form-row cols3">
+        <div class="form-group"><label>근무지</label><input id="ej-loc"></div>
+        <div class="form-group"><label>모집인원</label><input id="ej-cnt" type="number"></div>
+        <div class="form-group"><label>마감일</label><input id="ej-dl" type="date"></div>
+      </div>
+      <div class="form-row cols2">
+        <div class="form-group"><label>태그 (쉼표 구분)</label><input id="ej-tags" placeholder="전자과,정규직"></div>
+        <div class="form-group"><label>학교장 추천 인원 (0=미해당)</label><input id="ej-rec" type="number" min="0"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>상세내용</label><textarea id="ej-desc" rows="4"></textarea></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>붙임파일 URL</label><input id="ej-files" placeholder="파일명|URL, ..."></div>
+      </div>
+    </div>
+    <div class="edit-modal-footer">
+      <button class="btn btn-ghost" onclick="closeJobEdit()">취소</button>
+      <button class="btn btn-accent" onclick="saveJobEdit()">✅ 저장</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
