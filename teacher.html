@@ -139,7 +139,7 @@ tr:hover td{background:#fafbfd}
 <body>
 
 <!-- 로그인 -->
-<div class="login-screen" id="loginScreen">
+<div class="login-screen" id="loginScreen" style="display:none">
   <div class="login-box">
     <div class="login-logo">
       <div class="mark">👨‍🏫</div>
@@ -304,6 +304,7 @@ function tryLogin(){
   if(!found){ alert('아이디 또는 비밀번호가 틀렸습니다.'); return; }
 
   ME = found;
+  sessionStorage.setItem('samilTeacherAuth', ME.id);
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('topNav').style.display='flex';
   document.getElementById('appLayout').style.display='flex';
@@ -314,6 +315,7 @@ function tryLogin(){
 
 function logout(){
   ME=null;
+  sessionStorage.removeItem('samilTeacherAuth');
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('topNav').style.display='none';
   document.getElementById('appLayout').style.display='none';
@@ -531,6 +533,27 @@ function showTab(id,el){
   document.getElementById('tab-'+id).classList.add('active');
   el.classList.add('active');
 }
+
+// 세션 자동 로그인
+window.addEventListener('DOMContentLoaded',()=>{
+  const savedId = sessionStorage.getItem('samilTeacherAuth');
+  if(savedId){
+    DB = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
+    const found = (DB.teachers||[]).find(t=>t.id===savedId);
+    if(found){
+      ME = found;
+      document.getElementById('topNav').style.display='flex';
+      document.getElementById('appLayout').style.display='flex';
+      document.getElementById('navTeacherInfo').innerHTML =
+        `<strong>${ME.name}</strong> 선생님 | ${ME.dept} ${ME.grade}학년 ${ME.cls}반`;
+      init();
+    } else {
+      document.getElementById('loginScreen').style.display='flex';
+    }
+  } else {
+    document.getElementById('loginScreen').style.display='flex';
+  }
+});
 
 // 클릭 외부 모달 닫기
 document.getElementById('pwModal').addEventListener('click',function(e){ if(e.target===this) closePwModal(); });
