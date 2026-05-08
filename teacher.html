@@ -134,6 +134,32 @@ tr:hover td{background:#fafbfd}
   .main{margin-left:0}
   .dash-grid{grid-template-columns:1fr 1fr}
 }
+
+/* 학생 상세 모달 */
+.student-modal{max-width:620px;max-height:88vh;overflow-y:auto}
+.student-modal .modal-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:1}
+.student-modal .modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-sub);line-height:1}
+.student-modal .modal-body{padding:18px 20px}
+.smtab-bar{display:flex;gap:4px;margin-bottom:16px;background:var(--bg);padding:4px;border-radius:10px}
+.smtab-bar button{flex:1;padding:7px 4px;border:none;background:none;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;color:var(--text-sub);font-family:inherit;transition:.15s}
+.smtab-bar button.active{background:#fff;color:var(--primary);box-shadow:var(--shadow);font-weight:700}
+.smtab{display:none}.smtab.active{display:block}
+.grade-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:4px}
+.grade-card{background:var(--bg);border-radius:10px;padding:14px;text-align:center}
+.grade-card .gc-label{font-size:11px;color:var(--text-sub);margin-bottom:6px}
+.grade-card .gc-grade{font-size:24px;font-weight:700;color:var(--primary);line-height:1}
+.grade-card .gc-unit{font-size:11px;color:var(--text-sub);margin-top:3px}
+.grade-card.highlight{background:#EBF4FF}
+.attend-row{display:grid;grid-template-columns:60px 60px repeat(3,1fr) repeat(3,1fr) repeat(3,1fr) repeat(3,1fr);gap:4px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px;text-align:center;align-items:center}
+.attend-hdr{font-weight:600;color:var(--text-sub);font-size:11px;background:var(--bg);border-radius:6px;padding:5px 0}
+.cert-item{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg);border-radius:8px;margin-bottom:6px}
+.cert-name{font-weight:600;font-size:13px;flex:1}
+.cert-meta{font-size:11px;color:var(--text-sub)}
+.club-item,.leader-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg);border-radius:8px;margin-bottom:6px;font-size:13px}
+.empty-msg{text-align:center;color:var(--text-sub);font-size:13px;padding:20px}
+/* 클릭 가능한 학생 행 */
+.clickable-row{cursor:pointer}
+.clickable-row:hover td{background:#EBF4FF !important}
 </style>
 </head>
 <body>
@@ -267,6 +293,77 @@ tr:hover td{background:#fafbfd}
       <div id="jobListWrap"></div>
     </div>
 
+  </div>
+</div>
+
+<!-- 학생 상세 모달 -->
+<div class="modal-overlay" id="studentModal" onclick="closeStudentModal(event)">
+  <div class="modal student-modal">
+    <div class="modal-header">
+      <div>
+        <div id="sm-name" style="font-size:18px;font-weight:700"></div>
+        <div id="sm-meta" style="font-size:12px;color:var(--text-sub);margin-top:2px"></div>
+      </div>
+      <button class="modal-close" onclick="document.getElementById('studentModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="smtab-bar">
+        <button class="active" onclick="smShowTab('summary',this)">📊 성적요약</button>
+        <button onclick="smShowTab('certs',this)">📜 자격증</button>
+        <button onclick="smShowTab('attend',this)">📅 출결</button>
+        <button onclick="smShowTab('clubs',this)">🎯 동아리</button>
+        <button onclick="smShowTab('leaders',this)">🏅 임원</button>
+      </div>
+
+      <!-- 성적요약 -->
+      <div class="smtab active" id="smt-summary">
+        <div class="grade-grid">
+          <div class="grade-card highlight">
+            <div class="gc-label">전 과목 평균등급</div>
+            <div class="gc-grade" id="sm-allGrade">—</div>
+            <div class="gc-unit" id="sm-allUnit"></div>
+          </div>
+          <div class="grade-card">
+            <div class="gc-label">보통교과 평균등급</div>
+            <div class="gc-grade" id="sm-genGrade">—</div>
+            <div class="gc-unit" id="sm-genUnit"></div>
+          </div>
+          <div class="grade-card">
+            <div class="gc-label">전문교과 평균등급</div>
+            <div class="gc-grade" id="sm-proGrade">—</div>
+            <div class="gc-unit" id="sm-proUnit"></div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text-sub);margin-top:8px">※ 성적요약 시트 기준 (교과성적 상세는 Excel 파일 직접 확인)</div>
+      </div>
+
+      <!-- 자격증 -->
+      <div class="smtab" id="smt-certs">
+        <div id="sm-cert-list"></div>
+      </div>
+
+      <!-- 출결 -->
+      <div class="smtab" id="smt-attend">
+        <div class="attend-row attend-hdr">
+          <div>학년</div><div>수업일수</div>
+          <div>결석<br>질병</div><div>결석<br>미인정</div><div>결석<br>기타</div>
+          <div>지각<br>질병</div><div>지각<br>미인정</div><div>지각<br>기타</div>
+          <div>조퇴<br>질병</div><div>조퇴<br>미인정</div><div>조퇴<br>기타</div>
+          <div>결과<br>질병</div><div>결과<br>미인정</div><div>결과<br>기타</div>
+        </div>
+        <div id="sm-attend-list"></div>
+      </div>
+
+      <!-- 동아리 -->
+      <div class="smtab" id="smt-clubs">
+        <div id="sm-club-list"></div>
+      </div>
+
+      <!-- 임원 -->
+      <div class="smtab" id="smt-leaders">
+        <div id="sm-leader-list"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -554,7 +651,7 @@ function renderStudentList(){
     const certTip  =(s.certs||[]).map(c=>c.name).join('\n')||'';
     const clubTip  =(s.clubs||[]).map(c=>c.name).join('\n')||'';
     const roles    =(s.leaders||[]).map(l=>l.role).join(', ')||'—';
-    return `<tr>
+    return `<tr class="clickable-row" onclick="openStudentModal('${s.id}')">
       <td>${s.id}</td>
       <td><strong>${s.name}</strong></td>
       <td>${s.gender||'—'}</td>
@@ -612,6 +709,102 @@ function renderJobs(){
       </div>
     </div>`;
   }).join('')||'<div class="card" style="text-align:center;color:var(--text-sub);padding:32px">진행중인 채용공고가 없습니다</div>';
+}
+
+
+// ── 학생 상세 모달 ──
+function openStudentModal(id){
+  const s=getMyStudents().find(x=>x.id===id);
+  if(!s) return;
+  document.getElementById('sm-name').textContent=s.name;
+  document.getElementById('sm-meta').textContent=
+    `${s.dept} ${s.grade}학년 ${s.cls}반 | 학번: ${s.id} | 생년월일: ${s.birth||'—'}`;
+
+  // 성적요약
+  const sm=s.summary;
+  if(sm){
+    document.getElementById('sm-allGrade').textContent=sm.allGrade||'—';
+    document.getElementById('sm-allUnit').textContent=sm.allUnit?`이수 ${sm.allUnit}학점`:'';
+    document.getElementById('sm-genGrade').textContent=sm.genGrade||'—';
+    document.getElementById('sm-genUnit').textContent=sm.genUnit?`이수 ${sm.genUnit}학점`:'';
+    document.getElementById('sm-proGrade').textContent=sm.proGrade||'—';
+    document.getElementById('sm-proUnit').textContent=sm.proUnit?`이수 ${sm.proUnit}학점`:'';
+  } else {
+    ['allGrade','genGrade','proGrade'].forEach(k=>document.getElementById('sm-'+k).textContent='—');
+    ['allUnit','genUnit','proUnit'].forEach(k=>document.getElementById('sm-'+k).textContent='생기부 미업로드');
+  }
+
+  // 자격증
+  const certs=s.certs||[];
+  document.getElementById('sm-cert-list').innerHTML=certs.length
+    ? certs.map(c=>`<div class="cert-item">
+        <div>📜</div>
+        <div class="cert-name">${c.name}</div>
+        <div class="cert-meta">${c.date||''}<br>${c.agency||''}</div>
+      </div>`).join('')
+    : '<div class="empty-msg">자격증 정보 없음</div>';
+
+  // 출결
+  const attend=s.attend||[];
+  document.getElementById('sm-attend-list').innerHTML=attend.length
+    ? attend.map(a=>{
+        const ua=a.abs?a.abs.unauth:0;
+        return `<div class="attend-row" style="${ua>0?'background:#FFF5F5':''}">
+          <div><strong>${a.grade}학년</strong></div>
+          <div>${a.days}일</div>
+          <div>${a.abs?a.abs.sick:0}</div>
+          <div style="${ua>0?'color:var(--red);font-weight:700':''}">
+            ${ua>0?'⚠ '+ua:0}</div>
+          <div>${a.abs?a.abs.etc:0}</div>
+          <div>${a.late?a.late.sick:0}</div>
+          <div>${a.late?a.late.unauth:0}</div>
+          <div>${a.late?a.late.etc:0}</div>
+          <div>${a.early?a.early.sick:0}</div>
+          <div>${a.early?a.early.unauth:0}</div>
+          <div>${a.early?a.early.etc:0}</div>
+          <div>${a.leave?a.leave.sick:0}</div>
+          <div>${a.leave?a.leave.unauth:0}</div>
+          <div>${a.leave?a.leave.etc:0}</div>
+        </div>`;
+      }).join('')
+    : '<div class="empty-msg">출결 정보 없음</div>';
+
+  // 동아리
+  const clubs=s.clubs||[];
+  document.getElementById('sm-club-list').innerHTML=clubs.length
+    ? clubs.map(c=>`<div class="club-item">
+        <span>🎯 <strong>${c.name}</strong></span>
+        <span style="display:flex;gap:8px;align-items:center">
+          <span class="badge badge-gray">${c.type||''}</span>
+          <span class="badge badge-blue">${c.grade}학년</span>
+          ${c.hours?`<span style="font-size:12px;color:var(--text-sub)">${c.hours}시간</span>`:''}
+        </span>
+      </div>`).join('')
+    : '<div class="empty-msg">동아리 정보 없음</div>';
+
+  // 임원
+  const leaders=s.leaders||[];
+  document.getElementById('sm-leader-list').innerHTML=leaders.length
+    ? leaders.map(l=>`<div class="leader-item">
+        <span>🏅 <strong>${l.role}</strong></span>
+        <span style="font-size:12px;color:var(--text-sub)">${l.startYear}~${l.endYear}</span>
+      </div>`).join('')
+    : '<div class="empty-msg">임원 이력 없음</div>';
+
+  // 첫 탭(성적요약) 활성화
+  smShowTab('summary', document.querySelector('.smtab-bar button'));
+  document.getElementById('studentModal').classList.add('open');
+}
+
+function smShowTab(id, btn){
+  document.querySelectorAll('.smtab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.smtab-bar button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('smt-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function closeStudentModal(e){
+  if(e.target.id==='studentModal') document.getElementById('studentModal').classList.remove('open');
 }
 
 // ── 비밀번호 변경 ──

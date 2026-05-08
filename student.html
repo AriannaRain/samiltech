@@ -203,6 +203,19 @@ tr:hover td{background:#fafbfd}
   .nav-student{display:none}
   .jobs-grid{grid-template-columns:1fr}
 }
+
+/* 성적요약 카드 */
+.grade-summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.grade-summary-card{background:var(--bg);border-radius:10px;padding:14px;text-align:center}
+.grade-summary-card.highlight{background:#EBF4FF;border:1px solid #BEE3F8}
+.gs-label{font-size:11px;color:var(--text-sub);margin-bottom:6px}
+.gs-grade{font-size:26px;font-weight:700;color:var(--primary);line-height:1}
+.gs-unit{font-size:11px;color:var(--text-sub);margin-top:3px}
+/* 자격증/동아리/임원 리스트 */
+.spec-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg);border-radius:8px;margin-bottom:6px;font-size:13px}
+.spec-item-name{font-weight:600}
+.spec-item-meta{font-size:11px;color:var(--text-sub);text-align:right}
+@media(max-width:600px){.grade-summary-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -297,6 +310,50 @@ tr:hover td{background:#fafbfd}
         <table>
           <tbody id="myInfoTb"></tbody>
         </table>
+      </div>
+
+      <!-- 성적요약 -->
+      <div class="card" id="gradeCard">
+        <div class="card-title">성적요약</div>
+        <div id="gradeSummaryWrap">
+          <div class="grade-summary-grid">
+            <div class="grade-summary-card highlight">
+              <div class="gs-label">전 과목 평균등급</div>
+              <div class="gs-grade" id="g-allGrade">—</div>
+              <div class="gs-unit" id="g-allUnit">—</div>
+            </div>
+            <div class="grade-summary-card">
+              <div class="gs-label">보통교과 평균등급</div>
+              <div class="gs-grade" id="g-genGrade">—</div>
+              <div class="gs-unit" id="g-genUnit">—</div>
+            </div>
+            <div class="grade-summary-card">
+              <div class="gs-label">전문교과 평균등급</div>
+              <div class="gs-grade" id="g-proGrade">—</div>
+              <div class="gs-unit" id="g-proUnit">—</div>
+            </div>
+          </div>
+          <div id="g-notice" style="margin-top:10px;font-size:12px;color:var(--text-sub)"></div>
+        </div>
+      </div>
+
+      <!-- 내 스펙 (자격증 + 동아리 + 임원) -->
+      <div class="card">
+        <div class="card-title">내 스펙</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px" id="specWrap">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--text-sub);margin-bottom:8px">📜 자격증</div>
+            <div id="spec-certs"></div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--text-sub);margin-bottom:8px">🎯 동아리</div>
+            <div id="spec-clubs"></div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--text-sub);margin-bottom:8px">🏅 임원</div>
+            <div id="spec-leaders"></div>
+          </div>
+        </div>
       </div>
 
       <div class="card">
@@ -574,6 +631,48 @@ function initDashboard(){
     <tr><th style="color:var(--text-sub);font-weight:500;font-size:13px">학과</th><td style="font-size:13px">${ME.dept}</td><th style="color:var(--text-sub);font-weight:500;font-size:13px">학년/반</th><td style="font-size:13px">${ME.grade||'—'}학년 ${ME.cls||'—'}반</td></tr>
     <tr><th style="color:var(--text-sub);font-weight:500;font-size:13px">담임교사</th><td style="font-size:13px">${ME.teacher||'—'}</td><th style="color:var(--text-sub);font-weight:500;font-size:13px">자격증</th><td style="font-size:13px">${ME.certCount||0}개</td></tr>
     <tr><th style="color:var(--text-sub);font-weight:500;font-size:13px">성별</th><td style="font-size:13px">${ME.gender||'—'}</td><th style="color:var(--text-sub);font-weight:500;font-size:13px">생년월일</th><td style="font-size:13px">${ME.birth||'—'}</td></tr>`;
+
+  // 성적요약
+  const sm = ME.summary;
+  if(sm){
+    document.getElementById('g-allGrade').textContent = sm.allGrade||'—';
+    document.getElementById('g-allUnit').textContent  = sm.allUnit ? `이수 ${sm.allUnit}학점` : '';
+    document.getElementById('g-genGrade').textContent = sm.genGrade||'—';
+    document.getElementById('g-genUnit').textContent  = sm.genUnit ? `이수 ${sm.genUnit}학점` : '';
+    document.getElementById('g-proGrade').textContent = sm.proGrade||'—';
+    document.getElementById('g-proUnit').textContent  = sm.proUnit ? `이수 ${sm.proUnit}학점` : '';
+    document.getElementById('g-notice').textContent   = '※ 생활기록부 업로드 기준 성적요약입니다.';
+  } else {
+    ['allGrade','genGrade','proGrade'].forEach(k=>document.getElementById('g-'+k).textContent='—');
+    document.getElementById('g-notice').textContent = '📌 담임선생님이 생기부를 업로드하면 성적이 표시됩니다.';
+  }
+
+  // 스펙 — 자격증
+  const myCerts = ME.certs||[];
+  document.getElementById('spec-certs').innerHTML = myCerts.length
+    ? myCerts.map(c=>`<div class="spec-item" style="flex-direction:column;align-items:flex-start;gap:2px">
+        <div class="spec-item-name">${c.name}</div>
+        <div class="spec-item-meta">${c.date||''} ${c.agency?'· '+c.agency:''}</div>
+      </div>`).join('')
+    : '<div style="font-size:12px;color:var(--text-sub);padding:8px 0">없음</div>';
+
+  // 스펙 — 동아리
+  const myClubs = ME.clubs||[];
+  document.getElementById('spec-clubs').innerHTML = myClubs.length
+    ? myClubs.map(cl=>`<div class="spec-item" style="flex-direction:column;align-items:flex-start;gap:2px">
+        <div class="spec-item-name">${cl.name}</div>
+        <div class="spec-item-meta">${cl.grade}학년 · ${cl.type||''}${cl.hours?' · '+cl.hours+'시간':''}</div>
+      </div>`).join('')
+    : '<div style="font-size:12px;color:var(--text-sub);padding:8px 0">없음</div>';
+
+  // 스펙 — 임원
+  const myLeaders = ME.leaders||[];
+  document.getElementById('spec-leaders').innerHTML = myLeaders.length
+    ? myLeaders.map(l=>`<div class="spec-item" style="flex-direction:column;align-items:flex-start;gap:2px">
+        <div class="spec-item-name">${l.role}</div>
+        <div class="spec-item-meta">${l.startYear}~${l.endYear}</div>
+      </div>`).join('')
+    : '<div style="font-size:12px;color:var(--text-sub);padding:8px 0">없음</div>';
 
   // 내 학과 최신 공고 (최대 3개)
   const related = getActiveJobs().filter(j=>(j.tags||[]).some(t=>ME.dept.includes(t)||t.includes(ME.dept.replace('과','')))).slice(0,3);
