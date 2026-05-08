@@ -343,6 +343,31 @@ function switchTab(tab,btn){
   document.querySelectorAll('.login-tab button').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
 }
+function loginStudent(){
+  const dept=document.getElementById('l-dept').value;
+  const id=document.getElementById('l-id').value.trim();
+  const pw=document.getElementById('l-pw').value;
+  if(!id||!pw){alert('학번과 비밀번호를 입력하세요');return;}
+  const DB=JSON.parse(localStorage.getItem('samilAdmin')||'{}');
+  const found=(DB.students||[]).find(s=>s.id===id&&s.pw===pw);
+  if(found){
+    sessionStorage.setItem('samilStudentAuth',found.id);
+    closeModal('loginModal');
+    alert('학생 마이페이지 준비중입니다.');
+  } else { document.getElementById('l-pw').value=''; alert('아이디 또는 비밀번호가 틀렸습니다.'); }
+}
+function loginTeacher(){
+  const id=document.getElementById('t-id').value.trim();
+  const pw=document.getElementById('t-pw').value;
+  if(!id||!pw){alert('아이디와 비밀번호를 입력하세요');return;}
+  const DB=JSON.parse(localStorage.getItem('samilAdmin')||'{}');
+  const found=(DB.teachers||[]).find(t=>t.id===id&&t.pw===pw);
+  if(found){
+    sessionStorage.setItem('samilTeacherAuth',found.id);
+    closeModal('loginModal');
+    window.location.href='teacher.html';
+  } else { document.getElementById('t-pw').value=''; alert('아이디 또는 비밀번호가 틀렸습니다.'); }
+}
 function tryAdmin(){
   const pw=document.getElementById('a-pw').value;
   const masterPw=localStorage.getItem('samilMasterPw')||'samil_master';
