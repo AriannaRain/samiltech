@@ -767,6 +767,7 @@ function closeJobEdit(){
 function saveJobEdit(){
   const i=parseInt(document.getElementById('ej-idx').value);
   if(isNaN(i)||!DB.jobs[i]){alert('오류: 인덱스 없음');return;}
+  console.log('[디버그] editIdx:', i, '| job id:', DB.jobs[i]?.id, '| co:', DB.jobs[i]?.co);
   const recChecked=document.getElementById('ej-rec-toggle').checked;
   const recVal=recChecked?(parseInt(document.getElementById('ej-rec').value)||1):0;
   const filesRaw=document.getElementById('ej-files').value.trim();
