@@ -321,7 +321,7 @@ input:checked+.slider:before{transform:translateX(18px)}
   <div class="card">
     <div class="card-title">공고 목록</div>
     <div class="tbl-wrap"><table>
-      <thead><tr><th>업체명</th><th>직무</th><th>근무지</th><th>마감일</th><th>추천</th><th>상태</th><th>관리</th></tr></thead>
+      <thead><tr><th>업체명</th><th>근무지</th><th>마감일</th><th>추천</th><th>상태</th><th>관리</th></tr></thead>
       <tbody id="jobTb"></tbody>
     </table></div>
   </div>
@@ -715,10 +715,11 @@ function addJob(){
   const recChecked=document.getElementById('j-rec-toggle').checked;
   const recVal=recChecked?(parseInt(document.getElementById('j-rec').value)||1):0;
   if(!DB.jobs) DB.jobs=[];
+  const type=document.getElementById('j-type').value;
+  const coFull='['+type+'] '+co;
   const newJob={
     id:'job_'+Date.now(),
-    type:document.getElementById('j-type').value,
-    co,job,
+    co:coFull,job,
     loc:document.getElementById('j-loc').value,
     cnt:document.getElementById('j-cnt').value,
     dl:document.getElementById('j-dl').value,
@@ -790,7 +791,7 @@ function toggleJob(i){ DB.jobs[i].active=!DB.jobs[i].active; save(); renderJobs(
 function delJob(i){ if(confirm('삭제?')){ const id=DB.jobs[i]?.id; DB.jobs.splice(i,1); save(); renderJobs(); updateDash(); if(id) syncJobToSheets('delete',{id}); } }
 function renderJobs(){
   document.getElementById('jobTb').innerHTML = (DB.jobs||[]).map((j,i)=>`
-    <tr><td><strong>${j.co}</strong></td><td>${j.job}</td><td>${j.loc}</td><td>${j.dl}</td>
+    <tr><td><strong>${j.co}</strong></td><td>${j.loc}</td><td>${j.dl}</td>
     <td>${j.rec?`<span class="badge badge-orange">${j.recCnt}명</span>`:'—'}</td>
     <td><span class="badge ${j.active?'badge-green':'badge-red'}">${j.active?'진행중':'마감'}</span></td>
     <td style="display:flex;gap:4px">
