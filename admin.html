@@ -486,6 +486,50 @@ function getCommonPw(){ return localStorage.getItem('samilCommonPw')||'samil2024
 
 function save(){ localStorage.setItem('samilAdmin',JSON.stringify(DB)); }
 
+// Sheets 동기화 헬퍼
+async function syncJobToSheets(action, data){
+  try{
+    let res;
+    if(action==='add')    res = await SAMIL_API.addJob(data);
+    if(action==='update') res = await SAMIL_API.updateJob(data.id, data);
+    if(action==='delete') res = await SAMIL_API.deleteJob(data.id);
+    if(action==='toggle') res = await SAMIL_API.toggleJob(data.id);
+    if(res && !res.success) console.error('Sheets 동기화 오류:', res.error);
+    else {
+      // Sheets에서 최신 목록 재로드
+      const r = await SAMIL_API.getJobs();
+      if(r.success) DB.jobs = r.data;
+    }
+  }catch(e){ console.warn('Sheets 동기화 실패:', e); }
+}
+async function syncBannerToSheets(action, data){
+  try{
+    let res;
+    if(action==='add')    res = await SAMIL_API.addBanner(data);
+    if(action==='delete') res = await SAMIL_API.deleteBanner(data.id);
+    if(res && res.success){
+      const r = await SAMIL_API.getBanners();
+      if(r.success) DB.banners = r.data;
+    }
+  }catch(e){ console.warn('Sheets 배너 동기화 실패:', e); }
+}
+async function syncDeptToSheets(action, data){
+  try{
+    if(action==='add')    await SAMIL_API.addDept(data);
+    if(action==='delete') await SAMIL_API.deleteDept(data.name);
+    const r = await SAMIL_API.getDepts();
+    if(r.success) DB.depts = r.data;
+  }catch(e){ console.warn('Sheets 학과 동기화 실패:', e); }
+}
+async function syncStatToSheets(action, data){
+  try{
+    if(action==='save')   await SAMIL_API.saveAnnualStat(data);
+    if(action==='delete') await SAMIL_API.deleteAnnualStat(data.year);
+    const r = await SAMIL_API.getStats();
+    if(r.success) DB.statsHistory = r.data;
+  }catch(e){ console.warn('Sheets 통계 동기화 실패:', e); }
+}
+
 function changeMasterPw(){
   const cur=document.getElementById('mp-cur').value;
   const nw=document.getElementById('mp-new').value;
@@ -513,21 +557,41 @@ function changeCommonPw(){
 }
 
 // ── 로그인 ──
-function tryLogin(){
+async function tryLogin(){
   const pw = document.getElementById('adminPw').value;
   if(pw===getMasterPw()||pw===getCommonPw()){
     sessionStorage.setItem('samilAdminAuth','1');
-    document.getElementById('loginScreen').style.display='none'; init();
+    document.getElementById('loginScreen').style.display='none';
+    await loadFromSheets();
+    init();
   } else alert('비밀번호가 틀렸습니다.');
 }
 // 이미 로그인된 경우 스킵
-window.addEventListener('DOMContentLoaded',()=>{
+window.addEventListener('DOMContentLoaded', async ()=>{
   if(sessionStorage.getItem('samilAdminAuth')==='1'){
+    await loadFromSheets();
     init();
   } else {
     document.getElementById('loginScreen').style.display='flex';
   }
 });
+
+async function loadFromSheets(){
+  try{
+    const [deptsRes, bannersRes, jobsRes, statsRes] = await Promise.all([
+      SAMIL_API.getDepts(),
+      SAMIL_API.getBanners(),
+      SAMIL_API.getJobs(),
+      SAMIL_API.getStats(),
+    ]);
+    if(deptsRes.success && deptsRes.data.length)
+      DB.depts = deptsRes.data.map(d=>({name:d.name, code:d.code||'', date:d.startYear||today()}));
+    if(bannersRes.success) DB.banners      = bannersRes.data;
+    if(jobsRes.success)    DB.jobs         = jobsRes.data;
+    if(statsRes.success)   DB.statsHistory = statsRes.data;
+    save(); // 로컬 캐시 갱신
+  }catch(e){ console.warn('Sheets 로드 오류, 로컬 데이터 사용:', e); }
+}
 function logout(){ sessionStorage.removeItem('samilAdminAuth'); document.getElementById('loginScreen').style.display='flex'; }
 
 // ── 초기화 ──
@@ -553,7 +617,7 @@ function renderAll(){
 }
 
 // ── 학과 ──
-function addDept(){
+async function addDept(){
   const name=document.getElementById('deptName').value.trim();
   const code=document.getElementById('deptCode').value.trim();
   if(!name){alert('학과명을 입력하세요');return;}
@@ -561,8 +625,9 @@ function addDept(){
   DB.depts.push({name,code,date:today()});
   save(); updateDeptSelects(); renderDepts();
   document.getElementById('deptName').value=''; document.getElementById('deptCode').value='';
+  await syncDeptToSheets('add',{name,code});
 }
-function delDept(i){ if(confirm('삭제하시겠습니까?')){ DB.depts.splice(i,1); save(); updateDeptSelects(); renderDepts(); } }
+async function delDept(i){ if(confirm('삭제하시겠습니까?')){ const name=DB.depts[i].name; DB.depts.splice(i,1); save(); updateDeptSelects(); renderDepts(); await syncDeptToSheets('delete',{name}); } }
 function renderDepts(){
   document.getElementById('deptTb').innerHTML = DB.depts.map((d,i)=>
     `<tr><td><strong>${d.name}</strong></td><td>${d.code}</td><td>${d.date}</td>
@@ -604,6 +669,7 @@ function addTeacher(){
   DB.teachers.push({year:currentYear,dept,grade,cls,name,id,pw,date:today()});
   save(); renderTeachers();
   ['tcClass','tcName','tcPw'].forEach(x=>document.getElementById(x).value='');
+  SAMIL_API.addTeacher({dept,grade,cls,name,pw,year:currentYear}).catch(e=>console.warn('담임 GAS 등록 실패:',e));
 }
 function delTeacher(i){ if(confirm('삭제?')){ DB.teachers.splice(i,1); save(); renderTeachers(); } }
 function renderTeachers(){
@@ -625,7 +691,8 @@ function addJob(){
   const filesRaw=document.getElementById('j-files').value.trim();
   const files=filesRaw?filesRaw.split(',').map(f=>{const[name,url]=f.split('|');return{name:name?.trim(),url:url?.trim()||'#'}}):[]; 
   if(!DB.jobs) DB.jobs=[];
-  DB.jobs.unshift({
+  const newJob={
+    id:'job_'+Date.now(),
     co,job,loc:document.getElementById('j-loc').value,
     cnt:document.getElementById('j-cnt').value,
     dl:document.getElementById('j-dl').value,
@@ -633,8 +700,10 @@ function addJob(){
     rec:recVal>0,recCnt:recVal,
     desc:document.getElementById('j-desc').value,
     files,date:today(),active:true
-  });
+  };
+  DB.jobs.unshift(newJob);
   save(); renderJobs(); clearJobForm(); updateDash();
+  syncJobToSheets('add',newJob).then(()=>{save();renderJobs();updateDash();});
 }
 function clearJobForm(){
   ['j-co','j-job','j-loc','j-cnt','j-tags','j-desc','j-files'].forEach(x=>document.getElementById(x).value='');
@@ -683,11 +752,12 @@ function saveJobEdit(){
     files
   };
   save(); renderJobs(); updateDash(); closeJobEdit();
+  syncJobToSheets('update',DB.jobs[i]).then(()=>{save();renderJobs();updateDash();});
   alert('수정되었습니다.');
 }
 
-function toggleJob(i){ DB.jobs[i].active=!DB.jobs[i].active; save(); renderJobs(); }
-function delJob(i){ if(confirm('삭제?')){ DB.jobs.splice(i,1); save(); renderJobs(); updateDash(); } }
+function toggleJob(i){ DB.jobs[i].active=!DB.jobs[i].active; save(); renderJobs(); syncJobToSheets('toggle',DB.jobs[i]).then(()=>{save();renderJobs();}); }
+function delJob(i){ if(confirm('삭제?')){ const id=DB.jobs[i]?.id; DB.jobs.splice(i,1); save(); renderJobs(); updateDash(); if(id) syncJobToSheets('delete',{id}); } }
 function renderJobs(){
   document.getElementById('jobTb').innerHTML = (DB.jobs||[]).map((j,i)=>`
     <tr><td><strong>${j.co}</strong></td><td>${j.job}</td><td>${j.loc}</td><td>${j.dl}</td>
@@ -714,11 +784,13 @@ function addBanner(){
   const title=document.getElementById('b-title').value.trim();
   if(!title){alert('제목을 입력하세요');return;}
   if(!DB.banners) DB.banners=[];
-  DB.banners.push({title,url:document.getElementById('b-url').value,dl:document.getElementById('b-dl').value,color:pickedColor,date:today()});
+  const newBanner={title,url:document.getElementById('b-url').value,dl:document.getElementById('b-dl').value,color:pickedColor,date:today()};
+  DB.banners.push(newBanner);
   save(); renderBanners();
+  syncBannerToSheets('add',newBanner).then(()=>renderBanners());
   ['b-title','b-url','b-dl'].forEach(x=>document.getElementById(x).value='');
 }
-function delBanner(i){ if(confirm('삭제?')){ DB.banners.splice(i,1); save(); renderBanners(); } }
+async function delBanner(i){ if(confirm('삭제?')){ const id=DB.banners[i].id; DB.banners.splice(i,1); save(); renderBanners(); if(id) await syncBannerToSheets('delete',{id}); } }
 function renderBanners(){
   document.getElementById('bannerTb').innerHTML=(DB.banners||[]).map((b,i)=>`
     <tr><td><div style="width:24px;height:24px;border-radius:50%;background:${b.color}"></div></td>
@@ -881,5 +953,6 @@ function showTab(id,el){
     </div>
   </div>
 </div>
+<script src="samil-api.js"></script>
 </body>
 </html>
