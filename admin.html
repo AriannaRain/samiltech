@@ -195,7 +195,7 @@ input:checked+.slider:before{transform:translateX(18px)}
   <div class="card">
     <div class="card-title">최근 등록 채용공고</div>
     <div class="tbl-wrap"><table id="dashJobTable">
-      <thead><tr><th>업체명</th><th>직무</th><th>마감일</th><th>학교장추천</th><th>상태</th></tr></thead>
+      <thead><tr><th>업체명</th><th>마감일</th><th>학교장추천</th><th>상태</th></tr></thead>
       <tbody id="dashJobTb"></tbody>
     </table></div>
   </div>
@@ -802,7 +802,7 @@ function renderJobs(){
   ).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-sub)">공고 없음</td></tr>';
   // 대시보드 최근공고
   document.getElementById('dashJobTb').innerHTML = (DB.jobs||[]).slice(0,5).map(j=>`
-    <tr><td>${j.co}</td><td>${j.job}</td><td>${j.dl}</td>
+    <tr><td>${j.co}</td><td>${j.dl}</td>
     <td>${j.rec?`<span class="badge badge-orange">${j.recCnt}명</span>`:'—'}</td>
     <td><span class="badge ${j.active?'badge-green':'badge-red'}">${j.active?'진행중':'마감'}</span></td></tr>`
   ).join('');

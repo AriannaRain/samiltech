@@ -32,8 +32,9 @@ const SAMIL_API = (() => {
   // ── GET 방식 (CORS 캐시 활용) ──
   async function get(params) {
     try {
+      params._t = Date.now();
       const qs = new URLSearchParams(params).toString();
-      const res = await fetch(`${GAS_URL}?${qs}`, { redirect: 'follow' });
+      const res = await fetch(`${GAS_URL}?${qs}`, { redirect: 'follow', cache: 'no-store' });
       return await res.json();
     } catch (e) {
       return { success: false, error: e.message };
