@@ -288,7 +288,12 @@ tr:hover td{background:#fafbfd}
       <h2>담임교사 로그인</h2>
       <p>삼일공업고등학교 취업정보 포털</p>
     </div>
-    <div class="form-group"><label>아이디</label><input id="l-id" placeholder="관리자로부터 받은 아이디" onkeydown="if(event.key==='Enter')tryLogin()"></div>
+    <div class="form-group"><label>학과</label><select id="l-dept" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit"><option value="">학과 선택</option></select></div>
+    <div style="display:flex;gap:8px">
+      <div class="form-group" style="flex:1"><label>학년</label><select id="l-grade" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"><option value="">학년</option><option>1</option><option>2</option><option>3</option></select></div>
+      <div class="form-group" style="flex:1"><label>반</label><select id="l-cls" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"><option value="">반</option><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
+    </div>
+    <div class="form-group"><label>이름</label><input id="l-name" placeholder="홍길동" onkeydown="if(event.key==='Enter')tryLogin()"></div>
     <div class="form-group"><label>비밀번호</label><input type="password" id="l-pw" placeholder="비밀번호" onkeydown="if(event.key==='Enter')tryLogin()"></div>
     <button class="btn-login" onclick="tryLogin()">로그인</button>
     <div class="login-hint">💡 아이디/비밀번호는 관리자에게 문의하세요<br>아이디 형식: 학과코드_학년반 (예: 전자_104)</div>
@@ -531,22 +536,32 @@ let pendingStudents = []; // 업로드 미리보기 대기
 function saveDB(){ localStorage.setItem('samilAdmin', JSON.stringify(DB)); }
 
 // ── 로그인 ──
-function tryLogin(){
-  const id = document.getElementById('l-id').value.trim();
-  const pw = document.getElementById('l-pw').value;
-  if(!id||!pw){ alert('아이디와 비밀번호를 입력하세요'); return; }
+async function tryLogin(){
+  const dept  = document.getElementById('l-dept').value;
+  const grade = document.getElementById('l-grade').value;
+  const cls   = document.getElementById('l-cls').value;
+  const name  = document.getElementById('l-name').value.trim();
+  const pw    = document.getElementById('l-pw').value;
+  if(!dept||!grade||!cls||!name||!pw){ alert('모든 항목을 입력하세요'); return; }
 
-  const teachers = DB.teachers||[];
-  const found = teachers.find(t => t.id===id && t.pw===pw);
-  if(!found){ alert('아이디 또는 비밀번호가 틀렸습니다.'); return; }
+  const btn = document.querySelector('#loginScreen .btn-submit, #loginScreen button');
+  if(btn){ btn.textContent='확인중…'; btn.disabled=true; }
 
-  ME = found;
+  const res = await SAMIL_API.loginTeacher(dept, grade, cls, name, pw);
+
+  if(btn){ btn.textContent='로그인'; btn.disabled=false; }
+
+  if(!res.success){ alert(res.error||'담임 계정 정보가 맞지 않습니다.'); return; }
+
+  ME = res.teacher;
   sessionStorage.setItem('samilTeacherAuth', ME.id);
+  sessionStorage.setItem('samilTeacherME', JSON.stringify(ME));
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('topNav').style.display='flex';
   document.getElementById('appLayout').style.display='flex';
   document.getElementById('navTeacherInfo').innerHTML =
     `<strong>${ME.name}</strong> 선생님 | ${ME.dept} ${ME.grade}학년 ${ME.cls}반`;
+  await loadTeacherData();
   init();
 }
 
@@ -685,7 +700,23 @@ function confirmUpload(){
     else{ DB.students.push(s); added++; }
   });
   saveDB();
-  showUploadAlert('success',`✅ 저장 완료! 신규 ${added}명 추가, ${updated}명 업데이트`);
+
+  // ── Sheets 저장 ──
+  showUploadAlert('success',`⏳ Sheets에 저장 중… (${pendingStudents.length}명)`);
+  const teacherId = ME ? ME.id : '';
+  Promise.all(
+    pendingStudents.map(s => SAMIL_API.saveRecord(s, teacherId))
+  ).then(results => {
+    const failed = results.filter(r => !r.success).length;
+    if(failed > 0){
+      showUploadAlert('error', `⚠️ 저장 완료 (${added}명 추가, ${updated}명 업데이트) — ${failed}건 Sheets 오류`);
+    } else {
+      showUploadAlert('success', `✅ 저장 완료! 신규 ${added}명 추가, ${updated}명 업데이트`);
+    }
+  }).catch(e => {
+    showUploadAlert('error', `⚠️ Sheets 저장 실패: ${e.message}`);
+  });
+
   document.getElementById('previewCard').style.display='none';
   pendingStudents=[];
   document.getElementById('fileInput').value='';
@@ -1120,28 +1151,52 @@ function renderRecommend(){
 // ══════════════════════════════════════════
 
 // 세션 자동 로그인
-window.addEventListener('DOMContentLoaded',()=>{
-  const savedId = sessionStorage.getItem('samilTeacherAuth');
-  if(savedId){
-    DB = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
-    const found = (DB.teachers||[]).find(t=>t.id===savedId);
-    if(found){
-      ME = found;
-      document.getElementById('topNav').style.display='flex';
-      document.getElementById('appLayout').style.display='flex';
-      document.getElementById('navTeacherInfo').innerHTML =
-        `<strong>${ME.name}</strong> 선생님 | ${ME.dept} ${ME.grade}학년 ${ME.cls}반`;
-      init();
-    } else {
-      document.getElementById('loginScreen').style.display='flex';
+window.addEventListener('DOMContentLoaded', async ()=>{
+  // 학과 드롭다운 채우기
+  try{
+    const deptsRes = await SAMIL_API.getDepts();
+    const sel = document.getElementById('l-dept');
+    if(deptsRes.success && deptsRes.data.length){
+      deptsRes.data.forEach(d=>{
+        const o=document.createElement('option'); o.value=d.name; o.textContent=d.name; sel.appendChild(o);
+      });
     }
-  } else {
-    document.getElementById('loginScreen').style.display='flex';
+  }catch(e){}
+
+  const savedME = sessionStorage.getItem('samilTeacherME');
+  if(savedME){
+    try{
+      ME = JSON.parse(savedME);
+      if(ME){
+        document.getElementById('topNav').style.display='flex';
+        document.getElementById('appLayout').style.display='flex';
+        document.getElementById('navTeacherInfo').innerHTML =
+          `<strong>${ME.name}</strong> 선생님 | ${ME.dept} ${ME.grade}학년 ${ME.cls}반`;
+        await loadTeacherData();
+        init();
+        return;
+      }
+    }catch(e){}
   }
+  document.getElementById('loginScreen').style.display='flex';
 });
+
+// 담임교사 데이터 로드 (본인 반 학생 + 채용공고)
+async function loadTeacherData(){
+  try{
+    const [studRes, jobsRes] = await Promise.all([
+      SAMIL_API.getStudents({ teacherId: ME.id }),
+      SAMIL_API.getJobs(true),
+    ]);
+    if(studRes.success) DB.students = studRes.data;
+    if(jobsRes.success) DB.jobs     = jobsRes.data;
+    saveDB();
+  }catch(e){ console.warn('Sheets 학생 데이터 로드 실패:', e); }
+}
 
 // 클릭 외부 모달 닫기
 document.getElementById('pwModal').addEventListener('click',function(e){ if(e.target===this) closePwModal(); });
 </script>
+<script src="samil-api.js"></script>
 </body>
 </html>
