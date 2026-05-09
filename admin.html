@@ -273,24 +273,49 @@ input:checked+.slider:before{transform:translateX(18px)}
   <div class="page-header"><h1>채용공고 관리</h1><p>채용공고를 등록하고 관리합니다.</p></div>
   <div class="card">
     <div class="card-title">공고 등록</div>
-    <div class="form-row cols2">
-      <div class="form-group"><label>업체명</label><input id="j-co" placeholder="(주)삼성전자"></div>
-      <div class="form-group"><label>직무</label><input id="j-job" placeholder="전자기기 생산"></div>
+    <div class="form-row">
+      <div class="form-group"><label>회사유형 *</label>
+        <select id="j-type"><option>공공기관</option><option>대기업</option><option>중소기업</option><option>외국계</option><option selected>기타</option></select>
+      </div>
     </div>
-    <div class="form-row cols3">
-      <div class="form-group"><label>근무지</label><input id="j-loc" placeholder="수원"></div>
-      <div class="form-group"><label>모집인원</label><input id="j-cnt" type="number" placeholder="3"></div>
-      <div class="form-group"><label>마감일</label><input id="j-dl" type="date"></div>
+    <div class="form-row">
+      <div class="form-group"><label>회사명 *</label><input id="j-co" placeholder="한국은행"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>공고 제목 *</label><input id="j-job" placeholder="일반사무직원(C3) 채용공고"></div>
     </div>
     <div class="form-row cols2">
+      <div class="form-group"><label>근무지 *</label><input id="j-loc" placeholder="수도권(서울, 수원, 인천)"></div>
+      <div class="form-group"><label>모집인원</label><input id="j-cnt" placeholder="10명이내"></div>
+    </div>
+    <div class="form-row cols2">
+      <div class="form-group"><label>급여</label><input id="j-salary" placeholder="면접 후 결정"></div>
+      <div class="form-group"><label>마감일 *</label><input id="j-dl" type="date"></div>
+    </div>
+    <div class="form-row">
       <div class="form-group"><label>태그 (쉼표 구분)</label><input id="j-tags" placeholder="전자과,정규직"></div>
-      <div class="form-group"><label>학교장 추천 인원 (0=미해당)</label><input id="j-rec" type="number" value="0" min="0"></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>상세내용</label><textarea id="j-desc" rows="4" placeholder="채용 상세 내용을 입력하세요"></textarea></div>
+      <div class="form-group" style="display:flex;justify-content:space-between;align-items:center;background:var(--bg);padding:12px;border-radius:8px">
+        <div><label style="display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">학교장추천전형</label>
+          <small style="color:var(--text-sub);font-size:11px">해당되는 경우에만 켜세요</small></div>
+        <label class="switch"><input type="checkbox" id="j-rec-toggle" onchange="document.getElementById('j-rec-cnt-row').style.display=this.checked?'block':'none'"><span class="slider"></span></label>
+      </div>
+    </div>
+    <div id="j-rec-cnt-row" style="display:none" class="form-row">
+      <div class="form-group"><label>추천인원</label><input id="j-rec" type="number" min="1" value="1"></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>붙임파일 URL (쉼표로 구분, 파일명|URL 형식)</label><input id="j-files" placeholder="채용공고문.pdf|https://..., 지원서.hwp|https://..."></div>
+      <div class="form-group"><label>첨부파일 (최대 5개)</label>
+        <div style="border:2px dashed var(--border);border-radius:8px;padding:24px;text-align:center;cursor:pointer;transition:.2s" onmouseover="this.style.borderColor='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)'" onclick="document.getElementById('j-file-input').click()">
+          <div style="font-size:22px;margin-bottom:4px">↑</div>
+          <div style="font-size:13px;color:var(--text-sub)">파일을 클릭하여 선택하세요</div>
+          <div style="font-size:11px;color:var(--text-sub);margin-top:4px">공고문, 지원서 등 (PDF, HWP, DOCX)</div>
+          <input type="file" id="j-file-input" multiple accept=".pdf,.hwp,.docx,.xlsx" style="display:none" onchange="handleFileSelect(this,'j-files-list','j-files')">
+        </div>
+        <div id="j-files-list" style="margin-top:6px"></div>
+        <input type="hidden" id="j-files">
+      </div>
     </div>
     <div class="btn-group"><button class="btn btn-accent" onclick="addJob()">공고 등록</button><button class="btn btn-ghost" onclick="clearJobForm()">초기화</button></div>
   </div>
@@ -687,29 +712,35 @@ function renderTeachers(){
 function addJob(){
   const co=document.getElementById('j-co').value.trim();
   const job=document.getElementById('j-job').value.trim();
-  if(!co||!job){alert('업체명과 직무를 입력하세요');return;}
-  const recVal=parseInt(document.getElementById('j-rec').value)||0;
-  const filesRaw=document.getElementById('j-files').value.trim();
-  const files=filesRaw?filesRaw.split(',').map(f=>{const[name,url]=f.split('|');return{name:name?.trim(),url:url?.trim()||'#'}}):[]; 
+  if(!co||!job){alert('회사명과 공고 제목을 입력하세요');return;}
+  const recChecked=document.getElementById('j-rec-toggle').checked;
+  const recVal=recChecked?(parseInt(document.getElementById('j-rec').value)||1):0;
   if(!DB.jobs) DB.jobs=[];
   const newJob={
     id:'job_'+Date.now(),
-    co,job,loc:document.getElementById('j-loc').value,
+    type:document.getElementById('j-type').value,
+    co,job,
+    loc:document.getElementById('j-loc').value,
     cnt:document.getElementById('j-cnt').value,
+    salary:document.getElementById('j-salary').value,
     dl:document.getElementById('j-dl').value,
     tags:document.getElementById('j-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
     rec:recVal>0,recCnt:recVal,
-    desc:document.getElementById('j-desc').value,
-    files,date:today(),active:true
+    files:document.getElementById('j-files').value,
+    date:today(),active:true
   };
   DB.jobs.unshift(newJob);
   save(); renderJobs(); clearJobForm(); updateDash();
   syncJobToSheets('add',newJob).then(()=>{save();renderJobs();updateDash();});
 }
 function clearJobForm(){
-  ['j-co','j-job','j-loc','j-cnt','j-tags','j-desc','j-files'].forEach(x=>document.getElementById(x).value='');
-  document.getElementById('j-rec').value='0';
-  // 마감일 기본값: 30일 후
+  ['j-co','j-job','j-loc','j-cnt','j-salary','j-tags','j-files'].forEach(x=>document.getElementById(x).value='');
+  document.getElementById('j-rec').value='1';
+  document.getElementById('j-rec-toggle').checked=false;
+  document.getElementById('j-rec-cnt-row').style.display='none';
+  document.getElementById('j-files-list').innerHTML='';
+  document.getElementById('j-file-input').value='';
+  document.getElementById('j-type').value='기타';
   const d=new Date(); d.setDate(d.getDate()+30);
   document.getElementById('j-dl').value=d.toISOString().split('T')[0];
 }
@@ -717,15 +748,19 @@ function clearJobForm(){
 function editJob(i){
   const j=DB.jobs[i];
   document.getElementById('ej-idx').value=i;
+  document.getElementById('ej-type').value=j.type||'기타';
   document.getElementById('ej-co').value=j.co||'';
   document.getElementById('ej-job').value=j.job||'';
   document.getElementById('ej-loc').value=j.loc||'';
   document.getElementById('ej-cnt').value=j.cnt||'';
+  document.getElementById('ej-salary').value=j.salary||'';
   document.getElementById('ej-dl').value=j.dl||'';
   document.getElementById('ej-tags').value=(j.tags||[]).join(',');
-  document.getElementById('ej-rec').value=j.recCnt||0;
-  document.getElementById('ej-desc').value=j.desc||'';
-  document.getElementById('ej-files').value=(j.files||[]).map(f=>f.name+'|'+f.url).join(', ');
+  const recOn=j.rec&&j.recCnt>0;
+  document.getElementById('ej-rec-toggle').checked=recOn;
+  document.getElementById('ej-rec-cnt-row').style.display=recOn?'block':'none';
+  document.getElementById('ej-rec').value=j.recCnt||1;
+  document.getElementById('ej-files').value=Array.isArray(j.files)?j.files.map(f=>f.name+'|'+f.url).join(', '):(j.files||'');
   document.getElementById('jobEditModal').classList.add('open');
 }
 function closeJobEdit(){
@@ -734,23 +769,21 @@ function closeJobEdit(){
 function saveJobEdit(){
   const i=parseInt(document.getElementById('ej-idx').value);
   if(isNaN(i)||!DB.jobs[i]){alert('오류: 인덱스 없음');return;}
-  const recVal=parseInt(document.getElementById('ej-rec').value)||0;
+  const recChecked=document.getElementById('ej-rec-toggle').checked;
+  const recVal=recChecked?(parseInt(document.getElementById('ej-rec').value)||1):0;
   const filesRaw=document.getElementById('ej-files').value.trim();
-  const files=filesRaw?filesRaw.split(',').map(f=>{
-    const[name,url]=f.split('|');
-    return{name:(name||'').trim(),url:(url||'#').trim()};
-  }).filter(f=>f.name):[];
+  const files=filesRaw?filesRaw.split(',').map(f=>{const[n,u]=f.split('|');return{name:(n||'').trim(),url:(u||'#').trim()};}).filter(f=>f.name):[];
   DB.jobs[i]={
     ...DB.jobs[i],
+    type:document.getElementById('ej-type').value,
     co:document.getElementById('ej-co').value.trim(),
     job:document.getElementById('ej-job').value.trim(),
     loc:document.getElementById('ej-loc').value,
     cnt:document.getElementById('ej-cnt').value,
+    salary:document.getElementById('ej-salary').value,
     dl:document.getElementById('ej-dl').value,
     tags:document.getElementById('ej-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
-    rec:recVal>0, recCnt:recVal,
-    desc:document.getElementById('ej-desc').value,
-    files
+    rec:recVal>0,recCnt:recVal,files
   };
   save(); renderJobs(); updateDash(); closeJobEdit();
   syncJobToSheets('update',DB.jobs[i]).then(()=>{save();renderJobs();updateDash();});
@@ -917,6 +950,15 @@ function showTab(id,el){
   el.classList.add('active');
   if(id==='dashboard') updateDash();
 }
+function handleFileSelect(input, listId, hiddenId){
+  const files=Array.from(input.files).slice(0,5);
+  document.getElementById(listId).innerHTML=files.map(f=>
+    `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
+      <span>📎 ${f.name}</span><span style="color:var(--text-sub)">(${(f.size/1024).toFixed(0)}KB)</span>
+    </div>`
+  ).join('');
+  document.getElementById(hiddenId).value=files.map(f=>f.name+'|#').join('|');
+}
 </script>
 
 <!-- 채용공고 수정 모달 -->
@@ -928,24 +970,42 @@ function showTab(id,el){
     </div>
     <div class="edit-modal-body">
       <input type="hidden" id="ej-idx">
-      <div class="form-row cols2">
-        <div class="form-group"><label>업체명</label><input id="ej-co" placeholder="(주)삼성전자"></div>
-        <div class="form-group"><label>직무</label><input id="ej-job" placeholder="전자기기 생산"></div>
+      <div class="form-row">
+        <div class="form-group"><label>회사유형</label>
+          <select id="ej-type"><option>공공기관</option><option>대기업</option><option>중소기업</option><option>외국계</option><option>기타</option></select>
+        </div>
       </div>
-      <div class="form-row cols3">
+      <div class="form-row">
+        <div class="form-group"><label>회사명</label><input id="ej-co" placeholder="(주)삼성전자"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>공고 제목</label><input id="ej-job" placeholder="전자기기 생산 채용공고"></div>
+      </div>
+      <div class="form-row cols2">
         <div class="form-group"><label>근무지</label><input id="ej-loc"></div>
-        <div class="form-group"><label>모집인원</label><input id="ej-cnt" type="number"></div>
+        <div class="form-group"><label>모집인원</label><input id="ej-cnt"></div>
+      </div>
+      <div class="form-row cols2">
+        <div class="form-group"><label>급여</label><input id="ej-salary" placeholder="면접 후 결정"></div>
         <div class="form-group"><label>마감일</label><input id="ej-dl" type="date"></div>
       </div>
-      <div class="form-row cols2">
+      <div class="form-row">
         <div class="form-group"><label>태그 (쉼표 구분)</label><input id="ej-tags" placeholder="전자과,정규직"></div>
-        <div class="form-group"><label>학교장 추천 인원 (0=미해당)</label><input id="ej-rec" type="number" min="0"></div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label>상세내용</label><textarea id="ej-desc" rows="4"></textarea></div>
+        <div class="form-group" style="display:flex;justify-content:space-between;align-items:center;background:var(--bg);padding:12px;border-radius:8px">
+          <div><label style="display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">학교장추천전형</label>
+            <small style="color:var(--text-sub);font-size:11px">해당되는 경우에만 켜세요</small></div>
+          <label class="switch"><input type="checkbox" id="ej-rec-toggle" onchange="document.getElementById('ej-rec-cnt-row').style.display=this.checked?'block':'none'"><span class="slider"></span></label>
+        </div>
+      </div>
+      <div id="ej-rec-cnt-row" style="display:none" class="form-row">
+        <div class="form-group"><label>추천인원</label><input id="ej-rec" type="number" min="1" value="1"></div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label>붙임파일 URL</label><input id="ej-files" placeholder="파일명|URL, ..."></div>
+        <div class="form-group"><label>첨부파일 URL (파일명|URL 형식, 쉼표 구분)</label>
+          <input id="ej-files" placeholder="공고문.pdf|https://..., 지원서.hwp|https://...">
+        </div>
       </div>
     </div>
     <div class="edit-modal-footer">
