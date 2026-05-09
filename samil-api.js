@@ -66,7 +66,6 @@ const SAMIL_API = (() => {
   function flattenJob(d) {
     return {
       co: d.co, job: d.job, loc: d.loc, cnt: d.cnt, dl: d.dl,
-      salary: d.salary || '',
       type: d.type || '기타',
       tags: Array.isArray(d.tags) ? d.tags.join(',') : (d.tags || ''),
       rec: String(!!d.rec),

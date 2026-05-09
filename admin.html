@@ -288,8 +288,7 @@ input:checked+.slider:before{transform:translateX(18px)}
       <div class="form-group"><label>근무지 *</label><input id="j-loc" placeholder="수도권(서울, 수원, 인천)"></div>
       <div class="form-group"><label>모집인원</label><input id="j-cnt" placeholder="10명이내"></div>
     </div>
-    <div class="form-row cols2">
-      <div class="form-group"><label>급여</label><input id="j-salary" placeholder="면접 후 결정"></div>
+    <div class="form-row">
       <div class="form-group"><label>마감일 *</label><input id="j-dl" type="date"></div>
     </div>
     <div class="form-row">
@@ -722,7 +721,6 @@ function addJob(){
     co,job,
     loc:document.getElementById('j-loc').value,
     cnt:document.getElementById('j-cnt').value,
-    salary:document.getElementById('j-salary').value,
     dl:document.getElementById('j-dl').value,
     tags:document.getElementById('j-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
     rec:recVal>0,recCnt:recVal,
@@ -734,7 +732,7 @@ function addJob(){
   syncJobToSheets('add',newJob).then(()=>{save();renderJobs();updateDash();});
 }
 function clearJobForm(){
-  ['j-co','j-job','j-loc','j-cnt','j-salary','j-tags','j-files'].forEach(x=>document.getElementById(x).value='');
+  ['j-co','j-job','j-loc','j-cnt','j-tags','j-files'].forEach(x=>document.getElementById(x).value='');
   document.getElementById('j-rec').value='1';
   document.getElementById('j-rec-toggle').checked=false;
   document.getElementById('j-rec-cnt-row').style.display='none';
@@ -753,7 +751,6 @@ function editJob(i){
   document.getElementById('ej-job').value=j.job||'';
   document.getElementById('ej-loc').value=j.loc||'';
   document.getElementById('ej-cnt').value=j.cnt||'';
-  document.getElementById('ej-salary').value=j.salary||'';
   document.getElementById('ej-dl').value=j.dl||'';
   document.getElementById('ej-tags').value=(j.tags||[]).join(',');
   const recOn=j.rec&&j.recCnt>0;
@@ -780,7 +777,6 @@ function saveJobEdit(){
     job:document.getElementById('ej-job').value.trim(),
     loc:document.getElementById('ej-loc').value,
     cnt:document.getElementById('ej-cnt').value,
-    salary:document.getElementById('ej-salary').value,
     dl:document.getElementById('ej-dl').value,
     tags:document.getElementById('ej-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
     rec:recVal>0,recCnt:recVal,files
@@ -985,8 +981,7 @@ function handleFileSelect(input, listId, hiddenId){
         <div class="form-group"><label>근무지</label><input id="ej-loc"></div>
         <div class="form-group"><label>모집인원</label><input id="ej-cnt"></div>
       </div>
-      <div class="form-row cols2">
-        <div class="form-group"><label>급여</label><input id="ej-salary" placeholder="면접 후 결정"></div>
+      <div class="form-row">
         <div class="form-group"><label>마감일</label><input id="ej-dl" type="date"></div>
       </div>
       <div class="form-row">
