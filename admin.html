@@ -622,11 +622,11 @@ function logout(){ sessionStorage.removeItem('samilAdminAuth'); document.getElem
 
 // ── 초기화 ──
 function init(){
-  // 연도 선택
   const sel = document.getElementById('yearSelect');
   const yr = new Date().getFullYear();
   sel.innerHTML = '';
   for(let y=yr+1;y>=yr-3;y--){ const o=document.createElement('option'); o.value=y; o.textContent=y+'년'; if(y===currentYear) o.selected=true; sel.appendChild(o); }
+  clearJobForm();
   renderAll();
 }
 
