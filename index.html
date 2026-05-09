@@ -231,26 +231,10 @@ footer strong{color:#fff}
 <script>
 // ── 데이터 로드 (localStorage 우선, 없으면 샘플) ──
 const SAMPLE = {
-  stats:{grad:'312명',rate:'78%',active:'8개',closing:'3개',done:'24개'},
-  banners:[
-    {title:'2026 상반기 현장실습 기업 모집',url:'#',deadline:'2026.03.31',color:'#1A3A6B'},
-    {title:'취업역량 강화 특강 안내',url:'#',deadline:'2026.02.28',color:'#E8740A'},
-    {title:'NCS 직무능력 경진대회 참가 안내',url:'#',deadline:'2026.04.15',color:'#2E5FAD'},
-    {title:'2026 수원 취업박람회 사전 신청',url:'#',deadline:'2026.05.10',color:'#1D6A4A'},
-  ],
-  jobs:[
-    {co:'(주)삼성전자',job:'전자기기 생산',loc:'수원',cnt:3,dl:'2026.09.30',tags:['전자과'],rec:true,recCnt:2,desc:'전자기기 생산 및 품질 관리 업무',active:true},
-    {co:'LG이노텍',job:'PCB 생산',loc:'평택',cnt:5,dl:'2026.09.10',tags:['전자과'],rec:false,recCnt:0,desc:'PCB 생산 라인 운영 및 품질 검사',active:true},
-    {co:'(주)현대모비스',job:'자동차 부품 제조',loc:'화성',cnt:4,dl:'2026.09.20',tags:['기계과'],rec:true,recCnt:3,desc:'자동차 부품 제조 및 조립 업무',active:true},
-    {co:'(주)LS일렉트릭',job:'전기 시공',loc:'안양',cnt:6,dl:'2026.10.20',tags:['전기과'],rec:true,recCnt:4,desc:'전기 시공 및 유지보수 업무',active:true},
-    {co:'KT&G',job:'설비 유지보수',loc:'수원',cnt:2,dl:'2026.10.01',tags:['기계과','전기과'],rec:false,recCnt:0,desc:'생산 설비 유지보수 및 점검',active:true},
-    {co:'KCC건설',job:'현장 관리',loc:'서울',cnt:3,dl:'2026.10.25',tags:['건설과'],rec:false,recCnt:0,desc:'건설 현장 관리 및 안전 감독',active:true},
-  ],
-  depts:[
-    {dept:'전자과',g:68,e:54,a:8},{dept:'기계과',g:72,e:58,a:6},
-    {dept:'전기과',g:64,e:50,a:9},{dept:'화학공업과',g:45,e:35,a:5},
-    {dept:'건설과',g:38,e:28,a:4},{dept:'정보통신과',g:55,e:42,a:8},
-  ]
+  stats:{grad:'—',rate:'—',active:'—',closing:'—',done:'—'},
+  banners:[],
+  jobs:[],
+  depts:[]
 };
 
 function loadData(){
@@ -341,10 +325,9 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     });
     DATA.depts = depts.map(d=>({dept:d.name||d.dept,g:0,e:0,a:0}));
   } catch(e) {
-    console.warn('Sheets 연결 실패, 샘플 데이터 사용:', e);
-    DATA = { jobs:SAMPLE.jobs, banners:SAMPLE.banners, depts:SAMPLE.depts, stats:SAMPLE.stats };
-    const sel=document.getElementById('l-dept');
-    SAMPLE.depts.forEach(d=>{const o=document.createElement('option');o.value=d.dept;o.textContent=d.dept;sel.appendChild(o);});
+    console.warn('Sheets 연결 실패:', e);
+    DATA = { jobs:[], banners:[], depts:[], stats:SAMPLE.stats };
+    document.getElementById('jobList').innerHTML='<p style="color:var(--text-sub);font-size:13px;padding:12px 0">데이터를 불러오는 중 오류가 발생했습니다.</p>';
   }
 
   // 통계 표시
@@ -376,6 +359,11 @@ window.addEventListener('DOMContentLoaded', async ()=>{
 
 function renderJobs(){
   const today=new Date();
+  if(!DATA.jobs.length){
+    document.getElementById('jobList').innerHTML='<p style="color:var(--text-sub);font-size:13px;padding:12px 0">등록된 채용공고가 없습니다.</p>';
+    document.getElementById('btnMore').style.display='none';
+    return;
+  }
   document.getElementById('jobList').innerHTML = DATA.jobs.slice(0,showN).map((j,i)=>{
     const dlStr=(j.dl||'').replace(/\./g,'-');
     const dl=new Date(dlStr);
