@@ -503,13 +503,14 @@ input:checked+.slider:before{transform:translateX(18px)}
 let DB = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
 const INIT = {depts:[],classes:[],teachers:[],jobs:[],banners:[],employ:[],reviews:[],students:[],stats:{grad:0,rate:0},year:new Date().getFullYear()};
 if(!DB.depts) DB = {...INIT,...DB};
+DB.jobs = []; // jobs는 항상 Sheets에서 로드
 
 let currentYear = DB.year || new Date().getFullYear();
 // 비밀번호 (localStorage 우선, 없으면 기본값)
 function getMasterPw(){ return localStorage.getItem('samilMasterPw')||'samil_master'; }
 function getCommonPw(){ return localStorage.getItem('samilCommonPw')||'samil2024'; }
 
-function save(){ localStorage.setItem('samilAdmin',JSON.stringify(DB)); }
+function save(){ const d={...DB,jobs:undefined}; localStorage.setItem('samilAdmin',JSON.stringify(d)); }
 
 // Sheets 동기화 헬퍼
 async function syncJobToSheets(action, data){
