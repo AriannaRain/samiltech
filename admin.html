@@ -618,7 +618,7 @@ async function loadFromSheets(){
     save(); // 로컬 캐시 갱신
   }catch(e){ console.warn('Sheets 로드 오류, 로컬 데이터 사용:', e); }
 }
-function logout(){ sessionStorage.removeItem('samilAdminAuth'); document.getElementById('loginScreen').style.display='flex'; }
+function logout(){ sessionStorage.removeItem('samilAdminAuth'); location.href='index.html'; }
 
 // ── 초기화 ──
 function init(){
