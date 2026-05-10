@@ -9,7 +9,7 @@
 
 const SAMIL_API = (() => {
   // ★ 배포 후 이 URL을 교체하세요
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbyiYRU7nq8CrBAu_oJLPbIyLcMOxV_rPhOHDGUgF9hVupXcH-__P47S25ouLd9Srs8c/exec';
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycby6UpyOV0rxKOUbQkerpniceHPAgZOkLfNKJC5JFyEJqxmJbe_4BcK-HOPCHOmahnnA_g/exec';
   const ADMIN_TOKEN = 'samil_admin_2024';  // Code.gs와 동일하게
 
   // ── 내부 fetch 래퍼 ──
