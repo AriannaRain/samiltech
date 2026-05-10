@@ -287,48 +287,45 @@ let DATA = {jobs:[],banners:[],depts:[],stats:{}};
 window.addEventListener('DOMContentLoaded', async ()=>{
   updateNavAuth();
   // ── Sheets에서 데이터 로드 ──
-  try {
-    const [jobsRes, bannersRes, statsRes, deptsRes] = await Promise.all([
-      SAMIL_API.getJobs(true),
-      SAMIL_API.getBanners(),
-      SAMIL_API.getStats(),
-      SAMIL_API.getDepts(),
-    ]);
-    DATA.jobs    = jobsRes.success    ? jobsRes.data    : SAMPLE.jobs;
-    DATA.banners = bannersRes.success ? bannersRes.data : SAMPLE.banners;
+  const [jobsSet, bannersSet, statsSet, deptsSet] = await Promise.allSettled([
+    SAMIL_API.getJobs(true),
+    SAMIL_API.getBanners(),
+    SAMIL_API.getStats(),
+    SAMIL_API.getDepts(),
+  ]);
+  const jobsRes   = jobsSet.status   === 'fulfilled' ? jobsSet.value   : {};
+  const bannersRes= bannersSet.status === 'fulfilled' ? bannersSet.value : {};
+  const statsRes  = statsSet.status  === 'fulfilled' ? statsSet.value  : {};
+  const deptsRes  = deptsSet.status  === 'fulfilled' ? deptsSet.value  : {};
 
-    // 통계
-    const st = statsRes.success && statsRes.latest ? statsRes.latest : {};
-    const today2 = new Date();
-    const closing = DATA.jobs.filter(j=>{
-      const diff=Math.ceil((new Date(j.dl)-today2)/86400000);
-      return diff>=0&&diff<=7;
-    }).length;
-    DATA.stats = {
-      grad    : st.grad     ? st.grad+'명'    : SAMPLE.stats.grad,
-      rate    : st.rate     ? st.rate+'%'     : SAMPLE.stats.rate,
-      active  : DATA.jobs.length+'개',
-      closing : closing+'개',
-      done    : SAMPLE.stats.done,
-    };
+  DATA.jobs    = jobsRes.success    ? jobsRes.data    : SAMPLE.jobs;
+  DATA.banners = bannersRes.success ? bannersRes.data : SAMPLE.banners;
 
-    // 학과 드롭다운
-    const sel=document.getElementById('l-dept');
-    const depts = deptsRes.success && deptsRes.data.length ? deptsRes.data : SAMPLE.depts;
-    depts.forEach(d=>{
-      const o=document.createElement('option');
-      o.value=d.name||d.dept; o.textContent=d.name||d.dept; sel.appendChild(o);
-      // 담임 학과 드롭다운도 채우기
-      const o2=document.createElement('option');
-      o2.value=d.name||d.dept; o2.textContent=d.name||d.dept;
-      document.getElementById('t-dept').appendChild(o2);
-    });
-    DATA.depts = depts.map(d=>({dept:d.name||d.dept,g:0,e:0,a:0}));
-  } catch(e) {
-    console.warn('Sheets 연결 실패:', e);
-    DATA = { jobs:[], banners:[], depts:[], stats:SAMPLE.stats };
-    document.getElementById('jobList').innerHTML='<p style="color:var(--text-sub);font-size:13px;padding:12px 0">데이터를 불러오는 중 오류가 발생했습니다.</p>';
-  }
+  // 통계
+  const st = statsRes.success && statsRes.latest ? statsRes.latest : {};
+  const today2 = new Date();
+  const closing = DATA.jobs.filter(j=>{
+    const diff=Math.ceil((new Date(j.dl)-today2)/86400000);
+    return diff>=0&&diff<=7;
+  }).length;
+  DATA.stats = {
+    grad    : st.grad     ? st.grad+'명'    : SAMPLE.stats.grad,
+    rate    : st.rate     ? st.rate+'%'     : SAMPLE.stats.rate,
+    active  : DATA.jobs.length+'개',
+    closing : closing+'개',
+    done    : SAMPLE.stats.done,
+  };
+
+  // 학과 드롭다운 (항상 실행)
+  const depts = deptsRes.success && deptsRes.data && deptsRes.data.length ? deptsRes.data : SAMPLE.depts;
+  const selS = document.getElementById('l-dept');
+  const selT = document.getElementById('t-dept');
+  depts.forEach(d=>{
+    const name = d.name||d.dept;
+    const o=document.createElement('option'); o.value=name; o.textContent=name; selS.appendChild(o);
+    const o2=document.createElement('option'); o2.value=name; o2.textContent=name; selT.appendChild(o2);
+  });
+  DATA.depts = depts.map(d=>({dept:d.name||d.dept,g:0,e:0,a:0}));
 
   // 통계 표시
   document.getElementById('s-grad').textContent = DATA.stats.grad;
