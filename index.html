@@ -365,17 +365,18 @@ function renderJobs(){
     return;
   }
   document.getElementById('jobList').innerHTML = DATA.jobs.slice(0,showN).map((j,i)=>{
-    const dlStr=(j.dl||'').replace(/\./g,'-');
+    const dlStr=(j.dl||'').substring(0,10);
     const dl=new Date(dlStr);
     const diff=Math.ceil((dl-today)/86400000);
     const urg=diff<=7&&diff>=0;
+    const tags=(j.tags||[]).map(t=>`<span class="job-tag">${t}</span>`).join('');
     return `<div class="job-card" onclick="openJob(${i})">
-      <div class="job-company">${j.co}${j.rec?'<span class="job-recommend">학교장추천</span>':''}</div>
-      <div class="job-title">${j.title}</div>
-      <div class="job-meta">${j.tags.map(t=>`<span class="job-tag">${t}</span>`).join('')}
-        <span class="job-tag">📍${j.loc}</span><span class="job-tag">👤${j.cnt}명</span></div>
+      <div class="job-company">${j.type?`[${j.type}] `:''}${j.co||''}${j.rec?'<span class="job-recommend">학교장추천</span>':''}</div>
+      <div class="job-title">${j.job||''}</div>
+      <div class="job-meta">${tags}
+        ${j.loc?`<span class="job-tag">📍${j.loc}</span>`:''}${j.cnt?`<span class="job-tag">👤${j.cnt}</span>`:''}</div>
       <div class="job-footer">
-        <span class="job-deadline${urg?' urgent':''}">마감 ${j.dl}${urg?' ⚠':''}</span>
+        <span class="job-deadline${urg?' urgent':''}">마감 ${dlStr}${urg?' ⚠':''}</span>
         <span class="job-detail">상세보기 →</span>
       </div></div>`;
   }).join('');
@@ -386,13 +387,13 @@ function loadMore(){showN+=4;renderJobs();}
 
 function openJob(i){
   const j=DATA.jobs[i];
-  document.getElementById('m-co').textContent=j.co;
-  document.getElementById('m-title').textContent=j.title||j.job;
-  document.getElementById('m-job').textContent=j.job||j.title;
-  document.getElementById('m-loc').textContent=j.loc;
-  document.getElementById('m-cnt').textContent=j.cnt+'명';
-  document.getElementById('m-dl').textContent=j.dl;
-  document.getElementById('m-desc').textContent=j.desc;
+  document.getElementById('m-co').textContent=(j.type?`[${j.type}] `:'')+( j.co||'');
+  document.getElementById('m-title').textContent=j.job||'';
+  document.getElementById('m-job').textContent=j.job||'';
+  document.getElementById('m-loc').textContent=j.loc||'';
+  document.getElementById('m-cnt').textContent=(j.cnt||'')+( j.cnt?'':'');
+  document.getElementById('m-dl').textContent=(j.dl||'').substring(0,10);
+  document.getElementById('m-desc').textContent=j.desc||'';
   document.getElementById('m-rec').style.display=j.rec?'block':'none';
   if(j.rec) document.getElementById('m-reccnt').textContent=j.recCnt;
   // 붙임파일
