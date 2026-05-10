@@ -118,6 +118,10 @@ const SAMIL_API = (() => {
     return call({ action: 'loginTeacher', dept, grade, cls, name, pw });
   }
 
+  async function changeTeacherPw(data) {
+    return call({ action: 'changeTeacherPw', ...data });
+  }
+
   async function addTeacher(data) {
     // data: { dept, grade, cls, name, pw, year }
     return call({ action: 'addTeacher', token: ADMIN_TOKEN, ...data });
@@ -194,7 +198,7 @@ const SAMIL_API = (() => {
   return {
     getJobs, addJob, updateJob, deleteJob, toggleJob,
     loginStudent, getStudents, getMyRecord, saveRecord, addStudent, resetStudentPw,
-    loginTeacher, addTeacher, deleteTeacher,
+    loginTeacher, addTeacher, deleteTeacher, changeTeacherPw,
     getDepts, addDept, deleteDept,
     getBanners, addBanner, deleteBanner,
     getStats, saveAnnualStat, deleteAnnualStat, saveEmploy,

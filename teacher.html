@@ -940,16 +940,20 @@ function renderJobs(){
 // ── 비밀번호 변경 ──
 function openPwModal(){ document.getElementById('pwModal').classList.add('open'); }
 function closePwModal(){ document.getElementById('pwModal').classList.remove('open'); ['pw-cur','pw-new','pw-cf'].forEach(x=>document.getElementById(x).value=''); }
-function changePw(){
+async function changePw(){
   const cur=document.getElementById('pw-cur').value;
   const nw=document.getElementById('pw-new').value;
   const cf=document.getElementById('pw-cf').value;
   const al=document.getElementById('pw-alert');
-  if(cur!==ME.pw){ al.innerHTML='<div class="alert alert-error">현재 비밀번호가 틀렸습니다.</div>'; return; }
   if(nw.length<4){ al.innerHTML='<div class="alert alert-error">4자 이상 입력하세요.</div>'; return; }
   if(nw!==cf){ al.innerHTML='<div class="alert alert-error">새 비밀번호가 일치하지 않습니다.</div>'; return; }
-  const idx=DB.teachers.findIndex(t=>t.id===ME.id);
-  if(idx>-1){ DB.teachers[idx].pw=nw; ME.pw=nw; saveDB(); }
+  al.innerHTML='<div class="alert alert-info">확인 중...</div>';
+  const res = await SAMIL_API.changeTeacherPw({
+    dept:ME.dept, grade:ME.grade, cls:ME.cls, name:ME.name, year:ME.year, pw:cur, newPw:nw
+  });
+  if(!res.success){ al.innerHTML=`<div class="alert alert-error">${res.error||'오류'}</div>`; return; }
+  ME.pw=nw;
+  sessionStorage.setItem('samilTeacherME', JSON.stringify(ME));
   al.innerHTML='<div class="alert alert-success">✅ 변경되었습니다.</div>';
   setTimeout(closePwModal, 1200);
 }
@@ -1153,15 +1157,20 @@ function renderRecommend(){
 // 세션 자동 로그인
 window.addEventListener('DOMContentLoaded', async ()=>{
   // 학과 드롭다운 채우기
+  const sel = document.getElementById('l-dept');
+  const deptInputStyle = 'width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none';
   try{
     const deptsRes = await SAMIL_API.getDepts();
-    const sel = document.getElementById('l-dept');
     if(deptsRes.success && deptsRes.data.length){
       deptsRes.data.forEach(d=>{
         const o=document.createElement('option'); o.value=d.name; o.textContent=d.name; sel.appendChild(o);
       });
+    } else {
+      sel.parentElement.innerHTML=`<label style="display:block;font-size:12px;font-weight:600;color:var(--text-sub);margin-bottom:5px">학과</label><input id="l-dept" placeholder="학과명 입력 (예: 반도체과)" style="${deptInputStyle}">`;
     }
-  }catch(e){}
+  }catch(e){
+    sel.parentElement.innerHTML=`<label style="display:block;font-size:12px;font-weight:600;color:var(--text-sub);margin-bottom:5px">학과</label><input id="l-dept" placeholder="학과명 입력 (예: 반도체과)" style="${deptInputStyle}">`;
+  }
 
   const savedME = sessionStorage.getItem('samilTeacherME');
   if(savedME){
