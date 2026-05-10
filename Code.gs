@@ -142,6 +142,7 @@ function getJobs(p) {
     .filter(r => r['상태'] !== '삭제')
     .map(r => ({
       id      : r['ID'],
+      type    : r['회사유형'] || '',
       co      : r['회사명'],
       job     : r['공고제목'],
       loc     : r['근무지'],
@@ -166,7 +167,7 @@ function addJob(p) {
   const sh = getSheet(SH.JOBS);
   const id = generateId('J');
   sh.appendRow([
-    id, p.co, p.job, p.loc, p.cnt,
+    id, p.type||'기타', p.co, p.job, p.loc, p.cnt,
     p.dl,
     p.rec === 'true' ? '예' : '아니오',
     p.recCnt || 0,
@@ -183,8 +184,8 @@ function updateJob(p) {
   const row  = rows.find(r => r['ID'] === p.id);
   if (!row) return { success: false, error: '공고 없음' };
   const r = row['_row'];
-  sh.getRange(r, 2, 1, 11).setValues([[
-    p.co, p.job, p.loc, p.cnt,
+  sh.getRange(r, 2, 1, 12).setValues([[
+    p.type||row['회사유형']||'기타', p.co, p.job, p.loc, p.cnt,
     p.dl,
     p.rec === 'true' ? '예' : '아니오',
     p.recCnt || 0,
@@ -201,7 +202,7 @@ function deleteJob(p) {
   const rows = sheetToObjects(sh);
   const row  = rows.find(r => r['ID'] === p.id);
   if (!row) return { success: false, error: '공고 없음' };
-  sh.getRange(row['_row'], 12).setValue('삭제');
+  sh.getRange(row['_row'], 13).setValue('삭제');
   return { success: true };
 }
 
@@ -211,7 +212,7 @@ function toggleJob(p) {
   const row  = rows.find(r => r['ID'] === p.id);
   if (!row) return { success: false, error: '공고 없음' };
   const newStatus = row['상태'] === '진행중' ? '마감' : '진행중';
-  sh.getRange(row['_row'], 12).setValue(newStatus);
+  sh.getRange(row['_row'], 13).setValue(newStatus);
   return { success: true, status: newStatus };
 }
 
@@ -542,7 +543,7 @@ function initSheets(p) {
   const headers = {
     [SH.STUDENTS] : ['학번','이름','학과','학년','반','성별','생년월일','비밀번호','담임ID','등록일','자격증수','생기부업로드'],
     [SH.COMPANIES]: ['업체ID','업체명','업종','주소','담당자','연락처','이메일','등록일'],
-    [SH.JOBS]     : ['ID','회사명','공고제목','근무지','모집인원','마감일','학교장추천','추천인원','첨부파일','태그','등록일','상태','조회수'],
+    [SH.JOBS]     : ['ID','회사유형','회사명','공고제목','근무지','모집인원','마감일','학교장추천','추천인원','첨부파일','태그','등록일','상태','조회수'],
     [SH.PRACTICE] : ['학번','이름','학과','학년','반','업체명','시작일','종료일','담당교사ID','학년도'],
     [SH.EMPLOY]   : ['학번','이름','학과','업체명','취업일','고용형태','담당교사ID','학년도'],
     [SH.ANNUAL]   : ['학년도','졸업생수','취업자수','취업률'],
