@@ -425,6 +425,19 @@ function switchTab(tab,btn){
   document.getElementById('tab-'+tab).style.display='block';
   document.querySelectorAll('.login-tab button').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+  if(tab==='tc') loadTcDepts();
+}
+async function loadTcDepts(){
+  const sel=document.getElementById('t-dept');
+  if(sel.options.length>1) return; // 이미 로드됨
+  try{
+    const res=await SAMIL_API.getDepts();
+    const depts=res.success&&res.data&&res.data.length?res.data:[];
+    depts.forEach(d=>{
+      const o=document.createElement('option');
+      o.value=d.name||d.dept; o.textContent=d.name||d.dept; sel.appendChild(o);
+    });
+  }catch(e){}
 }
 async function loginStudent(){
   const dept=document.getElementById('l-dept').value;
