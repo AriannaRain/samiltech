@@ -568,6 +568,7 @@ async function tryLogin(){
 function logout(){
   ME=null;
   sessionStorage.removeItem('samilTeacherAuth');
+  sessionStorage.removeItem('samilTeacherME');
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('topNav').style.display='none';
   document.getElementById('appLayout').style.display='none';
@@ -1197,7 +1198,7 @@ async function loadTeacherData(){
       SAMIL_API.getStudents({ teacherId: ME.id }),
       SAMIL_API.getJobs(true),
     ]);
-    if(studRes.success) DB.students = studRes.data;
+    if(studRes.success) DB.students = studRes.data.map(s=>({...s, grade:String(s.grade), cls:String(s.cls)}));
     if(jobsRes.success) DB.jobs     = jobsRes.data;
     saveDB();
   }catch(e){ console.warn('Sheets 학생 데이터 로드 실패:', e); }
