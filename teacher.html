@@ -793,7 +793,7 @@ function selectStudent(id){
   document.querySelectorAll('.stu-row').forEach(r=>{
     r.classList.toggle('active', r.dataset.id===id);
   });
-  const s=getMyStudents().find(x=>x.id===id);
+  const s=getMyStudents().find(x=>String(x.id)===String(id));
   if(!s) return;
 
   // 모달 헤더
@@ -890,7 +890,7 @@ function selectStudent(id){
 }
 function resetPw(id){
   if(!confirm('초기 비밀번호(생년월일)로 초기화합니까?')) return;
-  const s=DB.students.find(x=>x.id===id);
+  const s=DB.students.find(x=>String(x.id)===String(id));
   if(s){ s.pw=s.birth; saveDB(); alert('초기화 완료'); }
 }
 
@@ -1199,6 +1199,7 @@ async function loadTeacherData(){
         const local = localStudents.find(ls => String(ls.id) === String(s.id));
         return local ? {
           ...s,
+          id      : String(s.id),
           grade   : String(s.grade),
           cls     : String(s.cls),
           certs   : local.certs   || [],
@@ -1206,7 +1207,7 @@ async function loadTeacherData(){
           clubs   : local.clubs   || [],
           leaders : local.leaders || [],
           summary : local.summary || null,
-        } : { ...s, grade: String(s.grade), cls: String(s.cls) };
+        } : { ...s, id: String(s.id), grade: String(s.grade), cls: String(s.cls) };
       });
     }
     if(jobsRes.success) DB.jobs = jobsRes.data;
