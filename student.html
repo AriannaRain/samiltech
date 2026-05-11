@@ -542,7 +542,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   if(savedME){
     try{
       ME = JSON.parse(savedME);
-      if(ME){ sel.value=ME.dept; await enterApp(); return; }
+      if(ME){ sel.value=ME.dept; document.getElementById('loginScreen').style.display='none'; await enterApp(); return; }
     }catch(e){}
   }
   document.getElementById('loginScreen').style.display='flex';
