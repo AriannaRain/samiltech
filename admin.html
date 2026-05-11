@@ -262,7 +262,7 @@ input:checked+.slider:before{transform:translateX(18px)}
   <div class="card">
     <div class="card-title" style="display:flex;justify-content:space-between;align-items:center"><span>담임교사 목록 (<span id="tcYear"></span>)</span><button class="btn btn-sm" style="background:var(--accent);color:#fff;font-size:12px" onclick="syncAllTeachers()">GAS 전체 동기화</button></div>
     <div class="tbl-wrap"><table>
-      <thead><tr><th>학과</th><th>학년</th><th>반</th><th>이름</th><th>아이디</th><th>PW</th><th>관리</th></tr></thead>
+      <thead><tr><th>학과</th><th>학년</th><th>반</th><th>이름</th><th>PW</th><th>관리</th></tr></thead>
       <tbody id="tcTb"></tbody>
     </table></div>
   </div>
@@ -690,9 +690,9 @@ function addTeacher(){
   const name=document.getElementById('tcName').value.trim();
   const pw=document.getElementById('tcPw').value.trim();
   if(!dept||!cls||!name||!pw){alert('모든 항목을 입력하세요');return;}
-  const id = `${dept.replace('과','')}_${grade}${cls.padStart(2,'0')}`;
+
   if(!DB.teachers) DB.teachers=[];
-  DB.teachers.push({year:currentYear,dept,grade,cls,name,id,pw,date:today()});
+  DB.teachers.push({year:currentYear,dept,grade,cls,name,pw,date:today()});
   save(); renderTeachers();
   ['tcClass','tcName','tcPw'].forEach(x=>document.getElementById(x).value='');
   SAMIL_API.addTeacher({dept,grade,cls,name,pw,year:currentYear}).catch(e=>console.warn('담임 GAS 등록 실패:',e));
@@ -717,7 +717,7 @@ function renderTeachers(){
   document.getElementById('tcTb').innerHTML = list.map((t,i)=>{
     const realI=DB.teachers.indexOf(t);
     return `<tr><td>${t.dept}</td><td>${t.grade}학년</td><td>${t.cls}반</td><td><strong>${t.name}</strong></td>
-    <td><span class="badge badge-blue">${t.id}</span></td><td>${t.pw}</td>
+<td>${t.pw}</td>
     <td><button class="btn btn-sm btn-danger" onclick="delTeacher(${realI})">삭제</button></td></tr>`;
   }).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-sub)">데이터 없음</td></tr>';
 }
