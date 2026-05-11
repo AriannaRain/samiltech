@@ -292,7 +292,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     try{
       const cd = JSON.parse(cached);
       DATA.jobs = cd.jobs||[]; DATA.banners = cd.banners||[]; DATA.stats = cd.stats||DATA.stats;
-      renderBanners(); renderJobs(); renderStats();
+      renderJobs();
     }catch(_){}
   }
 
@@ -339,7 +339,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
 
   // ── 캐시 저장 및 재렌더 ──
   try{ localStorage.setItem('samilJobsCache', JSON.stringify({jobs:DATA.jobs,banners:DATA.banners,stats:DATA.stats})); }catch(_){}
-  renderBanners(); renderJobs(); renderStats();
+  renderJobs();
 
   // 통계 표시
   document.getElementById('s-grad').textContent = DATA.stats.grad;
