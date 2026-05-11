@@ -375,7 +375,8 @@ function renderJobs(){
     document.getElementById('btnMore').style.display='none';
     return;
   }
-  document.getElementById('jobList').innerHTML = DATA.jobs.slice(0,showN).map((j,i)=>{
+  const sorted=[...DATA.jobs].sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+  document.getElementById('jobList').innerHTML = sorted.slice(0,showN).map((j,i)=>{
     const dlStr=(j.dl||'').substring(0,10);
     const dl=new Date(dlStr);
     const diff=Math.ceil((dl-today)/86400000);
@@ -387,11 +388,11 @@ function renderJobs(){
       <div class="job-meta">${tags}
         ${j.loc?`<span class="job-tag">📍${j.loc}</span>`:''}${j.cnt?`<span class="job-tag">👤${j.cnt}</span>`:''}</div>
       <div class="job-footer">
-        <span class="job-deadline${urg?' urgent':''}">마감 ${dlStr}${urg?' ⚠':''}</span>
+        <span class="job-deadline${urg?' urgent':''}">${urg?'마감임박':'마감 '+dlStr}</span>
         <span class="job-detail">상세보기 →</span>
       </div></div>`;
   }).join('');
-  document.getElementById('btnMore').style.display = showN>=DATA.jobs.length?'none':'block';
+  document.getElementById('btnMore').style.display = showN>=sorted.length?'none':'block';
 }
 
 function loadMore(){showN+=4;renderJobs();}
