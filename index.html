@@ -286,6 +286,16 @@ let DATA = {jobs:[],banners:[],depts:[],stats:{}};
 
 window.addEventListener('DOMContentLoaded', async ()=>{
   updateNavAuth();
+  // ── 캐시 우선 즉시 렌더 ──
+  const cached = localStorage.getItem('samilJobsCache');
+  if(cached){
+    try{
+      const cd = JSON.parse(cached);
+      DATA.jobs = cd.jobs||[]; DATA.banners = cd.banners||[]; DATA.stats = cd.stats||DATA.stats;
+      renderBanners(); renderJobs(); renderStats();
+    }catch(_){}
+  }
+
   // ── Sheets에서 데이터 로드 ──
   const [jobsSet, bannersSet, statsSet, deptsSet] = await Promise.allSettled([
     SAMIL_API.getJobs(true),
@@ -326,6 +336,10 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     const o2=document.createElement('option'); o2.value=name; o2.textContent=name; selT.appendChild(o2);
   });
   DATA.depts = depts.map(d=>({dept:d.name||d.dept,g:0,e:0,a:0}));
+
+  // ── 캐시 저장 및 재렌더 ──
+  try{ localStorage.setItem('samilJobsCache', JSON.stringify({jobs:DATA.jobs,banners:DATA.banners,stats:DATA.stats})); }catch(_){}
+  renderBanners(); renderJobs(); renderStats();
 
   // 통계 표시
   document.getElementById('s-grad').textContent = DATA.stats.grad;

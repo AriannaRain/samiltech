@@ -260,7 +260,7 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div class="btn-group"><button class="btn btn-accent" onclick="addTeacher()">계정 추가</button></div>
   </div>
   <div class="card">
-    <div class="card-title">담임교사 목록 (<span id="tcYear"></span>)</div>
+    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center"><span>담임교사 목록 (<span id="tcYear"></span>)</span><button class="btn btn-sm" style="background:var(--accent);color:#fff;font-size:12px" onclick="syncAllTeachers()">GAS 전체 동기화</button></div>
     <div class="tbl-wrap"><table>
       <thead><tr><th>학과</th><th>학년</th><th>반</th><th>이름</th><th>아이디</th><th>PW</th><th>관리</th></tr></thead>
       <tbody id="tcTb"></tbody>
@@ -696,6 +696,20 @@ function addTeacher(){
   save(); renderTeachers();
   ['tcClass','tcName','tcPw'].forEach(x=>document.getElementById(x).value='');
   SAMIL_API.addTeacher({dept,grade,cls,name,pw,year:currentYear}).catch(e=>console.warn('담임 GAS 등록 실패:',e));
+}
+async function syncAllTeachers(){
+  const list=(DB.teachers||[]).filter(t=>t.year===currentYear);
+  if(!list.length){alert('등록된 교사가 없습니다');return;}
+  const btn=event.target; btn.disabled=true; btn.textContent='동기화 중...';
+  let ok=0,fail=0;
+  for(const t of list){
+    try{
+      await SAMIL_API.addTeacher({dept:t.dept,grade:t.grade,cls:t.cls,name:t.name,pw:t.pw,year:t.year});
+      ok++;
+    }catch(e){fail++;}
+  }
+  btn.disabled=false; btn.textContent='GAS 전체 동기화';
+  alert(`동기화 완료: 성공 ${ok}명 / 실패 ${fail}명`);
 }
 function delTeacher(i){ if(confirm('삭제?')){ DB.teachers.splice(i,1); save(); renderTeachers(); } }
 function renderTeachers(){
