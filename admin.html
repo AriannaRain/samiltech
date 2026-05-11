@@ -168,8 +168,8 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div class="nav-item" onclick="showTab('teacher',this)"><span class="icon">👨‍🏫</span><span>담임교사 계정</span></div>
 
     <div class="nav-section">콘텐츠 관리</div>
-    <div class="nav-item" onclick="showTab('jobs',this)"><span class="icon">📝</span><span>채용공고 관리</span></div>
     <div class="nav-item" onclick="showTab('banner',this)"><span class="icon">🖼️</span><span>배너 관리</span></div>
+    <div class="nav-item" onclick="showTab('jobs',this)"><span class="icon">📝</span><span>채용공고 관리</span></div>
     <div class="nav-item" onclick="showTab('employ',this)"><span class="icon">📈</span><span>취업현황 관리</span></div>
     <div class="nav-item" onclick="showTab('stats',this)"><span class="icon">🔢</span><span>통계 설정</span></div>
 
@@ -806,16 +806,15 @@ function toggleJob(i){ DB.jobs[i].active=!DB.jobs[i].active; save(); renderJobs(
 function delJob(i){ if(confirm('삭제?')){ const id=DB.jobs[i]?.id; DB.jobs.splice(i,1); save(); renderJobs(); updateDash(); if(id) syncJobToSheets('delete',{id}); } }
 function renderJobs(){
   const sortedJobs=[...(DB.jobs||[])].sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
-  document.getElementById('jobTb').innerHTML = sortedJobs.map((j,i)=>`
+  document.getElementById('jobTb').innerHTML = sortedJobs.map((j)=>{const idx=DB.jobs.indexOf(j);return `
     <tr><td><span class="badge badge-blue" style="font-size:11px">${j.type||'기타'}</span></td><td><strong>${j.co}</strong></td><td>${j.loc}</td><td>${j.dl}</td>
     <td>${j.rec?`<span class="badge badge-orange">${j.recCnt}명</span>`:'—'}</td>
     <td><span class="badge ${j.active?'badge-green':'badge-red'}">${j.active?'진행중':'마감'}</span></td>
     <td style="display:flex;gap:4px">
-      <button class="btn btn-sm btn-ghost" onclick="editJob(DB.jobs.indexOf(j))">수정</button>
-      <button class="btn btn-sm btn-ghost" onclick="toggleJob(DB.jobs.indexOf(j))">${j.active?'마감':'재개'}</button>
-      <button class="btn btn-sm btn-danger" onclick="delJob(DB.jobs.indexOf(j))">삭제</button>
-    </td></tr>`
-  ).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-sub)">공고 없음</td></tr>';
+      <button class="btn btn-sm btn-ghost" onclick="editJob(${idx})">수정</button>
+      <button class="btn btn-sm btn-ghost" onclick="toggleJob(${idx})">${j.active?'마감':'재개'}</button>
+      <button class="btn btn-sm btn-danger" onclick="delJob(${idx})">삭제</button>
+    </td></tr>`;}).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-sub)">공고 없음</td></tr>';
   // 대시보드 최근공고
   document.getElementById('dashJobTb').innerHTML = [...(DB.jobs||[])].sort((a,b)=>new Date(b.date||0)-new Date(a.date||0)).slice(0,5).map(j=>`
     <tr><td>${j.co}</td><td>${j.dl}</td>
