@@ -281,7 +281,7 @@ function buildDeptStats(DB){
   }));
 }
 
-let showN = 4;
+let showN = 6;
 let DATA = {jobs:[],banners:[],depts:[],stats:{}};
 
 window.addEventListener('DOMContentLoaded', async ()=>{
@@ -375,7 +375,21 @@ function renderJobs(){
     document.getElementById('btnMore').style.display='none';
     return;
   }
-  const sorted=[...DATA.jobs].sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+  const today0=new Date(); today0.setHours(0,0,0,0);
+  const sorted=[...DATA.jobs].sort((a,b)=>{
+    const da=new Date((a.dl||'').substring(0,10)); const db=new Date((b.dl||'').substring(0,10));
+    const diffA=Math.ceil((da-today0)/86400000); const diffB=Math.ceil((db-today0)/86400000);
+    const urgA=diffA>=0&&diffA<=7; const urgB=diffB>=0&&diffB<=7;
+    const expA=diffA<0; const expB=diffB<0;
+    // 만료 → 최하단
+    if(expA!==expB) return expA?1:-1;
+    // 마감임박 → 최상단 (가까운 날짜 순)
+    if(urgA!==urgB) return urgA?-1:1;
+    // 마감임박끼리: 날짜 오름차순
+    if(urgA&&urgB) return da-db;
+    // 일반 활성: 등록일 내림차순
+    return new Date(b.date||0)-new Date(a.date||0);
+  });
   document.getElementById('jobList').innerHTML = sorted.slice(0,showN).map((j,i)=>{
     const dlStr=(j.dl||'').substring(0,10);
     const dl=new Date(dlStr);
@@ -388,14 +402,14 @@ function renderJobs(){
       <div class="job-meta">${tags}
         ${j.loc?`<span class="job-tag">📍${j.loc}</span>`:''}${j.cnt?`<span class="job-tag">👤${j.cnt}</span>`:''}</div>
       <div class="job-footer">
-        <span class="job-deadline${urg?' urgent':''}">${urg?'마감임박':'마감 '+dlStr}</span>
+        <span class="job-deadline${urg?' urgent':''}">${urg?'마감임박 '+dlStr:'마감 '+dlStr}</span>
         <span class="job-detail">상세보기 →</span>
       </div></div>`;
   }).join('');
   document.getElementById('btnMore').style.display = showN>=sorted.length?'none':'block';
 }
 
-function loadMore(){showN+=4;renderJobs();}
+function loadMore(){showN+=3;renderJobs();}
 
 function openJob(i){
   const j=DATA.jobs[i];
