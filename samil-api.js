@@ -1,39 +1,30 @@
 /**
  * samil-api.js  —  Google Apps Script API 레이어
- *
- * 사용법: 각 HTML 파일에 <script src="samil-api.js"></script> 추가
- *        또는 <script> 블록 상단에 인라인 삽입
- *
- * GAS_URL = 배포 후 받은 웹 앱 URL로 교체
  */
 
 const SAMIL_API = (() => {
-  // ★ 배포 후 이 URL을 교체하세요
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycby6UpyOV0rxKOUbQkerpniceHPAgZOkLfNKJC5JFyEJqxmJbe_4BcK-HOPCHOmahnnA_g/exec';
-  const ADMIN_TOKEN = 'samil_admin_2024';  // Code.gs와 동일하게
+  const GAS_URL     = 'https://script.google.com/macros/s/AKfycby6UpyOV0rxKOUbQkerpniceHPAgZOkLfNKJC5JFyEJqxmJbe_4BcK-HOPCHOmahnnA_g/exec';
+  const ADMIN_TOKEN = 'samil_admin_2024';
 
-  // ── 내부 fetch 래퍼 ──
   async function call(params) {
     try {
       const res = await fetch(GAS_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },  // GAS CORS 우회
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(params),
         redirect: 'follow',
       });
-      const json = await res.json();
-      return json;
+      return await res.json();
     } catch (e) {
       console.error('[SAMIL_API]', e);
       return { success: false, error: e.message };
     }
   }
 
-  // ── GET 방식 (CORS 캐시 활용) ──
   async function get(params) {
     try {
       params._t = Date.now();
-      const qs = new URLSearchParams(params).toString();
+      const qs  = new URLSearchParams(params).toString();
       const res = await fetch(`${GAS_URL}?${qs}`, { redirect: 'follow', cache: 'no-store' });
       return await res.json();
     } catch (e) {
@@ -85,7 +76,6 @@ const SAMIL_API = (() => {
   }
 
   async function getStudents(opts = {}) {
-    // opts: { teacherId, dept, adminMode }
     const params = { action: 'getStudents', ...opts };
     if (opts.adminMode) params.token = ADMIN_TOKEN;
     return call(params);
@@ -96,11 +86,12 @@ const SAMIL_API = (() => {
   }
 
   async function saveRecord(record, teacherId) {
-    return call({
-      action: 'saveRecord',
-      teacherId,
-      record: JSON.stringify(record),
-    });
+    return call({ action: 'saveRecord', teacherId, record: JSON.stringify(record) });
+  }
+
+  // 배치 저장 — 단건 반복 대신 1회 호출
+  async function saveRecords(records, teacherId) {
+    return call({ action: 'saveRecords', teacherId, records: JSON.stringify(records) });
   }
 
   async function addStudent(data) {
@@ -123,7 +114,6 @@ const SAMIL_API = (() => {
   }
 
   async function addTeacher(data) {
-    // data: { dept, grade, cls, name, pw, year }
     return call({ action: 'addTeacher', token: ADMIN_TOKEN, ...data });
   }
 
@@ -169,7 +159,6 @@ const SAMIL_API = (() => {
   }
 
   async function saveAnnualStat(data) {
-    // data: { year, grad, employed, rate }
     return call({ action: 'saveAnnualStat', token: ADMIN_TOKEN, ...data });
   }
 
@@ -189,7 +178,7 @@ const SAMIL_API = (() => {
   }
 
   // ════════════════════════════════════════════
-  // 시트 초기화 (최초 1회)
+  // 시트 초기화
   // ════════════════════════════════════════════
   async function initSheets() {
     return call({ action: 'initSheets', token: ADMIN_TOKEN });
@@ -197,7 +186,7 @@ const SAMIL_API = (() => {
 
   return {
     getJobs, addJob, updateJob, deleteJob, toggleJob,
-    loginStudent, getStudents, getMyRecord, saveRecord, addStudent, resetStudentPw,
+    loginStudent, getStudents, getMyRecord, saveRecord, saveRecords, addStudent, resetStudentPw,
     loginTeacher, addTeacher, deleteTeacher, changeTeacherPw,
     getDepts, addDept, deleteDept,
     getBanners, addBanner, deleteBanner,
