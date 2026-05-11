@@ -569,10 +569,7 @@ function logout(){
   ME=null;
   sessionStorage.removeItem('samilTeacherAuth');
   sessionStorage.removeItem('samilTeacherME');
-  document.getElementById('loginScreen').style.display='flex';
-  document.getElementById('topNav').style.display='none';
-  document.getElementById('appLayout').style.display='none';
-  document.getElementById('l-pw').value='';
+  location.href='index.html';
 }
 
 // ── 초기화 ──
@@ -702,17 +699,14 @@ function confirmUpload(){
   });
   saveDB();
 
-  // ── Sheets 저장 ──
+  // ── Sheets 저장 (배치 1회) ──
   showUploadAlert('success',`⏳ Sheets에 저장 중… (${pendingStudents.length}명)`);
   const teacherId = ME ? ME.id : '';
-  Promise.all(
-    pendingStudents.map(s => SAMIL_API.saveRecord(s, teacherId))
-  ).then(results => {
-    const failed = results.filter(r => !r.success).length;
-    if(failed > 0){
-      showUploadAlert('error', `⚠️ 저장 완료 (${added}명 추가, ${updated}명 업데이트) — ${failed}건 Sheets 오류`);
+  SAMIL_API.saveRecords(pendingStudents, teacherId).then(res => {
+    if(res && res.success){
+      showUploadAlert('success', `✅ 저장 완료! 신규 ${res.added}명 추가, ${res.updated}명 업데이트`);
     } else {
-      showUploadAlert('success', `✅ 저장 완료! 신규 ${added}명 추가, ${updated}명 업데이트`);
+      showUploadAlert('error', `⚠️ Sheets 저장 실패: ${(res&&res.error)||'오류'}`);
     }
   }).catch(e => {
     showUploadAlert('error', `⚠️ Sheets 저장 실패: ${e.message}`);
@@ -1198,8 +1192,24 @@ async function loadTeacherData(){
       SAMIL_API.getStudents({ teacherId: ME.id }),
       SAMIL_API.getJobs(true),
     ]);
-    if(studRes.success) DB.students = studRes.data.map(s=>({...s, grade:String(s.grade), cls:String(s.cls)}));
-    if(jobsRes.success) DB.jobs     = jobsRes.data;
+    if(studRes.success){
+      // Sheets 기본정보 + localStorage rich 데이터(출결/성적/동아리/임원) merge
+      const localStudents = JSON.parse(localStorage.getItem('samilAdmin')||'{}').students || [];
+      DB.students = studRes.data.map(s => {
+        const local = localStudents.find(ls => String(ls.id) === String(s.id));
+        return local ? {
+          ...s,
+          grade   : String(s.grade),
+          cls     : String(s.cls),
+          certs   : local.certs   || [],
+          attend  : local.attend  || [],
+          clubs   : local.clubs   || [],
+          leaders : local.leaders || [],
+          summary : local.summary || null,
+        } : { ...s, grade: String(s.grade), cls: String(s.cls) };
+      });
+    }
+    if(jobsRes.success) DB.jobs = jobsRes.data;
     saveDB();
   }catch(e){ console.warn('Sheets 학생 데이터 로드 실패:', e); }
 }
