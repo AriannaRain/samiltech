@@ -520,30 +520,35 @@ function hasApplied(jobId){
 
 // ── 로그인 ──
 window.addEventListener('DOMContentLoaded', async ()=>{
-  // 학과 드롭다운 채우기 (Sheets)
   const sel = document.getElementById('l-dept');
+
+  // ── 세션 자동 로그인 (getDepts 전에 먼저 체크) ──
+  const savedME = sessionStorage.getItem('samilStudentME');
+  if(savedME){
+    try{
+      ME = JSON.parse(savedME);
+      if(ME){
+        document.getElementById('loginScreen').style.display='none';
+        await enterApp();
+        return;
+      }
+    }catch(e){}
+  }
+
+  // ── 로그인 화면: 학과 드롭다운 채우기 ──
+  const deptInputStyle = 'width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none';
   try {
     const deptsRes = await SAMIL_API.getDepts();
     const depts = deptsRes.success && deptsRes.data.length ? deptsRes.data : [];
     if(depts.length){
       depts.forEach(d=>{ const o=document.createElement('option'); o.value=d.name; o.textContent=d.name; sel.appendChild(o); });
     } else {
-      // 폴백: 기본 학과
       ['전자과','기계과','전기과','화학공업과','건설과','반도체과','사물인터넷과']
         .forEach(d=>{ const o=document.createElement('option'); o.value=d; o.textContent=d; sel.appendChild(o); });
     }
   } catch(e) {
     ['전자과','기계과','전기과','화학공업과','건설과','반도체과','사물인터넷과']
       .forEach(d=>{ const o=document.createElement('option'); o.value=d; o.textContent=d; sel.appendChild(o); });
-  }
-
-  // 세션 자동 로그인
-  const savedME = sessionStorage.getItem('samilStudentME');
-  if(savedME){
-    try{
-      ME = JSON.parse(savedME);
-      if(ME){ sel.value=ME.dept; document.getElementById('loginScreen').style.display='none'; await enterApp(); return; }
-    }catch(e){}
   }
   document.getElementById('loginScreen').style.display='flex';
 });
