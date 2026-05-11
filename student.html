@@ -519,60 +519,59 @@ function hasApplied(jobId){
 }
 
 // ── 로그인 ──
-window.addEventListener('DOMContentLoaded',()=>{
-  DB = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
-
-  // 학과 목록 채우기 (DB 또는 기본값)
-  const depts = [...new Set((DB.students||[]).map(s=>s.dept))];
-  const defaults = ['전자과','기계과','전기과','화학공업과','건설과','정보통신과','반도체과','사물인터넷과'];
-  const allDepts = depts.length ? depts : defaults;
+window.addEventListener('DOMContentLoaded', async ()=>{
+  // 학과 드롭다운 채우기 (Sheets)
   const sel = document.getElementById('l-dept');
-  allDepts.forEach(d=>{ const o=document.createElement('option'); o.value=d; o.textContent=d; sel.appendChild(o); });
+  try {
+    const deptsRes = await SAMIL_API.getDepts();
+    const depts = deptsRes.success && deptsRes.data.length ? deptsRes.data : [];
+    if(depts.length){
+      depts.forEach(d=>{ const o=document.createElement('option'); o.value=d.name; o.textContent=d.name; sel.appendChild(o); });
+    } else {
+      // 폴백: 기본 학과
+      ['전자과','기계과','전기과','화학공업과','건설과','반도체과','사물인터넷과']
+        .forEach(d=>{ const o=document.createElement('option'); o.value=d; o.textContent=d; sel.appendChild(o); });
+    }
+  } catch(e) {
+    ['전자과','기계과','전기과','화학공업과','건설과','반도체과','사물인터넷과']
+      .forEach(d=>{ const o=document.createElement('option'); o.value=d; o.textContent=d; sel.appendChild(o); });
+  }
 
   // 세션 자동 로그인
-  const savedId = sessionStorage.getItem('samilStudentAuth');
-  if(savedId){
-    // 1순위: DB에서 학생 조회
-    const found = (DB.students||[]).find(s=>s.id===savedId);
-    if(found){ ME=found; enterApp(); return; }
-    // 2순위: sessionStorage에 저장된 ME 객체 복원 (샘플 로그인 등)
-    const savedME = sessionStorage.getItem('samilStudentME');
-    if(savedME){ try{ ME=JSON.parse(savedME); enterApp(); return; }catch(e){} }
+  const savedME = sessionStorage.getItem('samilStudentME');
+  if(savedME){
+    try{
+      ME = JSON.parse(savedME);
+      if(ME){ sel.value=ME.dept; await enterApp(); return; }
+    }catch(e){}
   }
   document.getElementById('loginScreen').style.display='flex';
 });
 
-function tryLogin(){
+async function tryLogin(){
   const dept = document.getElementById('l-dept').value;
   const id   = document.getElementById('l-id').value.trim();
   const pw   = document.getElementById('l-pw').value;
   if(!dept){ alert('학과를 선택하세요'); return; }
   if(!id||!pw){ alert('학번과 비밀번호를 입력하세요'); return; }
 
-  DB = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
-  const found = (DB.students||[]).find(s=>s.id===id && s.pw===pw && s.dept===dept);
+  const btn = document.querySelector('#loginScreen .btn-login');
+  if(btn){ btn.textContent='확인중…'; btn.disabled=true; }
 
-  if(!found){
-    // 학번+PW만으로도 시도 (학과 미일치 허용 — Sheets 연동 전 유연성)
-    const byIdPw = (DB.students||[]).find(s=>s.id===id && s.pw===pw);
-    if(byIdPw){ ME=byIdPw; }
-    else {
-      // 샘플 학생으로 로그인 허용 (개발/테스트용)
-      ME = {
-        id, name: '학생', dept,
-        grade: id.length>=4 ? id[0] : '3',
-        cls:   id.length>=4 ? id[1] : '1',
-        birth: pw, pw,
-        gender:'—', certCount:0, uploaded:false,
-        teacher:'—'
-      };
-    }
-  } else { ME = found; }
+  const res = await SAMIL_API.loginStudent(dept, id, pw);
 
-  sessionStorage.setItem('samilStudentAuth', ME.id);
-  sessionStorage.setItem('samilStudentME', JSON.stringify(ME));
-  document.getElementById('loginScreen').style.display='none';
-  enterApp();
+  if(btn){ btn.textContent='로그인'; btn.disabled=false; }
+
+  if(res.success){
+    ME = res.student;
+    sessionStorage.setItem('samilStudentAuth', ME.id);
+    sessionStorage.setItem('samilStudentME', JSON.stringify(ME));
+    document.getElementById('loginScreen').style.display='none';
+    await enterApp();
+  } else {
+    document.getElementById('l-pw').value='';
+    alert(res.error||'학과/학번/비밀번호가 일치하지 않습니다.');
+  }
 }
 
 function logout(){
@@ -585,9 +584,16 @@ function logout(){
   document.getElementById('l-pw').value='';
 }
 
-function enterApp(){
+async function enterApp(){
   document.getElementById('topNav').style.display='flex';
   document.getElementById('appLayout').style.display='flex';
+  // 채용공고 Sheets에서 로드
+  try{
+    const jobsRes = await SAMIL_API.getJobs(true);
+    if(jobsRes.success) DB.jobs = jobsRes.data;
+    const archRes = await SAMIL_API.getArchive();
+    if(archRes.success) DB.archive = archRes.data;
+  }catch(e){ console.warn('Sheets 채용공고 로드 실패:', e); }
   document.getElementById('navStudentInfo').innerHTML =
     `<strong>${ME.name}</strong> | ${ME.dept} ${ME.grade||''}학년 ${ME.cls||''}반`;
   initDashboard();
@@ -685,9 +691,7 @@ function initDashboard(){
 
 // ── 채용공고 ──
 function getActiveJobs(){
-  const _db=JSON.parse(localStorage.getItem('samilAdmin')||'{}');
-  const live=(_db.jobs||[]).filter(j=>j.active).map((j,i)=>({...j,id:j.id!=null?j.id:i}));
-  if(live.length) return live;
+  if(DB.jobs && DB.jobs.length) return DB.jobs.filter(j=>j.active);
   // 샘플 데이터 (admin에서 공고 등록 전)
   return [
     {id:0,co:'(주)삼성전자',title:'전자기기 생산',job:'전자기기 생산',loc:'수원',cnt:3,
@@ -945,17 +949,17 @@ function updateBadges(){
 
 // ── 비밀번호 변경 ──
 function openPwModal(){ document.getElementById('pwModal').classList.add('open'); }
-function changePw(){
+async function changePw(){
   const cur = document.getElementById('pw-cur').value;
   const nw  = document.getElementById('pw-new').value;
   const cf  = document.getElementById('pw-cf').value;
   const al  = document.getElementById('pw-alert');
-  if(cur!==ME.pw){ al.innerHTML='<div class="alert alert-error">현재 비밀번호가 틀렸습니다.</div>'; return; }
   if(nw.length<4){ al.innerHTML='<div class="alert alert-error">4자 이상 입력하세요.</div>'; return; }
   if(nw!==cf){ al.innerHTML='<div class="alert alert-error">새 비밀번호가 일치하지 않습니다.</div>'; return; }
-  const idx = (DB.students||[]).findIndex(s=>s.id===ME.id);
-  if(idx>-1){ DB.students[idx].pw=nw; ME.pw=nw; saveDB(); }
-  else { ME.pw=nw; }
+  al.innerHTML='<div class="alert alert-info">확인 중...</div>';
+  const res = await SAMIL_API.changeStudentPw({ studentId: ME.id, curPw: cur, newPw: nw });
+  if(!res.success){ al.innerHTML=`<div class="alert alert-error">${res.error||'오류'}</div>`; return; }
+  ME.pw = nw;
   sessionStorage.setItem('samilStudentME', JSON.stringify(ME));
   al.innerHTML='<div class="alert alert-success">✅ 변경되었습니다.</div>';
   setTimeout(()=>{ closeModal('pwModal'); ['pw-cur','pw-new','pw-cf'].forEach(x=>document.getElementById(x).value=''); al.innerHTML=''; }, 1200);
@@ -980,5 +984,6 @@ function closeModal(id,e){
   if(!e||e.target.id===id) document.getElementById(id).classList.remove('open');
 }
 </script>
+<script src="samil-api.js"></script>
 </body>
 </html>
