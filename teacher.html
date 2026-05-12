@@ -1151,9 +1151,28 @@ function renderRecommend(){
 
 // 세션 자동 로그인
 window.addEventListener('DOMContentLoaded', async ()=>{
-  // 학과 드롭다운 채우기
   const sel = document.getElementById('l-dept');
   const deptInputStyle = 'width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none';
+
+  // ── 세션 자동 로그인 먼저 체크 (getDepts 전에) ──
+  const savedME = sessionStorage.getItem('samilTeacherME');
+  if(savedME){
+    try{
+      ME = JSON.parse(savedME);
+      if(ME){
+        document.getElementById('loginScreen').style.display='none';
+        document.getElementById('topNav').style.display='flex';
+        document.getElementById('appLayout').style.display='flex';
+        document.getElementById('navTeacherInfo').innerHTML =
+          `<strong>${ME.name}</strong> 선생님 | ${ME.dept} ${ME.grade}학년 ${ME.cls}반`;
+        await loadTeacherData();
+        init();
+        return;
+      }
+    }catch(e){}
+  }
+
+  // ── 로그인 화면: 학과 드롭다운 채우기 ──
   try{
     const deptsRes = await SAMIL_API.getDepts();
     if(deptsRes.success && deptsRes.data.length){
@@ -1165,22 +1184,6 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     }
   }catch(e){
     sel.parentElement.innerHTML=`<label style="display:block;font-size:12px;font-weight:600;color:var(--text-sub);margin-bottom:5px">학과</label><input id="l-dept" placeholder="학과명 입력 (예: 반도체과)" style="${deptInputStyle}">`;
-  }
-
-  const savedME = sessionStorage.getItem('samilTeacherME');
-  if(savedME){
-    try{
-      ME = JSON.parse(savedME);
-      if(ME){
-        document.getElementById('topNav').style.display='flex';
-        document.getElementById('appLayout').style.display='flex';
-        document.getElementById('navTeacherInfo').innerHTML =
-          `<strong>${ME.name}</strong> 선생님 | ${ME.dept} ${ME.grade}학년 ${ME.cls}반`;
-        await loadTeacherData();
-        init();
-        return;
-      }
-    }catch(e){}
   }
   document.getElementById('loginScreen').style.display='flex';
 });
