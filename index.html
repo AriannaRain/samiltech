@@ -71,6 +71,14 @@ nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:var(--pri
 .job-detail{font-size:12px;color:var(--primary-light);font-weight:600}
 .btn-more{display:block;width:100%;text-align:center;padding:11px;border:2px solid var(--border);border-radius:var(--radius);color:var(--text-sub);font-size:14px;cursor:pointer;background:#fff;margin-bottom:28px;transition:.2s}
 .btn-more:hover{border-color:var(--primary);color:var(--primary)}
+.sub-table{width:100%;border-collapse:collapse;font-size:13px}
+.sub-table th{background:var(--bg);padding:7px 10px;text-align:left;font-weight:600;border-bottom:2px solid var(--border)}
+.sub-table td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.sub-table tr:last-child td{border-bottom:none}
+.sub-check{width:16px;height:16px;cursor:pointer}
+.sub-badge{font-size:11px;padding:2px 7px;border-radius:10px;font-weight:600}
+.sub-badge.담임{background:#EBF8FF;color:#2B6CB0}
+.sub-badge.학생{background:#F0FFF4;color:#276749}
 .dept-table-wrap{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:32px}
 .dept-table{width:100%;border-collapse:collapse}
 .dept-table th{background:var(--primary);color:#fff;padding:11px 14px;font-size:13px;text-align:center}
@@ -191,11 +199,20 @@ footer strong{color:#fff}
         <div style="font-size:13px;font-weight:600;color:var(--text-sub);margin-bottom:8px">📎 붙임파일</div>
         <div id="m-file-list"></div>
       </div>
-      <div style="display:flex;gap:10px;margin-top:16px">
-        <button class="btn-interest" id="btn-interest" onclick="toggleInterest()">🤍 관심등록</button>
-        <button class="apply-btn" style="flex:2" onclick="alert('로그인 후 지원 가능합니다.')">지원하기</button>
-      </div>
+      <div id="modal-action-btns" style="display:flex;gap:10px;margin-top:16px"></div>
     </div>
+  </div>
+</div>
+
+<!-- 서브모달 -->
+<div class="modal-overlay" id="subModal" onclick="closeModal('subModal',event)">
+  <div class="modal" style="max-width:540px">
+    <div class="modal-header">
+      <div style="font-size:16px;font-weight:700" id="sub-title"></div>
+      <button class="modal-close" onclick="closeModal('subModal')">✕</button>
+    </div>
+    <div class="modal-body" id="sub-body" style="max-height:55vh;overflow-y:auto;padding-top:4px"></div>
+    <div id="sub-footer" style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end"></div>
   </div>
 </div>
 
@@ -453,7 +470,10 @@ function renderJobs(){
 
 function loadMore(){showN+=3;renderJobs();}
 
+let _curJobIdx = -1;
+
 function openJob(i){
+  _curJobIdx = i;
   const j=DATA.jobs[i];
   document.getElementById('m-co').textContent=(j.type?`[${j.type}] `:'')+( j.co||'');
   document.getElementById('m-title').textContent=j.job||'';
@@ -464,32 +484,210 @@ function openJob(i){
   document.getElementById('m-desc').textContent=j.desc||'';
   document.getElementById('m-rec').style.display=j.rec?'block':'none';
   if(j.rec) document.getElementById('m-reccnt').textContent=j.recCnt;
-  // 붙임파일
   const fWrap=document.getElementById('m-files');
   const fList=document.getElementById('m-file-list');
   if(j.files&&j.files.length){
     fList.innerHTML=j.files.map(f=>`<a class="file-item" href="${f.url}" target="_blank">📄 ${f.name}</a>`).join('');
     fWrap.style.display='block';
   } else fWrap.style.display='none';
-  // 관심등록 상태
-  const interests=JSON.parse(localStorage.getItem('interests')||'[]');
-  const btn=document.getElementById('btn-interest');
-  btn.className='btn-interest'+(interests.includes(i)?' on':'');
-  btn.textContent=interests.includes(i)?'❤️ 관심등록됨':'🤍 관심등록';
-  btn.dataset.idx=i;
+  renderModalButtons(i);
   document.getElementById('jobModal').classList.add('open');
 }
 
-function toggleInterest(){
-  if(!sessionStorage.getItem('samilStudentAuth') && !sessionStorage.getItem('samilTeacherAuth') && !sessionStorage.getItem('samilAdminAuth')){
-    alert('로그인 후 관심등록 가능합니다.'); return;
+async function renderModalButtons(i){
+  const j = DATA.jobs[i];
+  const jobId = j.id != null ? String(j.id) : String(i);
+  const el = document.getElementById('modal-action-btns');
+  const isAdmin   = sessionStorage.getItem('samilAdminAuth') === '1';
+  const isTeacher = !!sessionStorage.getItem('samilTeacherAuth');
+  const isStudent = !!sessionStorage.getItem('samilStudentAuth');
+
+  if(isAdmin){
+    el.innerHTML=`
+      <button class="btn-interest" style="flex:1" onclick="openAdminSubModal('interest','${jobId}')">👥 관심학생 조회</button>
+      <button class="apply-btn" style="flex:1" onclick="openAdminSubModal('apply','${jobId}')">📋 지원학생 조회</button>`;
+  } else if(isTeacher){
+    el.innerHTML=`
+      <button class="btn-interest" style="flex:1" onclick="openTeacherApplyModal('${jobId}')">📝 학급학생 지원</button>
+      <button class="apply-btn" style="flex:1" onclick="openTeacherReviewModal('${jobId}')">📋 지원조회</button>`;
+  } else if(isStudent){
+    const ME = JSON.parse(sessionStorage.getItem('samilStudentME')||'{}');
+    // 관심 상태 확인 (localStorage 우선)
+    const localInts = JSON.parse(localStorage.getItem('interests')||'[]');
+    const interested = localInts.includes(i);
+    el.innerHTML=`
+      <button class="btn-interest${interested?' on':''}" id="btn-interest" onclick="handleStudentInterest(${i},'${jobId}')">${interested?'❤️ 관심등록됨':'🤍 관심등록'}</button>
+      <button class="apply-btn" style="flex:2" onclick="handleStudentApply('${jobId}')">지원하기</button>`;
+  } else {
+    el.innerHTML=`
+      <button class="btn-interest" style="flex:1" onclick="alert('로그인 후 관심등록 가능합니다.')">🤍 관심등록</button>
+      <button class="apply-btn" style="flex:2" onclick="alert('로그인 후 지원 가능합니다.')">지원하기</button>`;
   }
-  const btn=document.getElementById('btn-interest');
-  const i=parseInt(btn.dataset.idx);
-  let arr=JSON.parse(localStorage.getItem('interests')||'[]');
-  if(arr.includes(i)){arr=arr.filter(x=>x!==i);btn.className='btn-interest';btn.textContent='🤍 관심등록';}
-  else{arr.push(i);btn.className='btn-interest on';btn.textContent='❤️ 관심등록됨';}
-  localStorage.setItem('interests',JSON.stringify(arr));
+}
+
+// ── 학생: 관심등록 ──
+async function handleStudentInterest(i, jobId){
+  const ME = JSON.parse(sessionStorage.getItem('samilStudentME')||'{}');
+  const btn = document.getElementById('btn-interest');
+  btn.disabled = true;
+  const res = await SAMIL_API.toggleInterest({
+    jobId, jobName: DATA.jobs[i]?.job||'',
+    studentId: ME.id, name: ME.name, dept: ME.dept, grade: ME.grade, cls: ME.cls
+  });
+  if(!res.success){ alert(res.error||'오류'); btn.disabled=false; return; }
+  // localStorage도 동기화
+  let arr = JSON.parse(localStorage.getItem('interests')||'[]');
+  if(res.interested){ arr.push(i); btn.className='btn-interest on'; btn.textContent='❤️ 관심등록됨'; }
+  else { arr=arr.filter(x=>x!==i); btn.className='btn-interest'; btn.textContent='🤍 관심등록'; }
+  localStorage.setItem('interests', JSON.stringify(arr));
+  btn.disabled = false;
+}
+
+// ── 학생: 지원하기 ──
+async function handleStudentApply(jobId){
+  const ME = JSON.parse(sessionStorage.getItem('samilStudentME')||'{}');
+  if(!ME.id){ alert('로그인 후 지원 가능합니다.'); return; }
+  if(!confirm('지원하시겠습니까?')) return;
+  const j = DATA.jobs[_curJobIdx];
+  const res = await SAMIL_API.applyJob({
+    jobId, jobName: j?.job||'',
+    studentId: ME.id, name: ME.name, dept: ME.dept, grade: ME.grade, cls: ME.cls,
+    regType:'학생', regById: ME.id
+  });
+  alert(res.success ? '✅ 지원 완료되었습니다.' : (res.error||'오류'));
+}
+
+// ── 담임: 학급학생 지원 모달 ──
+async function openTeacherApplyModal(jobId){
+  const ME = JSON.parse(sessionStorage.getItem('samilTeacherME')||'{}');
+  document.getElementById('sub-title').textContent = '학급학생 지원';
+  document.getElementById('sub-body').innerHTML = '<p style="color:var(--text-sub);font-size:13px">학생 목록 불러오는 중...</p>';
+  document.getElementById('sub-footer').innerHTML = '';
+  document.getElementById('subModal').classList.add('open');
+
+  // 지원자 목록(중복체크용) + 학생목록 동시 로드
+  const [appRes] = await Promise.all([
+    SAMIL_API.getApplicants({ teacherId: ME.id, jobId, dept: ME.dept, grade: ME.grade, cls: ME.cls })
+  ]);
+  const appliedIds = appRes.success ? appRes.data.map(a=>String(a.studentId)) : [];
+
+  // 학생 목록은 index.html이 학생DB를 모르므로 sessionStorage에서 불러오거나 간소화
+  const j = DATA.jobs[_curJobIdx];
+  const body = document.getElementById('sub-body');
+  const footer = document.getElementById('sub-footer');
+
+  // 학생목록 조회
+  const stuRes = await SAMIL_API.getStudents({ teacherId: ME.id });
+  if(!stuRes.success || !stuRes.data.length){
+    body.innerHTML='<p style="color:var(--text-sub);font-size:13px">학생 정보가 없습니다. 생기부를 먼저 업로드해주세요.</p>'; return;
+  }
+  const students = stuRes.data.filter(s=> String(s.grade)===String(ME.grade) && String(s.cls)===String(ME.cls));
+
+  body.innerHTML=`
+    <p style="font-size:12px;color:var(--text-sub);margin-bottom:10px">✅ 이미 지원한 학생은 체크 비활성화됩니다.</p>
+    <table class="sub-table">
+      <thead><tr><th></th><th>학번</th><th>이름</th><th>성별</th></tr></thead>
+      <tbody>${students.map(s=>{
+        const done = appliedIds.includes(String(s.id));
+        return `<tr>
+          <td><input type="checkbox" class="sub-check apply-chk" value="${s.id}" data-name="${s.name||''}" data-dept="${s.dept||''}" data-grade="${s.grade||''}" data-cls="${s.cls||''}" ${done?'disabled checked':''}>
+          ${done?'<span class="sub-badge 담임" style="margin-left:4px">지원완료</span>':''}</td>
+          <td>${s.id}</td><td>${s.name||''}</td><td>${s.gender||''}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+
+  footer.innerHTML=`<button class="apply-btn" onclick="submitTeacherApply('${jobId}','${j?.job||''}')">선택 학생 지원 등록</button>`;
+}
+
+async function submitTeacherApply(jobId, jobName){
+  const ME = JSON.parse(sessionStorage.getItem('samilTeacherME')||'{}');
+  const checked = [...document.querySelectorAll('.apply-chk:checked:not(:disabled)')];
+  if(!checked.length){ alert('지원할 학생을 선택해주세요.'); return; }
+  const students = checked.map(c=>({ id:c.value, name:c.dataset.name, dept:c.dataset.dept, grade:c.dataset.grade, cls:c.dataset.cls }));
+  const res = await SAMIL_API.applyJobs({ teacherId: ME.id, jobId, jobName, students: JSON.stringify(students) });
+  if(res.success) alert(`✅ ${res.added}명 지원 완료 (중복 ${res.skipped}명 제외)`);
+  else alert(res.error||'오류');
+  closeModal('subModal');
+}
+
+// ── 담임: 지원조회 모달 ──
+async function openTeacherReviewModal(jobId){
+  const ME = JSON.parse(sessionStorage.getItem('samilTeacherME')||'{}');
+  document.getElementById('sub-title').textContent = '학급 지원 현황';
+  document.getElementById('sub-body').innerHTML = '<p style="color:var(--text-sub);font-size:13px">불러오는 중...</p>';
+  document.getElementById('sub-footer').innerHTML = '';
+  document.getElementById('subModal').classList.add('open');
+
+  const res = await SAMIL_API.getApplicants({ teacherId: ME.id, jobId, dept: ME.dept, grade: ME.grade, cls: ME.cls });
+  const body = document.getElementById('sub-body');
+  if(!res.success){ body.innerHTML=`<p>${res.error}</p>`; return; }
+  if(!res.data.length){ body.innerHTML='<p style="color:var(--text-sub);font-size:13px">지원한 학생이 없습니다.</p>'; return; }
+
+  body.innerHTML=`<table class="sub-table">
+    <thead><tr><th>학번</th><th>이름</th><th>지원일</th><th>등록</th><th>관리</th></tr></thead>
+    <tbody id="apply-review-tb">${renderApplyRows(res.data)}</tbody>
+  </table>`;
+}
+
+function renderApplyRows(list){
+  return list.map(a=>`
+    <tr id="row-${a._row}">
+      <td>${a.studentId}</td>
+      <td>${a.name}</td>
+      <td>${(a.date||'').substring(0,10)}</td>
+      <td><span class="sub-badge ${a.regType}">${a.regType||'학생'}</span></td>
+      <td style="display:flex;gap:6px">
+        <button style="font-size:12px;padding:3px 10px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:#fff" onclick="deleteApplyRow(${a._row})">삭제</button>
+      </td>
+    </tr>`).join('');
+}
+
+async function deleteApplyRow(rowNum){
+  if(!confirm('삭제하시겠습니까?')) return;
+  const ME = JSON.parse(sessionStorage.getItem('samilTeacherME')||'{}');
+  const isAdmin = sessionStorage.getItem('samilAdminAuth') === '1';
+  const res = await SAMIL_API.deleteApply(isAdmin ? { token:'samil_admin_2024', rowNum } : { teacherId: ME.id, rowNum });
+  if(res.success){ document.getElementById(`row-${rowNum}`)?.remove(); }
+  else alert(res.error||'삭제 실패');
+}
+
+// ── 관리자: 관심/지원학생 조회 모달 ──
+async function openAdminSubModal(type, jobId){
+  const isInterest = type === 'interest';
+  document.getElementById('sub-title').textContent = isInterest ? '관심학생 조회' : '지원학생 조회';
+  document.getElementById('sub-body').innerHTML = '<p style="color:var(--text-sub);font-size:13px">불러오는 중...</p>';
+  document.getElementById('sub-footer').innerHTML = '';
+  document.getElementById('subModal').classList.add('open');
+
+  const res = isInterest
+    ? await SAMIL_API.getInterested({ jobId })
+    : await SAMIL_API.getApplicants({ token:'samil_admin_2024', jobId });
+
+  const body = document.getElementById('sub-body');
+  if(!res.success){ body.innerHTML=`<p>${res.error}</p>`; return; }
+  const list = res.data;
+  if(!list.length){ body.innerHTML=`<p style="color:var(--text-sub);font-size:13px">${isInterest?'관심':'지원'}한 학생이 없습니다.</p>`; return; }
+
+  if(isInterest){
+    body.innerHTML=`<table class="sub-table">
+      <thead><tr><th>학번</th><th>이름</th><th>학과</th><th>학년/반</th><th>등록일</th></tr></thead>
+      <tbody>${list.map(a=>`<tr>
+        <td>${a.studentId}</td><td>${a.name}</td><td>${a.dept}</td>
+        <td>${a.grade}학년 ${a.cls}반</td><td>${(a.date||'').substring(0,10)}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  } else {
+    body.innerHTML=`<table class="sub-table">
+      <thead><tr><th>학번</th><th>이름</th><th>학과</th><th>학년/반</th><th>지원일</th><th>등록</th><th>관리</th></tr></thead>
+      <tbody id="admin-apply-tb">${list.map(a=>`<tr id="row-${a._row}">
+        <td>${a.studentId}</td><td>${a.name}</td><td>${a.dept}</td>
+        <td>${a.grade}학년 ${a.cls}반</td><td>${(a.date||'').substring(0,10)}</td>
+        <td><span class="sub-badge ${a.regType}">${a.regType||'학생'}</span></td>
+        <td><button style="font-size:12px;padding:3px 10px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:#fff" onclick="deleteApplyRow(${a._row})">삭제</button></td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  }
 }
 
 function closeModal(id,e){if(!e||e.target.id===id) document.getElementById(id).classList.remove('open');}

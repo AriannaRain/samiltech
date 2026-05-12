@@ -125,6 +125,14 @@ const SAMIL_API = (() => {
     return call({ action: 'deleteTeacher', token: ADMIN_TOKEN, ...data });
   }
 
+  async function applyJob(data)         { return call({ action: 'applyJob',       ...data }); }
+  async function applyJobs(data)        { return call({ action: 'applyJobs',      ...data }); }
+  async function getApplicants(data)    { return call({ action: 'getApplicants',  ...data }); }
+  async function deleteApply(data)      { return call({ action: 'deleteApply',    ...data }); }
+  async function toggleInterest(data)   { return call({ action: 'toggleInterest', ...data }); }
+  async function getInterested(data)    { return call({ action: 'getInterested',  token: ADMIN_TOKEN, ...data }); }
+  async function getMyInterests(data)   { return call({ action: 'getMyInterests', ...data }); }
+
   // ════════════════════════════════════════════
   // 학과
   // ════════════════════════════════════════════
@@ -196,6 +204,8 @@ const SAMIL_API = (() => {
     getBanners, addBanner, deleteBanner,
     getStats, saveAnnualStat, deleteAnnualStat, saveEmploy,
     getArchive,
+    applyJob, applyJobs, getApplicants, deleteApply,
+    toggleInterest, getInterested, getMyInterests,
     initSheets,
   };
 })();
