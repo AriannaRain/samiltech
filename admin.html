@@ -313,7 +313,14 @@ input:checked+.slider:before{transform:translateX(18px)}
     </div>
     <div class="form-row">
       <div class="form-group"><label>첨부파일 (최대 5개)</label>
-        <div style="border:2px dashed var(--border);border-radius:8px;padding:24px;text-align:center;cursor:pointer;transition:.2s" onmouseover="this.style.borderColor='var(--primary-light)'" onmouseout="this.style.borderColor='var(--border)'" onclick="document.getElementById('j-file-input').click()">
+        <div style="border:2px dashed var(--border);border-radius:8px;padding:24px;text-align:center;cursor:pointer;transition:.2s"
+          onmouseover="this.style.borderColor='var(--primary-light)'"
+          onmouseout="this.style.borderColor='var(--border)'"
+          onclick="document.getElementById('j-file-input').click()"
+          ondragover="event.preventDefault();event.stopPropagation();this.style.borderColor='var(--primary-light)';this.style.background='rgba(100,149,255,0.06)'"
+          ondragleave="this.style.borderColor='var(--border)';this.style.background=''"
+          ondrop="event.preventDefault();event.stopPropagation();this.style.borderColor='var(--border)';this.style.background='';handleFileSelect(event.dataTransfer.files,'j-files-list','j-files')"
+        >
           <div style="font-size:22px;margin-bottom:4px">↑</div>
           <div style="font-size:13px;color:var(--text-sub)">파일을 클릭하여 선택하세요</div>
           <div style="font-size:11px;color:var(--text-sub);margin-top:4px">공고문, 지원서 등 (PDF, HWP, DOCX)</div>
@@ -1004,8 +1011,9 @@ function fileToBase64(file){
     r.readAsDataURL(file);
   });
 }
-async function handleFileSelect(input,listId,hiddenId){
-  const files=Array.from(input.files).slice(0,5);
+async function handleFileSelect(inputOrFiles,listId,hiddenId){
+  const fileList=inputOrFiles instanceof FileList?inputOrFiles:inputOrFiles.files;
+  const files=Array.from(fileList).slice(0,5);
   if(!files.length)return;
   const listEl=document.getElementById(listId);
   const hiddenEl=document.getElementById(hiddenId);
@@ -1023,9 +1031,15 @@ async function handleFileSelect(input,listId,hiddenId){
     try{
       const b64=await fileToBase64(f);
       const res=await SAMIL_API.uploadFile(f.name,b64,f.type||'application/octet-stream');
-      if(res.success){ uploaded.push(`${f.name}::${res.url}`); if(stEl)stEl.innerHTML='<span style="color:green">✅</span>'; }
-      else{ if(stEl)stEl.innerHTML=`<span style="color:red">❌ ${res.error||'실패'}</span>`; }
-    }catch(e){ if(stEl)stEl.innerHTML='<span style="color:red">❌ 오류</span>'; }
+      if(res.success){
+        uploaded.push(`${f.name}::${res.url}`);
+        if(stEl)stEl.innerHTML='<span style="color:green">✅</span>';
+      } else {
+        if(stEl)stEl.innerHTML=`<span style="color:red" title="${res.error||''}">❌ ${res.error||'실패'}</span>`;
+      }
+    }catch(e){
+      if(stEl)stEl.innerHTML=`<span style="color:red" title="${e.message}">❌ 오류</span>`;
+    }
   }
   hiddenEl.value=uploaded.join('|');
 }
@@ -1081,7 +1095,12 @@ async function handleFileSelect(input,listId,hiddenId){
       <div class="form-row">
         <div class="form-group"><label>첨부파일</label>
           <div id="ej-files-list" style="margin-bottom:8px;font-size:12px"></div>
-          <div style="border:2px dashed var(--border);border-radius:8px;padding:10px;text-align:center;cursor:pointer" onclick="document.getElementById('ej-file-input').click()">
+          <div style="border:2px dashed var(--border);border-radius:8px;padding:10px;text-align:center;cursor:pointer;transition:.2s"
+            onclick="document.getElementById('ej-file-input').click()"
+            ondragover="event.preventDefault();event.stopPropagation();this.style.borderColor='var(--primary-light)';this.style.background='rgba(100,149,255,0.06)'"
+            ondragleave="this.style.borderColor='var(--border)';this.style.background=''"
+            ondrop="event.preventDefault();event.stopPropagation();this.style.borderColor='var(--border)';this.style.background='';handleFileSelect(event.dataTransfer.files,'ej-new-files-list','ej-new-files-hidden')"
+          >
             <div style="font-size:12px;color:var(--text-sub)">파일 추가 (클릭)</div>
             <input type="file" id="ej-file-input" multiple accept=".pdf,.hwp,.docx,.xlsx" style="display:none" onchange="handleFileSelect(this,'ej-new-files-list','ej-new-files-hidden')">
           </div>
