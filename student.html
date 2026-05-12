@@ -221,7 +221,7 @@ tr:hover td{background:#fafbfd}
 <body>
 
 <!-- 로그인 화면 -->
-<div class="login-screen" id="loginScreen">
+<div class="login-screen" id="loginScreen" style="display:none">
   <div class="login-box">
     <div class="login-logo">
       <div class="mark">🎓</div>
@@ -583,10 +583,7 @@ function logout(){
   ME = null;
   sessionStorage.removeItem('samilStudentAuth');
   sessionStorage.removeItem('samilStudentME');
-  document.getElementById('topNav').style.display='none';
-  document.getElementById('appLayout').style.display='none';
-  document.getElementById('loginScreen').style.display='flex';
-  document.getElementById('l-pw').value='';
+  location.href='index.html';
 }
 
 async function enterApp(){
