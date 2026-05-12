@@ -56,9 +56,9 @@ nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:var(--pri
 .jobs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:16px}
 .job-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);cursor:pointer;transition:.2s;border:1px solid var(--border)}
 .job-card:hover{transform:translateY(-2px);border-color:var(--primary-light)}
-.job-company{font-size:12px;color:var(--text-sub);margin-bottom:3px;display:flex;align-items:center;gap:6px}
+.job-company{font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px;display:flex;align-items:center;gap:6px}
 .job-recommend{background:var(--accent);color:#fff;font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600}
-.job-title{font-size:15px;font-weight:700;margin-bottom:8px}
+.job-title{font-size:12px;color:var(--text-sub);font-weight:400;margin-bottom:8px}
 .job-meta{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
 .job-tag{background:var(--bg);color:var(--text-sub);font-size:11px;padding:3px 8px;border-radius:20px;border:1px solid var(--border)}
 .job-footer{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);padding-top:10px}
@@ -293,6 +293,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
       const cd = JSON.parse(cached);
       DATA.jobs = cd.jobs||[]; DATA.banners = cd.banners||[]; DATA.stats = cd.stats||DATA.stats;
       renderJobs();
+      renderBanners();
     }catch(_){}
   }
 
@@ -348,12 +349,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   document.getElementById('s-close').textContent = DATA.stats.closing;
   document.getElementById('s-done').textContent = DATA.stats.done||'—';
 
-  // 배너
-  document.getElementById('banners').innerHTML = DATA.banners.map(b=>
-    `<a class="banner-item" href="${b.url||'#'}" style="background:${b.color||'#1A3A6B'}">
-      <div><div class="banner-title">${b.title}</div><div class="banner-date">마감 ${b.deadline||b.dl||''}</div></div>
-      <div class="banner-arrow">→</div></a>`).join('');
-
+  renderBanners();
   renderJobs();
 
   // 취업현황 테이블
@@ -368,21 +364,26 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     <td class="dept-rate">${Math.round(te/tg*100)}%</td><td>${Math.round(ta/tg*100)}%</td></tr>`:'');
 });
 
+function renderBanners(){
+  document.getElementById('banners').innerHTML = (DATA.banners||[]).map(b=>
+    `<a class="banner-item" href="${b.url||'#'}" style="background:${b.color||'#1A3A6B'}">
+      <div><div class="banner-title">${b.title}</div><div class="banner-date">마감 ${b.deadline||b.dl||''}</div></div>
+      <div class="banner-arrow">→</div></a>`).join('');
+}
+
 function renderJobs(){
   const today=new Date();
-  if(!DATA.jobs.length){
+  const today0=new Date(); today0.setHours(0,0,0,0);
+  // 만료된 공고(오늘 기준 마감일 지난 것) 제외
+  const valid=DATA.jobs.filter(j=>Math.ceil((new Date((j.dl||'').substring(0,10))-today0)/86400000)>=0);
+  if(!valid.length){
     document.getElementById('jobList').innerHTML='<p style="color:var(--text-sub);font-size:13px;padding:12px 0">등록된 채용공고가 없습니다.</p>';
     document.getElementById('btnMore').style.display='none';
     return;
   }
-  const today0=new Date(); today0.setHours(0,0,0,0);
-  const sorted=[...DATA.jobs].sort((a,b)=>{
+  const sorted=[...valid].sort((a,b)=>{
     const da=new Date((a.dl||'').substring(0,10)); const db=new Date((b.dl||'').substring(0,10));
-    const diffA=Math.ceil((da-today0)/86400000); const diffB=Math.ceil((db-today0)/86400000);
-    const expA=diffA<0; const expB=diffB<0;
-    if(expA!==expB) return expA?1:-1;   // 만료 → 최하단
-    if(expA&&expB) return db-da;        // 만료끼리: 최근 만료 먼저
-    return da-db;                       // 활성: 마감일 가까운 순
+    return da-db; // 마감일 가까운 순 (마감임박 자동 상단)
   });
   document.getElementById('jobList').innerHTML = sorted.slice(0,showN).map((j)=>{
     const dlStr=(j.dl||'').substring(0,10);
