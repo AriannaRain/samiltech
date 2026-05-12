@@ -351,7 +351,14 @@ input:checked+.slider:before{transform:translateX(18px)}
       <div class="form-group"><label>링크 URL</label><input id="b-url" placeholder="https://..."></div>
     </div>
     <div class="form-row cols2">
-      <div class="form-group"><label>마감일</label><input id="b-dl" type="date"></div>
+      <div class="form-group">
+        <label>마감일</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:normal;cursor:pointer;margin-bottom:6px;width:fit-content;white-space:nowrap">
+          <input type="checkbox" id="b-dl-nolimit" onchange="const di=document.getElementById('b-dl');di.disabled=this.checked;di.style.opacity=this.checked?'0.4':'1';if(this.checked)di.value=''">
+          마감기한 없음
+        </label>
+        <input id="b-dl" type="date">
+      </div>
       <div class="form-group"><label>배경 색상</label>
         <div class="color-picker-row" id="colorPicker">
           <div class="color-dot selected" style="background:#1A3A6B" data-color="#1A3A6B" onclick="pickColor(this)"></div>
@@ -865,25 +872,61 @@ function renderJobs(){
 }
 
 // ── 배너 ──
-let pickedColor='#1A3A6B';
-function pickColor(el){ pickedColor=el.dataset.color; document.getElementById('b-color').value=pickedColor; document.querySelectorAll('.color-dot').forEach(d=>d.classList.remove('selected')); el.classList.add('selected'); }
+let pickedColor='#1A3A6B', pickedEditColor='#1A3A6B';
+function pickColor(el){ pickedColor=el.dataset.color; document.getElementById('b-color').value=pickedColor; document.querySelectorAll('#colorPicker .color-dot').forEach(d=>d.classList.remove('selected')); el.classList.add('selected'); }
+function pickEditColor(el){ pickedEditColor=el.dataset.color; document.querySelectorAll('#editColorPicker .color-dot').forEach(d=>d.classList.remove('selected')); el.classList.add('selected'); }
 function addBanner(){
   const title=document.getElementById('b-title').value.trim();
   if(!title){alert('제목을 입력하세요');return;}
   if(!DB.banners) DB.banners=[];
-  const newBanner={title,url:document.getElementById('b-url').value,dl:document.getElementById('b-dl').value,color:pickedColor,date:today()};
+  const nolimit=document.getElementById('b-dl-nolimit').checked;
+  const newBanner={title,url:document.getElementById('b-url').value,dl:nolimit?'':document.getElementById('b-dl').value,color:pickedColor,date:today()};
   DB.banners.push(newBanner);
   save(); renderBanners();
   syncBannerToSheets('add',newBanner).then(()=>renderBanners());
   ['b-title','b-url','b-dl'].forEach(x=>document.getElementById(x).value='');
+  document.getElementById('b-dl-nolimit').checked=false;
+  document.getElementById('b-dl').disabled=false;
+  document.getElementById('b-dl').style.opacity='1';
 }
 async function delBanner(i){ if(confirm('삭제?')){ const id=DB.banners[i].id; DB.banners.splice(i,1); save(); renderBanners(); if(id) await syncBannerToSheets('delete',{id}); } }
+function editBanner(i){
+  const b=DB.banners[i];
+  document.getElementById('eb-idx').value=i;
+  document.getElementById('eb-title').value=b.title||'';
+  document.getElementById('eb-url').value=b.url||'';
+  const nolimit=!b.dl;
+  document.getElementById('eb-dl-nolimit').checked=nolimit;
+  document.getElementById('eb-dl').value=nolimit?'':b.dl;
+  document.getElementById('eb-dl').disabled=nolimit;
+  document.getElementById('eb-dl').style.opacity=nolimit?'0.4':'1';
+  pickedEditColor=b.color||'#1A3A6B';
+  document.querySelectorAll('#editColorPicker .color-dot').forEach(d=>{
+    d.classList.toggle('selected', d.dataset.color===pickedEditColor);
+  });
+  document.getElementById('bannerEditModal').classList.add('open');
+}
+function closeBannerEdit(){ document.getElementById('bannerEditModal').classList.remove('open'); }
+function saveBannerEdit(){
+  const i=parseInt(document.getElementById('eb-idx').value);
+  if(isNaN(i)||!DB.banners[i]){alert('오류');return;}
+  const nolimit=document.getElementById('eb-dl-nolimit').checked;
+  const updated={...DB.banners[i],title:document.getElementById('eb-title').value.trim(),url:document.getElementById('eb-url').value,dl:nolimit?'':document.getElementById('eb-dl').value,color:pickedEditColor};
+  DB.banners[i]=updated;
+  save(); renderBanners(); closeBannerEdit();
+  // Sheets 동기화: 삭제 후 재등록 방식
+  syncBannerToSheets('delete',{id:updated.id}).then(()=>syncBannerToSheets('add',updated)).then(()=>renderBanners());
+}
 function renderBanners(){
   document.getElementById('bannerTb').innerHTML=(DB.banners||[]).map((b,i)=>`
     <tr><td><div style="width:24px;height:24px;border-radius:50%;background:${b.color}"></div></td>
-    <td><strong>${b.title}</strong></td><td>${b.dl||'—'}</td>
+    <td><strong>${b.title}</strong></td>
+    <td>${b.dl?b.dl:'<span class="badge badge-green" style="font-size:11px">기한없음</span>'}</td>
     <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis">${b.url||'—'}</td>
-    <td><button class="btn btn-sm btn-danger" onclick="delBanner(${i})">삭제</button></td></tr>`
+    <td style="display:flex;gap:4px">
+      <button class="btn btn-sm btn-ghost" onclick="editBanner(${i})">수정</button>
+      <button class="btn btn-sm btn-danger" onclick="delBanner(${i})">삭제</button>
+    </td></tr>`
   ).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--text-sub)">배너 없음</td></tr>';
 }
 
@@ -1044,6 +1087,47 @@ async function handleFileSelect(inputOrFiles,listId,hiddenId){
   hiddenEl.value=uploaded.join('|');
 }
 </script>
+
+<!-- 배너 수정 모달 -->
+<div class="edit-modal-overlay" id="bannerEditModal" onclick="if(event.target===this)closeBannerEdit()">
+  <div class="edit-modal">
+    <div class="edit-modal-header">
+      <h3>✏️ 배너 수정</h3>
+      <button class="edit-modal-close" onclick="closeBannerEdit()">✕</button>
+    </div>
+    <div class="edit-modal-body">
+      <input type="hidden" id="eb-idx">
+      <div class="form-row"><div class="form-group"><label>배너 제목</label><input id="eb-title" placeholder="2026 취업박람회 안내"></div></div>
+      <div class="form-row"><div class="form-group"><label>링크 URL</label><input id="eb-url" placeholder="https://..."></div></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>마감일</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:normal;cursor:pointer;margin-bottom:6px;width:fit-content;white-space:nowrap">
+            <input type="checkbox" id="eb-dl-nolimit" onchange="const di=document.getElementById('eb-dl');di.disabled=this.checked;di.style.opacity=this.checked?'0.4':'1';if(this.checked)di.value=''">
+            마감기한 없음
+          </label>
+          <input id="eb-dl" type="date">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>배경 색상</label>
+          <div class="color-picker-row" id="editColorPicker">
+            <div class="color-dot selected" style="background:#1A3A6B" data-color="#1A3A6B" onclick="pickEditColor(this)"></div>
+            <div class="color-dot" style="background:#E8740A" data-color="#E8740A" onclick="pickEditColor(this)"></div>
+            <div class="color-dot" style="background:#2E5FAD" data-color="#2E5FAD" onclick="pickEditColor(this)"></div>
+            <div class="color-dot" style="background:#1D6A4A" data-color="#1D6A4A" onclick="pickEditColor(this)"></div>
+            <div class="color-dot" style="background:#6B46C1" data-color="#6B46C1" onclick="pickEditColor(this)"></div>
+            <div class="color-dot" style="background:#C53030" data-color="#C53030" onclick="pickEditColor(this)"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="edit-modal-footer">
+      <button class="btn btn-ghost" onclick="closeBannerEdit()">취소</button>
+      <button class="btn btn-accent" onclick="saveBannerEdit()">✅ 저장</button>
+    </div>
+  </div>
+</div>
 
 <!-- 채용공고 수정 모달 -->
 <div class="edit-modal-overlay" id="jobEditModal" onclick="if(event.target===this)closeJobEdit()">
