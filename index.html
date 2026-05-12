@@ -481,6 +481,9 @@ function openJob(i){
 }
 
 function toggleInterest(){
+  if(!sessionStorage.getItem('samilStudentAuth') && !sessionStorage.getItem('samilTeacherAuth') && !sessionStorage.getItem('samilAdminAuth')){
+    alert('로그인 후 관심등록 가능합니다.'); return;
+  }
   const btn=document.getElementById('btn-interest');
   const i=parseInt(btn.dataset.idx);
   let arr=JSON.parse(localStorage.getItem('interests')||'[]');
