@@ -302,7 +302,14 @@ input:checked+.slider:before{transform:translateX(18px)}
       </div>
     </div>
     <div id="j-rec-cnt-row" style="display:none" class="form-row">
-      <div class="form-group"><label>추천인원</label><input id="j-rec" type="number" min="1" value="1"></div>
+      <div class="form-group">
+        <label>추천인원</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:normal;cursor:pointer;margin-bottom:8px">
+          <input type="checkbox" id="j-rec-nolimit" onchange="document.getElementById('j-rec').disabled=this.checked;document.getElementById('j-rec').style.opacity=this.checked?'0.4':'1'">
+          인원제한 없음
+        </label>
+        <input id="j-rec" type="number" min="1" value="1">
+      </div>
     </div>
     <div class="form-row">
       <div class="form-group"><label>첨부파일 (최대 5개)</label>
@@ -728,7 +735,8 @@ function addJob(){
   const job=document.getElementById('j-job').value.trim();
   if(!co||!job){alert('회사명과 공고 제목을 입력하세요');return;}
   const recChecked=document.getElementById('j-rec-toggle').checked;
-  const recVal=recChecked?(parseInt(document.getElementById('j-rec').value)||1):0;
+  const noLimit=recChecked&&document.getElementById('j-rec-nolimit').checked;
+  const recVal=recChecked?(noLimit?0:(parseInt(document.getElementById('j-rec').value)||1)):0;
   if(!DB.jobs) DB.jobs=[];
   const type=document.getElementById('j-type').value;
   const newJob={
@@ -738,7 +746,7 @@ function addJob(){
     cnt:document.getElementById('j-cnt').value,
     dl:document.getElementById('j-dl').value,
     tags:document.getElementById('j-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
-    rec:recVal>0,recCnt:recVal,
+    rec:recChecked,recCnt:recVal,
     files:document.getElementById('j-files').value,
     date:today(),active:true
   };
@@ -750,6 +758,9 @@ function clearJobForm(){
   ['j-co','j-job','j-loc','j-cnt','j-tags','j-files'].forEach(x=>document.getElementById(x).value='');
   document.getElementById('j-rec').value='1';
   document.getElementById('j-rec-toggle').checked=false;
+  document.getElementById('j-rec-nolimit').checked=false;
+  document.getElementById('j-rec').disabled=false;
+  document.getElementById('j-rec').style.opacity='1';
   document.getElementById('j-rec-cnt-row').style.display='none';
   document.getElementById('j-files-list').innerHTML='';
   document.getElementById('j-file-input').value='';
@@ -758,6 +769,19 @@ function clearJobForm(){
   document.getElementById('j-dl').value=d.toISOString().split('T')[0];
 }
 
+let _ejExistingFiles=[];
+function renderEjFiles(){
+  const el=document.getElementById('ej-files-list');
+  if(!el)return;
+  el.innerHTML=_ejExistingFiles.length
+    ?_ejExistingFiles.map((f,i)=>
+      `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px;border-bottom:1px solid var(--border)">
+        📎 <a href="${f.url}" target="_blank" style="color:var(--primary-light,#4a90e2)">${f.name}</a>
+        <button onclick="_ejExistingFiles.splice(${i},1);renderEjFiles()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#e53;font-size:14px">✕</button>
+      </div>`
+    ).join('')
+    :'<div style="color:var(--text-sub);font-size:12px;padding:4px 0">첨부파일 없음</div>';
+}
 function editJob(i){
   const j=DB.jobs[i];
   document.getElementById('ej-idx').value=i;
@@ -768,11 +792,19 @@ function editJob(i){
   document.getElementById('ej-cnt').value=j.cnt||'';
   document.getElementById('ej-dl').value=j.dl||'';
   document.getElementById('ej-tags').value=(j.tags||[]).join(',');
-  const recOn=j.rec&&j.recCnt>0;
+  const recOn=j.rec;
+  const noLimitOn=j.rec&&j.recCnt===0;
   document.getElementById('ej-rec-toggle').checked=recOn;
   document.getElementById('ej-rec-cnt-row').style.display=recOn?'block':'none';
-  document.getElementById('ej-rec').value=j.recCnt||1;
-  document.getElementById('ej-files').value=Array.isArray(j.files)?j.files.map(f=>f.name+'|'+f.url).join(', '):(j.files||'');
+  document.getElementById('ej-rec-nolimit').checked=noLimitOn;
+  document.getElementById('ej-rec').value=noLimitOn?1:(j.recCnt||1);
+  document.getElementById('ej-rec').disabled=noLimitOn;
+  document.getElementById('ej-rec').style.opacity=noLimitOn?'0.4':'1';
+  _ejExistingFiles=Array.isArray(j.files)?j.files.filter(f=>f.url&&f.url!=='#'):[];
+  renderEjFiles();
+  document.getElementById('ej-new-files-list').innerHTML='';
+  document.getElementById('ej-file-input').value='';
+  document.getElementById('ej-new-files-hidden').value='';
   document.getElementById('jobEditModal').classList.add('open');
 }
 function closeJobEdit(){
@@ -783,9 +815,11 @@ function saveJobEdit(){
   if(isNaN(i)||!DB.jobs[i]){alert('오류: 인덱스 없음');return;}
   console.log('[디버그] editIdx:', i, '| job id:', DB.jobs[i]?.id, '| co:', DB.jobs[i]?.co);
   const recChecked=document.getElementById('ej-rec-toggle').checked;
-  const recVal=recChecked?(parseInt(document.getElementById('ej-rec').value)||1):0;
-  const filesRaw=document.getElementById('ej-files').value.trim();
-  const files=filesRaw?filesRaw.split(',').map(f=>{const[n,u]=f.split('|');return{name:(n||'').trim(),url:(u||'#').trim()};}).filter(f=>f.name):[];
+  const noLimit=recChecked&&document.getElementById('ej-rec-nolimit').checked;
+  const recVal=recChecked?(noLimit?0:(parseInt(document.getElementById('ej-rec').value)||1)):0;
+  const newHidden=document.getElementById('ej-new-files-hidden').value;
+  const newFiles=newHidden?newHidden.split('|').map(s=>{const[n,u]=s.split('::');return{name:(n||'').trim(),url:(u||'#').trim()};}).filter(f=>f.name&&f.url!=='#'):[];
+  const files=[..._ejExistingFiles,...newFiles];
   DB.jobs[i]={
     ...DB.jobs[i],
     type:document.getElementById('ej-type').value,
@@ -795,7 +829,7 @@ function saveJobEdit(){
     cnt:document.getElementById('ej-cnt').value,
     dl:document.getElementById('ej-dl').value,
     tags:document.getElementById('ej-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
-    rec:recVal>0,recCnt:recVal,files
+    rec:recChecked,recCnt:recVal,files
   };
   save(); renderJobs(); updateDash(); closeJobEdit();
   syncJobToSheets('update',DB.jobs[i]).then(()=>{save();renderJobs();updateDash();});
@@ -808,7 +842,7 @@ function renderJobs(){
   const sortedJobs=[...(DB.jobs||[])].sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
   document.getElementById('jobTb').innerHTML = sortedJobs.map((j)=>{const idx=DB.jobs.indexOf(j);return `
     <tr><td><span class="badge badge-blue" style="font-size:11px">${j.type||'기타'}</span></td><td><strong>${j.co}</strong></td><td>${j.loc}</td><td>${j.dl}</td>
-    <td>${j.rec?`<span class="badge badge-orange">${j.recCnt}명</span>`:'—'}</td>
+    <td>${j.rec?`<span class="badge badge-orange">${j.recCnt>0?j.recCnt+'명':'제한없음'}</span>`:'—'}</td>
     <td><span class="badge ${j.active?'badge-green':'badge-red'}">${j.active?'진행중':'마감'}</span></td>
     <td style="display:flex;gap:4px">
       <button class="btn btn-sm btn-ghost" onclick="editJob(${idx})">수정</button>
@@ -818,7 +852,7 @@ function renderJobs(){
   // 대시보드 최근공고
   document.getElementById('dashJobTb').innerHTML = [...(DB.jobs||[])].sort((a,b)=>new Date(b.date||0)-new Date(a.date||0)).slice(0,5).map(j=>`
     <tr><td>${j.co}</td><td>${j.dl}</td>
-    <td>${j.rec?`<span class="badge badge-orange">${j.recCnt}명</span>`:'—'}</td>
+    <td>${j.rec?`<span class="badge badge-orange">${j.recCnt>0?j.recCnt+'명':'제한없음'}</span>`:'—'}</td>
     <td><span class="badge ${j.active?'badge-green':'badge-red'}">${j.active?'진행중':'마감'}</span></td></tr>`
   ).join('');
 }
@@ -962,14 +996,38 @@ function showTab(id,el){
   el.classList.add('active');
   if(id==='dashboard') updateDash();
 }
-function handleFileSelect(input, listId, hiddenId){
+function fileToBase64(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>resolve(r.result.split(',')[1]);
+    r.onerror=reject;
+    r.readAsDataURL(file);
+  });
+}
+async function handleFileSelect(input,listId,hiddenId){
   const files=Array.from(input.files).slice(0,5);
-  document.getElementById(listId).innerHTML=files.map(f=>
+  if(!files.length)return;
+  const listEl=document.getElementById(listId);
+  const hiddenEl=document.getElementById(hiddenId);
+  hiddenEl.value='';
+  listEl.innerHTML=files.map((f,i)=>
     `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
       <span>📎 ${f.name}</span><span style="color:var(--text-sub)">(${(f.size/1024).toFixed(0)}KB)</span>
+      <span id="fst-${listId}-${i}" style="color:orange;margin-left:auto">⏳ 업로드 중...</span>
     </div>`
   ).join('');
-  document.getElementById(hiddenId).value=files.map(f=>f.name+'|#').join('|');
+  const uploaded=[];
+  for(let i=0;i<files.length;i++){
+    const f=files[i];
+    const stEl=document.getElementById(`fst-${listId}-${i}`);
+    try{
+      const b64=await fileToBase64(f);
+      const res=await SAMIL_API.uploadFile(f.name,b64,f.type||'application/octet-stream');
+      if(res.success){ uploaded.push(`${f.name}::${res.url}`); if(stEl)stEl.innerHTML='<span style="color:green">✅</span>'; }
+      else{ if(stEl)stEl.innerHTML=`<span style="color:red">❌ ${res.error||'실패'}</span>`; }
+    }catch(e){ if(stEl)stEl.innerHTML='<span style="color:red">❌ 오류</span>'; }
+  }
+  hiddenEl.value=uploaded.join('|');
 }
 </script>
 
@@ -1011,11 +1069,24 @@ function handleFileSelect(input, listId, hiddenId){
         </div>
       </div>
       <div id="ej-rec-cnt-row" style="display:none" class="form-row">
-        <div class="form-group"><label>추천인원</label><input id="ej-rec" type="number" min="1" value="1"></div>
+        <div class="form-group">
+          <label>추천인원</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:normal;cursor:pointer;margin-bottom:8px">
+            <input type="checkbox" id="ej-rec-nolimit" onchange="document.getElementById('ej-rec').disabled=this.checked;document.getElementById('ej-rec').style.opacity=this.checked?'0.4':'1'">
+            인원제한 없음
+          </label>
+          <input id="ej-rec" type="number" min="1" value="1">
+        </div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label>첨부파일 URL (파일명|URL 형식, 쉼표 구분)</label>
-          <input id="ej-files" placeholder="공고문.pdf|https://..., 지원서.hwp|https://...">
+        <div class="form-group"><label>첨부파일</label>
+          <div id="ej-files-list" style="margin-bottom:8px;font-size:12px"></div>
+          <div style="border:2px dashed var(--border);border-radius:8px;padding:10px;text-align:center;cursor:pointer" onclick="document.getElementById('ej-file-input').click()">
+            <div style="font-size:12px;color:var(--text-sub)">파일 추가 (클릭)</div>
+            <input type="file" id="ej-file-input" multiple accept=".pdf,.hwp,.docx,.xlsx" style="display:none" onchange="handleFileSelect(this,'ej-new-files-list','ej-new-files-hidden')">
+          </div>
+          <div id="ej-new-files-list" style="margin-top:6px"></div>
+          <input type="hidden" id="ej-new-files-hidden">
         </div>
       </div>
     </div>

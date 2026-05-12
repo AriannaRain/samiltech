@@ -192,6 +192,10 @@ const SAMIL_API = (() => {
     return get({ action: 'getArchive', dept });
   }
 
+  async function uploadFile(name, base64, mimeType) {
+    return call({ action: 'uploadFileToDrive', token: ADMIN_TOKEN, name, base64, mimeType: mimeType || 'application/octet-stream' });
+  }
+
   // ════════════════════════════════════════════
   // 시트 초기화
   // ════════════════════════════════════════════
@@ -210,6 +214,7 @@ const SAMIL_API = (() => {
     getArchive,
     applyJob, applyJobs, getApplicants, deleteApply,
     toggleInterest, getInterested, getMyInterests,
+    uploadFile,
     initSheets,
   };
 })();
