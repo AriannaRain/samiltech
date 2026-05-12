@@ -304,7 +304,7 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div id="j-rec-cnt-row" style="display:none" class="form-row">
       <div class="form-group">
         <label>추천인원</label>
-        <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:normal;cursor:pointer;margin-bottom:8px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:normal;cursor:pointer;margin-bottom:8px;width:fit-content">
           <input type="checkbox" id="j-rec-nolimit" onchange="document.getElementById('j-rec').disabled=this.checked;document.getElementById('j-rec').style.opacity=this.checked?'0.4':'1'">
           인원제한 없음
         </label>
@@ -1071,7 +1071,7 @@ async function handleFileSelect(input,listId,hiddenId){
       <div id="ej-rec-cnt-row" style="display:none" class="form-row">
         <div class="form-group">
           <label>추천인원</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:normal;cursor:pointer;margin-bottom:8px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:normal;cursor:pointer;margin-bottom:8px;width:fit-content">
             <input type="checkbox" id="ej-rec-nolimit" onchange="document.getElementById('ej-rec').disabled=this.checked;document.getElementById('ej-rec').style.opacity=this.checked?'0.4':'1'">
             인원제한 없음
           </label>
