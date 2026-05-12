@@ -66,6 +66,8 @@ nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:var(--pri
 .job-meta{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
 .job-tag{background:var(--bg);color:var(--text-sub);font-size:11px;padding:3px 8px;border-radius:20px;border:1px solid var(--border)}
 .job-footer{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);padding-top:10px}
+.job-stats{display:flex;gap:14px;padding-top:8px;border-top:1px solid var(--border);margin-top:8px}
+.job-stat{font-size:11px;color:var(--text-sub);display:flex;align-items:center;gap:3px}
 .job-deadline{font-size:12px;color:var(--text-sub)}
 .job-deadline.urgent{color:#E53E3E;font-weight:600}
 .job-detail{font-size:12px;color:var(--primary-light);font-weight:600}
@@ -342,7 +344,7 @@ function getFilteredJobs(){
     }
   });
 }
-let DATA = {jobs:[],banners:[],depts:[],stats:{}};
+let DATA = {jobs:[],banners:[],depts:[],stats:{},statsMap:{}};
 
 window.addEventListener('DOMContentLoaded', async ()=>{
   updateNavAuth();
@@ -358,16 +360,23 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   }
 
   // ── Sheets에서 데이터 로드 ──
-  const [jobsSet, bannersSet, statsSet, deptsSet] = await Promise.allSettled([
+  const [jobsSet, bannersSet, statsSet, deptsSet, jobStatsSet] = await Promise.allSettled([
     SAMIL_API.getJobs(false),
     SAMIL_API.getBanners(),
     SAMIL_API.getStats(),
     SAMIL_API.getDepts(),
+    SAMIL_API.getJobStats(),
   ]);
   const jobsRes   = jobsSet.status   === 'fulfilled' ? jobsSet.value   : {};
   const bannersRes= bannersSet.status === 'fulfilled' ? bannersSet.value : {};
   const statsRes  = statsSet.status  === 'fulfilled' ? statsSet.value  : {};
-  const deptsRes  = deptsSet.status  === 'fulfilled' ? deptsSet.value  : {};
+  const deptsRes    = deptsSet.status    === 'fulfilled' ? deptsSet.value    : {};
+  const jobStatsRes = jobStatsSet.status === 'fulfilled' ? jobStatsSet.value : {};
+  if(jobStatsRes.success){
+    const {interest={}, apply={}} = jobStatsRes;
+    const allIds = new Set([...Object.keys(interest), ...Object.keys(apply)]);
+    allIds.forEach(id => { DATA.statsMap[id] = { interest: interest[id]||0, apply: apply[id]||0 }; });
+  }
 
   DATA.jobs    = jobsRes.success    ? jobsRes.data    : SAMPLE.jobs;
   DATA.banners = bannersRes.success ? bannersRes.data : SAMPLE.banners;
@@ -455,15 +464,25 @@ function renderJobs(){
     const urg=diff>=0&&diff<=7;
     const tags=(j.tags||[]).map(t=>`<span class="job-tag">${t}</span>`).join('');
     const origIdx=DATA.jobs.indexOf(j);
+    const jobId=j.id!=null?String(j.id):String(origIdx);
+    const sm=DATA.statsMap[jobId]||{interest:0,apply:0};
     return `<div class="job-card" onclick="openJob(${origIdx})">
       <div class="job-company">${j.type?`[${j.type}] `:''}${j.co||''}${j.rec?'<span class="job-recommend">학교장추천</span>':''}</div>
       <div class="job-title">${j.job||''}</div>
       <div class="job-meta">${tags}
         ${j.loc?`<span class="job-tag">📍${j.loc}</span>`:''}${j.cnt?`<span class="job-tag">👤${j.cnt}</span>`:''}</div>
       <div class="job-footer">
-        <span class="job-deadline${urg?' urgent':''}">${diff<0?'마감 '+dlStr:urg?'마감임박 '+dlStr:'<span style="color:#2563eb">진행중</span>&nbsp;&nbsp;'+dlStr}</span>
+        <span class="job-deadline${urg?' urgent':''}">
+          ${diff<0?'마감 '+dlStr:urg?'마감임박 '+dlStr:'<span style="color:#2563eb">진행중</span>&nbsp;&nbsp;'+dlStr}
+        </span>
         <span class="job-detail">상세보기 →</span>
-      </div></div>`;
+      </div>
+      <div class="job-stats">
+        <span class="job-stat">👁 ${j.views||0}회</span>
+        <span class="job-stat">🤍 관심 ${sm.interest}명</span>
+        <span class="job-stat">📝 지원 ${sm.apply}명</span>
+      </div>
+    </div>`;
   }).join('');
   document.getElementById('btnMore').style.display = showN>=sorted.length?'none':'block';
 }
@@ -492,6 +511,9 @@ function openJob(i){
   } else fWrap.style.display='none';
   renderModalButtons(i);
   document.getElementById('jobModal').classList.add('open');
+  // 조회수 증가 (비동기, 결과 대기 안함)
+  const jId = j.id != null ? String(j.id) : null;
+  if(jId) SAMIL_API.incrementView(jId).then(r=>{ if(r.success){ j.views=r.views; } });
 }
 
 async function renderModalButtons(i){
