@@ -317,7 +317,7 @@ function getFilteredJobs(){
     const diff = expired ? -1 : Math.ceil((new Date(dl+'T00:00:00') - new Date(todayStr+'T00:00:00')) / 86400000);
     const urgent = !expired && diff <= 7;
     switch(currentFilter){
-      case '전체':    return !expired && !inactive;
+      case '전체':    return true;           // 삭제 제외 전체
       case '마감임박': return !expired && !inactive && urgent;
       case '진행중':  return !expired && !inactive && !urgent;
       case '마감':    return expired || inactive;
@@ -424,10 +424,13 @@ function renderJobs(){
     return;
   }
   const sorted=[...valid].sort((a,b)=>{
+    const todayStr2=getTodayStr();
+    const aExp=(a.dl||'').substring(0,10)<todayStr2||!a.active;
+    const bExp=(b.dl||'').substring(0,10)<todayStr2||!b.active;
+    if(aExp!==bExp) return aExp?1:-1;        // 진행중 먼저
     const da=new Date((a.dl||'').substring(0,10)+'T00:00:00');
     const db=new Date((b.dl||'').substring(0,10)+'T00:00:00');
-    if(currentFilter==='마감') return db-da; // 마감탭: 최근 마감 먼저
-    return da-db;                             // 나머지: 마감 가까운 순
+    return aExp ? db-da : da-db;             // 진행중: 마감일 오름차순 / 마감: 내림차순
   });
   document.getElementById('jobList').innerHTML = sorted.slice(0,showN).map((j)=>{
     const dlStr=(j.dl||'').substring(0,10);
