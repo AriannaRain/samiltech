@@ -195,7 +195,7 @@ footer strong{color:#fff}
         <div class="info-item"><div class="info-label">모집인원</div><div class="info-value" id="m-cnt"></div></div>
         <div class="info-item"><div class="info-label">마감일</div><div class="info-value" id="m-dl"></div></div>
       </div>
-      <div id="m-rec" style="display:none" class="recommend-box">🏫 <strong>학교장 추천전형</strong> — 추천 인원: <span id="m-reccnt"></span>명</div>
+      <div id="m-rec" style="display:none" class="recommend-box">🏫 <strong>학교장 추천전형</strong> — 추천 인원: <span id="m-reccnt"></span></div>
       <div class="modal-desc" id="m-desc"></div>
       <div id="m-files" style="display:none;margin-top:14px">
         <div style="font-size:13px;font-weight:600;color:var(--text-sub);margin-bottom:8px">📎 붙임파일</div>
@@ -502,7 +502,7 @@ function openJob(i){
   document.getElementById('m-dl').textContent=(j.dl||'').substring(0,10);
   document.getElementById('m-desc').textContent=j.desc||'';
   document.getElementById('m-rec').style.display=j.rec?'block':'none';
-  if(j.rec) document.getElementById('m-reccnt').textContent=j.recCnt;
+  if(j.rec) document.getElementById('m-reccnt').textContent=j.recCnt>0?j.recCnt+'명':'제한없음';
   const fWrap=document.getElementById('m-files');
   const fList=document.getElementById('m-file-list');
   if(j.files&&j.files.length){
