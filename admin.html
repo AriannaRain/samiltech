@@ -16,16 +16,8 @@ body{font-family:'Pretendard','Apple SD Gothic Neo',sans-serif;font-size:14px;ba
 a{text-decoration:none;color:inherit}
 
 /* ── 로그인 오버레이 ── */
-#loginOverlay{position:fixed;inset:0;background:var(--primary);display:flex;align-items:center;justify-content:center;z-index:9999}
-.login-box{background:#fff;border-radius:16px;padding:48px 40px;width:360px;text-align:center}
-.login-box h1{font-size:22px;font-weight:700;color:var(--primary);margin-bottom:6px}
-.login-box p{color:var(--text-sub);font-size:13px;margin-bottom:28px}
-.login-box input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:12px;font-family:inherit}
-.login-box button{width:100%;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
-.login-err{color:var(--red);font-size:12px;margin-top:8px}
-
 /* ── 레이아웃 ── */
-#app{display:none}
+#app{display:block}
 .sidebar{width:var(--sidebar-w);background:var(--primary);position:fixed;top:0;left:0;bottom:0;display:flex;flex-direction:column;z-index:100;overflow-y:auto}
 .main{margin-left:var(--sidebar-w);min-height:100vh;padding:24px}
 
@@ -121,17 +113,6 @@ tr:last-child td{border-bottom:none}
 </style>
 </head>
 <body>
-
-<!-- ══════════════════════ 로그인 ══════════════════════ -->
-<div id="loginOverlay">
-  <div class="login-box">
-    <h1>🔐 관리자 로그인</h1>
-    <p>삼일공업고등학교 취업포털 관리자</p>
-    <input type="password" id="loginPw" placeholder="관리자 비밀번호" onkeydown="if(event.key==='Enter')doLogin()">
-    <button onclick="doLogin()">로그인</button>
-    <p class="login-err" id="loginErr"></p>
-  </div>
-</div>
 
 <!-- ══════════════════════ 앱 ══════════════════════ -->
 <div id="app">
@@ -473,7 +454,6 @@ tr:last-child td{border-bottom:none}
 // ══════════════════════════════════════════════
 // 데이터 초기화
 // ══════════════════════════════════════════════
-const ADMIN_PW = 'samil_admin_2024';
 
 let DB = (() => {
   try { return JSON.parse(localStorage.getItem('samilAdmin') || '{}'); } catch(e) { return {}; }
@@ -502,17 +482,12 @@ function today() {
 }
 
 // ══════════════════════════════════════════════
-// 로그인
+// 초기화
 // ══════════════════════════════════════════════
-function doLogin() {
-  const pw = document.getElementById('loginPw').value;
-  if (pw === ADMIN_PW) {
-    document.getElementById('loginOverlay').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    init();
-  } else {
-    document.getElementById('loginErr').textContent = '비밀번호가 올바르지 않습니다.';
-  }
+async function init() {
+  initYearSelect();
+  renderAll();
+  loadFromSheets();
 }
 
 // ══════════════════════════════════════════════
@@ -1214,10 +1189,8 @@ async function init() {
   loadFromSheets();
 }
 
-// 로그인 화면에서 Enter 처리
-document.getElementById('loginPw').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doLogin();
-});
+window.onload = init;
+
 // Enter로 모달 저장
 document.getElementById('sem-place').addEventListener('keydown', e => {
   if (e.key === 'Enter') saveStudentEmployStatus();
