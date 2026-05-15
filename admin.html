@@ -307,7 +307,15 @@ tr:last-child td{border-bottom:none}
         <div class="form-group"><label>링크 URL</label><input id="bn-url" placeholder="https://..."></div>
       </div>
       <div class="form-row cols2">
-        <div class="form-group"><label>마감일 (선택)</label><input id="bn-dl" type="date"></div>
+        <div class="form-group">
+          <label>마감일 (선택)</label>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <input id="bn-dl" type="date" style="flex:1;min-width:140px">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text-sub);white-space:nowrap">
+              <input type="checkbox" id="bn-noExpiry" onchange="toggleBnDl(this)"> 기간제한 없음
+            </label>
+          </div>
+        </div>
         <div class="form-group"><label>배경색</label><input id="bn-color" type="color" value="#1E3A6E" style="height:38px;padding:4px 8px"></div>
       </div>
       <button class="btn btn-accent" onclick="addBanner()">배너 추가</button>
@@ -497,6 +505,39 @@ tr:last-child td{border-bottom:none}
     <div class="edit-modal-footer">
       <button class="btn btn-ghost" onclick="closeEmployDataModal()">취소</button>
       <button class="btn btn-accent" onclick="saveEmployDataEntry()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ 모달: 배너 수정 ══════ -->
+<div class="edit-modal-overlay" id="bannerEditModal" onclick="if(event.target===this)closeBannerEdit()">
+  <div class="edit-modal" style="max-width:480px">
+    <div class="edit-modal-header">
+      <h3>배너 수정</h3>
+      <button class="edit-modal-close" onclick="closeBannerEdit()">✕</button>
+    </div>
+    <div class="edit-modal-body">
+      <input type="hidden" id="eb-id">
+      <div class="form-row cols2">
+        <div class="form-group"><label>배너 제목</label><input id="eb-title"></div>
+        <div class="form-group"><label>링크 URL</label><input id="eb-url" placeholder="https://..."></div>
+      </div>
+      <div class="form-row cols2">
+        <div class="form-group">
+          <label>마감일</label>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <input id="eb-dl" type="date" style="flex:1;min-width:140px">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text-sub);white-space:nowrap">
+              <input type="checkbox" id="eb-noExpiry" onchange="toggleBnDl(this,'eb')"> 기간제한 없음
+            </label>
+          </div>
+        </div>
+        <div class="form-group"><label>배경색</label><input id="eb-color" type="color" style="height:38px;padding:4px 8px"></div>
+      </div>
+    </div>
+    <div class="edit-modal-footer">
+      <button class="btn btn-ghost" onclick="closeBannerEdit()">취소</button>
+      <button class="btn btn-accent" onclick="saveBannerEdit()">저장</button>
     </div>
   </div>
 </div>
@@ -1051,19 +1092,31 @@ function toggleRecUnlim(prefix) {
 // ══════════════════════════════════════════════
 // 배너
 // ══════════════════════════════════════════════
+function toggleBnDl(cb, prefix) {
+  const p = prefix || 'bn';
+  const dlEl = document.getElementById(p + '-dl');
+  dlEl.disabled = cb.checked;
+  dlEl.style.opacity = cb.checked ? '.4' : '1';
+  if (cb.checked) dlEl.value = '';
+}
+
 async function addBanner() {
-  const title = document.getElementById('bn-title').value.trim();
-  const url   = document.getElementById('bn-url').value.trim();
-  const dl    = document.getElementById('bn-dl').value;
-  const color = document.getElementById('bn-color').value;
+  const title    = document.getElementById('bn-title').value.trim();
+  const url      = document.getElementById('bn-url').value.trim();
+  const noExpiry = document.getElementById('bn-noExpiry').checked;
+  const dl       = noExpiry ? '' : document.getElementById('bn-dl').value;
+  const color    = document.getElementById('bn-color').value;
   if (!title) { alert('배너 제목을 입력하세요'); return; }
   try {
-    await SAMIL_API.addBanner({ title, url, dl, color });
+    await SAMIL_API.addBanner({ title, url, dl, color, noExpiry: String(noExpiry) });
     const fresh = await SAMIL_API.getBanners();
     if (fresh.success) { DB.banners = fresh.data; save(); renderBanners(); updateDash(); }
     document.getElementById('bn-title').value = '';
     document.getElementById('bn-url').value   = '';
     document.getElementById('bn-dl').value    = '';
+    document.getElementById('bn-noExpiry').checked = false;
+    document.getElementById('bn-dl').disabled = false;
+    document.getElementById('bn-dl').style.opacity = '1';
   } catch(e) { alert('배너 추가 실패'); }
 }
 
@@ -1076,20 +1129,61 @@ async function delBanner(id) {
   } catch(e) { alert('삭제 실패'); }
 }
 
+function editBanner(id) {
+  const b = (DB.banners||[]).find(b => b.id === id);
+  if (!b) return;
+  document.getElementById('eb-id').value    = id;
+  document.getElementById('eb-title').value = b.title || '';
+  document.getElementById('eb-url').value   = b.url   || '';
+  document.getElementById('eb-color').value = b.color || '#1E3A6E';
+  const noExpiry = b.noExpiry === true || b.noExpiry === 'true';
+  document.getElementById('eb-noExpiry').checked = noExpiry;
+  document.getElementById('eb-dl').value    = noExpiry ? '' : (b.dl || '');
+  document.getElementById('eb-dl').disabled = noExpiry;
+  document.getElementById('eb-dl').style.opacity = noExpiry ? '.4' : '1';
+  document.getElementById('bannerEditModal').classList.add('open');
+}
+
+function closeBannerEdit() {
+  document.getElementById('bannerEditModal').classList.remove('open');
+}
+
+async function saveBannerEdit() {
+  const id       = document.getElementById('eb-id').value;
+  const title    = document.getElementById('eb-title').value.trim();
+  const url      = document.getElementById('eb-url').value.trim();
+  const noExpiry = document.getElementById('eb-noExpiry').checked;
+  const dl       = noExpiry ? '' : document.getElementById('eb-dl').value;
+  const color    = document.getElementById('eb-color').value;
+  if (!title) { alert('배너 제목을 입력하세요'); return; }
+  try {
+    await SAMIL_API.updateBanner({ id, title, url, dl, color, noExpiry: String(noExpiry) });
+    const fresh = await SAMIL_API.getBanners();
+    if (fresh.success) { DB.banners = fresh.data; save(); renderBanners(); }
+    closeBannerEdit();
+  } catch(e) { alert('수정 실패'); }
+}
+
 function renderBanners() {
   const el = document.getElementById('bannerList');
   if (!el) return;
   const list = DB.banners || [];
   if (!list.length) { el.innerHTML = '<p style="color:var(--text-sub);font-size:13px">등록된 배너 없음</p>'; return; }
-  el.innerHTML = list.map(b => `
+  el.innerHTML = list.map(b => {
+    const noExpiry = b.noExpiry === true || b.noExpiry === 'true';
+    const dlText   = noExpiry ? '<span style="font-size:11px;color:var(--green);margin-left:8px;font-weight:600">기간제한 없음</span>'
+                   : b.dl ? `<span style="color:var(--text-sub);font-size:11px;margin-left:8px">~${b.dl}</span>` : '';
+    return `
     <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);margin-bottom:8px;background:${b.color||'#1E3A6E'}15">
       <div style="width:16px;height:16px;border-radius:4px;background:${b.color||'#1E3A6E'};flex-shrink:0"></div>
       <div style="flex:1">
-        <strong style="font-size:13px">${b.title}</strong>
-        ${b.dl?`<span style="color:var(--text-sub);font-size:11px;margin-left:8px">~${b.dl}</span>`:''}
+        <strong style="font-size:13px">${b.title}</strong>${dlText}
+        ${b.url && b.url !== '#' ? `<span style="display:block;font-size:11px;color:var(--text-sub);margin-top:2px">${b.url}</span>` : ''}
       </div>
+      <button class="btn btn-sm btn-ghost" onclick="editBanner('${b.id}')">수정</button>
       <button class="btn btn-sm btn-danger" onclick="delBanner('${b.id}')">삭제</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // ══════════════════════════════════════════════

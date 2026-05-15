@@ -185,6 +185,10 @@ const SAMIL_API = (() => {
     return call({ action: 'deleteBanner', token: ADMIN_TOKEN, id });
   }
 
+  async function updateBanner(data) {
+    return call({ action: 'updateBanner', token: ADMIN_TOKEN, ...data });
+  }
+
   // ════════════════════════════════════════════
   // 취업통계
   // ════════════════════════════════════════════
@@ -230,7 +234,7 @@ const SAMIL_API = (() => {
     getTeachers, getClasses, saveClasses,
     updateStudentEmploy,
     getDepts, addDept, deleteDept,
-    getBanners, addBanner, deleteBanner,
+    getBanners, addBanner, deleteBanner, updateBanner,
     getStats, saveAnnualStat, deleteAnnualStat, saveEmploy,
     getArchive,
     applyJob, applyJobs, getApplicants, deleteApply,
