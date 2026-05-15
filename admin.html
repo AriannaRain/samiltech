@@ -243,14 +243,22 @@ tr:last-child td{border-bottom:none}
         <div class="form-group"><label>마감일</label><input id="j-dl" type="date"></div>
         <div class="form-group"><label>모집인원</label><input id="j-cnt" type="number" min="1" value="1"></div>
       </div>
-      <div class="form-row">
-        <div class="form-group"><label>태그 (쉼표 구분)</label><input id="j-tags" placeholder="전기,기계,공조"></div>
-        <div class="form-group"><label>추천인원</label><input id="j-recCnt" type="number" min="0" value="0" style="width:100px"></div>
-      </div>
+      <div class="form-group"><label>태그 (쉼표 구분)</label><input id="j-tags" placeholder="전기,기계,공조"></div>
       <div class="form-group">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-          <input id="j-rec" type="checkbox"> 학교장 추천 공고
-        </label>
+        <label>학교장 추천 전형</label>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:2px">
+          <button type="button" id="j-rec-btn" data-active="0" onclick="toggleRec('j')"
+            style="padding:7px 18px;border-radius:8px;border:2px solid var(--border);background:#fff;cursor:pointer;font-size:13px;font-weight:600;color:var(--text-sub);transition:.2s">
+            ○ 비활성
+          </button>
+          <div id="j-rec-fields" style="display:none;align-items:center;gap:10px;flex-wrap:wrap">
+            <input id="j-recCnt" type="number" min="1" value="1" placeholder="추천인원"
+              style="width:100px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text-sub)">
+              <input type="checkbox" id="j-recUnlim" onchange="toggleRecUnlim('j')"> 추천인원 제한 없음
+            </label>
+          </div>
+        </div>
       </div>
       <button class="btn btn-accent" onclick="addJob()">공고 등록</button>
     </div>
@@ -384,14 +392,22 @@ tr:last-child td{border-bottom:none}
         <div class="form-group"><label>마감일</label><input id="ej-dl" type="date"></div>
         <div class="form-group"><label>모집인원</label><input id="ej-cnt" type="number" min="1"></div>
       </div>
-      <div class="form-row cols2">
-        <div class="form-group"><label>태그</label><input id="ej-tags" placeholder="쉼표 구분"></div>
-        <div class="form-group"><label>추천인원</label><input id="ej-recCnt" type="number" min="0"></div>
-      </div>
+      <div class="form-group"><label>태그</label><input id="ej-tags" placeholder="쉼표 구분"></div>
       <div class="form-group">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-          <input id="ej-rec" type="checkbox"> 학교장 추천 공고
-        </label>
+        <label>학교장 추천 전형</label>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:2px">
+          <button type="button" id="ej-rec-btn" data-active="0" onclick="toggleRec('ej')"
+            style="padding:7px 18px;border-radius:8px;border:2px solid var(--border);background:#fff;cursor:pointer;font-size:13px;font-weight:600;color:var(--text-sub);transition:.2s">
+            ○ 비활성
+          </button>
+          <div id="ej-rec-fields" style="display:none;align-items:center;gap:10px;flex-wrap:wrap">
+            <input id="ej-recCnt" type="number" min="1" value="1" placeholder="추천인원"
+              style="width:100px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text-sub)">
+              <input type="checkbox" id="ej-recUnlim" onchange="toggleRecUnlim('ej')"> 추천인원 제한 없음
+            </label>
+          </div>
+        </div>
       </div>
     </div>
     <div class="edit-modal-footer">
@@ -726,8 +742,9 @@ async function addJob() {
   const loc   = document.getElementById('j-loc').value.trim();
   const dl    = document.getElementById('j-dl').value;
   const cnt   = document.getElementById('j-cnt').value || '1';
-  const rec   = document.getElementById('j-rec').checked;
-  const recCnt= document.getElementById('j-recCnt').value || '0';
+  const rec      = document.getElementById('j-rec-btn').dataset.active === '1';
+  const recUnlim = rec && document.getElementById('j-recUnlim').checked;
+  const recCnt   = rec ? (recUnlim ? -1 : (Number(document.getElementById('j-recCnt').value) || 1)) : 0;
   const tags  = document.getElementById('j-tags').value.trim();
   const type  = document.getElementById('j-type').value;
   if (!co || !job) { alert('회사명과 공고제목을 입력하세요'); return; }
@@ -735,7 +752,7 @@ async function addJob() {
   // 즉시 UI 반영 (임시 ID)
   const tmpId = 'tmp_' + Date.now();
   DB.jobs.unshift({
-    id: tmpId, type, co, job, loc, cnt: Number(cnt)||1, dl, rec, recCnt: Number(recCnt)||0,
+    id: tmpId, type, co, job, loc, cnt: Number(cnt)||1, dl, rec, recCnt, recUnlim,
     tags: tags ? tags.split(',').map(t=>t.trim()).filter(Boolean) : [],
     files: [], active: true, date: today(), views: 0,
   });
@@ -743,7 +760,7 @@ async function addJob() {
 
   // Sheets 저장 후 진짜 ID로 교체
   try {
-    await SAMIL_API.addJob({ type, co, job, loc, cnt, dl, rec: String(rec), recCnt, tags });
+    await SAMIL_API.addJob({ type, co, job, loc, cnt, dl, rec: String(rec), recCnt: String(recCnt), tags });
     const fresh = await SAMIL_API.getJobs();
     if (fresh.success) { DB.jobs = fresh.data; save(); renderJobs(); updateDash(); }
   } catch(e) { console.warn('addJob 오류:', e); }
@@ -752,9 +769,17 @@ async function addJob() {
 function clearJobForm() {
   ['j-co','j-job','j-loc','j-tags'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('j-cnt').value = '1';
-  document.getElementById('j-recCnt').value = '0';
-  document.getElementById('j-rec').checked = false;
   document.getElementById('j-dl').value = '';
+  // 학교장 추천 초기화
+  const btn = document.getElementById('j-rec-btn');
+  btn.dataset.active = '0';
+  btn.textContent = '○ 비활성';
+  btn.style.cssText = 'padding:7px 18px;border-radius:8px;border:2px solid var(--border);background:#fff;cursor:pointer;font-size:13px;font-weight:600;color:var(--text-sub);transition:.2s';
+  document.getElementById('j-rec-fields').style.display = 'none';
+  document.getElementById('j-recUnlim').checked = false;
+  document.getElementById('j-recCnt').value = '1';
+  document.getElementById('j-recCnt').disabled = false;
+  document.getElementById('j-recCnt').style.opacity = '1';
 }
 
 function renderJobs() {
@@ -789,6 +814,9 @@ function editJob(id) {
   document.getElementById('ej-rec').checked   = !!j.rec;
   document.getElementById('ej-recCnt').value  = j.recCnt|| 0;
   document.getElementById('ej-tags').value    = (j.tags||[]).join(',');
+  // 학교장 추천 상태 복원
+  const recUnlim = j.recCnt === -1;
+  _setRecBtn('ej', !!j.rec, recUnlim, recUnlim ? 1 : (j.recCnt || 1));
   document.getElementById('jobEditModal').classList.add('open');
 }
 
@@ -796,6 +824,9 @@ async function saveJobEdit() {
   const id  = document.getElementById('ej-idx').value;
   const idx = (DB.jobs||[]).findIndex(j => j.id === id);
   if (idx === -1) { alert('공고를 찾을 수 없습니다'); return; }
+  const rec      = document.getElementById('ej-rec-btn').dataset.active === '1';
+  const recUnlim = rec && document.getElementById('ej-recUnlim').checked;
+  const recCnt   = rec ? (recUnlim ? -1 : (Number(document.getElementById('ej-recCnt').value) || 1)) : 0;
   const updated = {
     type  : document.getElementById('ej-type').value,
     co    : document.getElementById('ej-co').value.trim(),
@@ -803,15 +834,14 @@ async function saveJobEdit() {
     loc   : document.getElementById('ej-loc').value.trim(),
     dl    : document.getElementById('ej-dl').value,
     cnt   : Number(document.getElementById('ej-cnt').value)||1,
-    rec   : document.getElementById('ej-rec').checked,
-    recCnt: Number(document.getElementById('ej-recCnt').value)||0,
+    rec, recCnt, recUnlim,
     tags  : document.getElementById('ej-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
   };
   if (!updated.co || !updated.job) { alert('회사명과 공고제목을 입력하세요'); return; }
   DB.jobs[idx] = { ...DB.jobs[idx], ...updated };
   save(); renderJobs(); updateDash(); closeJobEdit();
   try {
-    await SAMIL_API.updateJob({ id, ...updated, rec: String(updated.rec), tags: updated.tags.join(',') });
+    await SAMIL_API.updateJob({ id, ...updated, rec: String(updated.rec), recCnt: String(updated.recCnt), tags: updated.tags.join(',') });
     const fresh = await SAMIL_API.getJobs();
     if (fresh.success) { DB.jobs = fresh.data; save(); renderJobs(); updateDash(); }
   } catch(e) {}
@@ -843,6 +873,39 @@ async function delJob(id) {
 }
 
 function closeJobEdit() { document.getElementById('jobEditModal').classList.remove('open'); }
+
+// ── 학교장 추천 전형 토글 ──
+function _setRecBtn(prefix, active, unlim, cnt) {
+  const btn    = document.getElementById(prefix + '-rec-btn');
+  const fields = document.getElementById(prefix + '-rec-fields');
+  const cntEl  = document.getElementById(prefix + '-recCnt');
+  const unlimEl= document.getElementById(prefix + '-recUnlim');
+  btn.dataset.active = active ? '1' : '0';
+  if (active) {
+    btn.textContent = '● 학교장 추천 활성';
+    btn.style.cssText = 'padding:7px 18px;border-radius:8px;border:2px solid var(--accent);background:var(--accent);cursor:pointer;font-size:13px;font-weight:600;color:#fff;transition:.2s';
+    fields.style.display = 'flex';
+  } else {
+    btn.textContent = '○ 비활성';
+    btn.style.cssText = 'padding:7px 18px;border-radius:8px;border:2px solid var(--border);background:#fff;cursor:pointer;font-size:13px;font-weight:600;color:var(--text-sub);transition:.2s';
+    fields.style.display = 'none';
+  }
+  if (unlimEl) unlimEl.checked = !!unlim;
+  if (cntEl)   { cntEl.value = cnt || 1; cntEl.disabled = !!unlim; cntEl.style.opacity = unlim ? '.4' : '1'; }
+}
+
+function toggleRec(prefix) {
+  const btn    = document.getElementById(prefix + '-rec-btn');
+  const active = btn.dataset.active !== '1';
+  _setRecBtn(prefix, active, false, 1);
+}
+
+function toggleRecUnlim(prefix) {
+  const unlim = document.getElementById(prefix + '-recUnlim').checked;
+  const cntEl = document.getElementById(prefix + '-recCnt');
+  cntEl.disabled     = unlim;
+  cntEl.style.opacity= unlim ? '.4' : '1';
+}
 
 // ══════════════════════════════════════════════
 // 배너
