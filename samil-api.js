@@ -1,177 +1,79 @@
 /**
- * samil-api.js  ─  GAS 클라이언트 API 레이어
- * - TTL 기반 localStorage 캐시 (cold start 지연 완화)
- * - mutating 작업 후 캐시 자동 무효화
+ * samil-api.js  —  Google Apps Script API 레이어
  */
 
 const SAMIL_API = (() => {
   const GAS_URL     = 'https://script.google.com/macros/s/AKfycby6UpyOV0rxKOUbQkerpniceHPAgZOkLfNKJC5JFyEJqxmJbe_4BcK-HOPCHOmahnnA_g/exec';
   const ADMIN_TOKEN = 'samil_admin_2024';
 
-  // ── 캐시 헬퍼 (localStorage 기반, TTL ms) ──
-  function _getCache(key) {
-    try {
-      const raw = localStorage.getItem('_sc_' + key);
-      if (!raw) return null;
-      const item = JSON.parse(raw);
-      if (Date.now() - item.ts > item.ttl) { localStorage.removeItem('_sc_' + key); return null; }
-      return item.data;
-    } catch(e) { return null; }
-  }
-  function _setCache(key, data, ttl = 300000) { // default 5분
-    try { localStorage.setItem('_sc_' + key, JSON.stringify({ data, ts: Date.now(), ttl })); } catch(e) {}
-  }
-  function _invalidate(...keys) {
-    keys.forEach(k => { try { localStorage.removeItem('_sc_' + k); } catch(e) {} });
-  }
-
-  // ── 기본 호출 ──
   async function call(params) {
-    const res = await fetch(GAS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(params),
-    });
-    const text = await res.text();
-    return JSON.parse(text);
+    try {
+      const res = await fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(params),
+        redirect: 'follow',
+      });
+      return await res.json();
+    } catch (e) {
+      console.error('[SAMIL_API]', e);
+      return { success: false, error: e.message };
+    }
   }
+
   async function get(params) {
-    const qs  = new URLSearchParams({ ...params }).toString();
-    const res = await fetch(`${GAS_URL}?${qs}`);
-    const text = await res.text();
-    return JSON.parse(text);
+    try {
+      params._t = Date.now();
+      const qs  = new URLSearchParams(params).toString();
+      const res = await fetch(`${GAS_URL}?${qs}`, { redirect: 'follow', cache: 'no-store' });
+      return await res.json();
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
   }
 
-  // ══════════════════════════════════════════
-  // Public reads (캐시 적용)
-  // ══════════════════════════════════════════
-  async function getDepts() {
-    const cached = _getCache('depts');
-    if (cached) return cached;
-    const res = await get({ action: 'getDepts' });
-    if (res.success) _setCache('depts', res, 3600000); // 1시간
-    return res;
-  }
-
+  // ════════════════════════════════════════════
+  // 채용공고
+  // ════════════════════════════════════════════
   async function getJobs(activeOnly = false) {
-    const key    = 'jobs_' + activeOnly;
-    const cached = _getCache(key);
-    if (cached) return cached;
-    const res = await get({ action: 'getJobs', activeOnly });
-    if (res.success) _setCache(key, res, 300000); // 5분
-    return res;
+    return get({ action: 'getJobs', activeOnly });
   }
 
-  async function getBanners() {
-    const cached = _getCache('banners');
-    if (cached) return cached;
-    const res = await get({ action: 'getBanners' });
-    if (res.success) _setCache('banners', res, 300000);
-    return res;
+  async function addJob(data) {
+    return call({ action: 'addJob', token: ADMIN_TOKEN, ...flattenJob(data) });
   }
 
-  async function getStats()       { return get({ action: 'getStats' }); }
-  async function getArchive(opts) { return get({ action: 'getArchive', ...opts }); }
-
-  // ── 연도별 학년-반 구조 ──
-  async function getClasses(opts = {}) {
-    return get({ action: 'getClasses', ...opts });
+  async function updateJob(data) {
+    return call({ action: 'updateJob', token: ADMIN_TOKEN, id: data.id, ...flattenJob(data) });
   }
 
-  // ── 홈 취업현황 집계 ──
-  async function getEmployStats(opts = {}) {
-    return get({ action: 'getEmployStats', ...opts });
-  }
-
-  // ── 이전 연도 취업현황 기록 ──
-  async function getEmployData(opts = {}) {
-    return get({ action: 'getEmployData', ...opts });
-  }
-
-  // ══════════════════════════════════════════
-  // 공고 관리 (Admin, 캐시 무효화)
-  // ══════════════════════════════════════════
-  async function addJob(job) {
-    const res = await call({ action: 'addJob', token: ADMIN_TOKEN, ...job });
-    _invalidate('jobs_false', 'jobs_true');
-    return res;
-  }
-  async function updateJob(job) {
-    const res = await call({ action: 'updateJob', token: ADMIN_TOKEN, ...job });
-    _invalidate('jobs_false', 'jobs_true');
-    return res;
-  }
   async function deleteJob(id) {
-    const res = await call({ action: 'deleteJob', token: ADMIN_TOKEN, id });
-    _invalidate('jobs_false', 'jobs_true');
-    return res;
+    return call({ action: 'deleteJob', token: ADMIN_TOKEN, id });
   }
+
   async function toggleJob(id) {
-    const res = await call({ action: 'toggleJob', token: ADMIN_TOKEN, id });
-    _invalidate('jobs_false', 'jobs_true');
-    return res;
+    return call({ action: 'toggleJob', token: ADMIN_TOKEN, id });
   }
 
-  // ══════════════════════════════════════════
-  // 배너 관리 (캐시 무효화)
-  // ══════════════════════════════════════════
-  async function addBanner(b) {
-    const res = await call({ action: 'addBanner', token: ADMIN_TOKEN, ...b });
-    _invalidate('banners');
-    return res;
-  }
-  async function deleteBanner(id) {
-    const res = await call({ action: 'deleteBanner', token: ADMIN_TOKEN, id });
-    _invalidate('banners');
-    return res;
-  }
-
-  // ══════════════════════════════════════════
-  // 학과 관리 (캐시 무효화)
-  // ══════════════════════════════════════════
-  async function addDept(d) {
-    const res = await call({ action: 'addDept', token: ADMIN_TOKEN, ...d });
-    _invalidate('depts');
-    return res;
-  }
-  async function deleteDept(name) {
-    const res = await call({ action: 'deleteDept', token: ADMIN_TOKEN, name });
-    _invalidate('depts');
-    return res;
+  function flattenJob(d) {
+    return {
+      type: d.type || '기타',
+      co: d.co, job: d.job, loc: d.loc, cnt: d.cnt, dl: d.dl,
+      tags: Array.isArray(d.tags) ? d.tags.join(',') : (d.tags || ''),
+      rec: String(!!d.rec),
+      recCnt: d.recCnt || 0,
+      files: Array.isArray(d.files)
+        ? d.files.map(f => `${f.name}::${f.url}`).join('|')
+        : (d.files || ''),
+    };
   }
 
-  // ══════════════════════════════════════════
-  // 교사 관리
-  // ══════════════════════════════════════════
-  async function addTeacher(t) {
-    return call({ action: 'addTeacher', token: ADMIN_TOKEN, ...t });
+  // ════════════════════════════════════════════
+  // 학생 로그인 / 정보
+  // ════════════════════════════════════════════
+  async function loginStudent(dept, id, pw) {
+    return call({ action: 'loginStudent', dept, id, pw });
   }
-  async function deleteTeacher(t) {
-    return call({ action: 'deleteTeacher', token: ADMIN_TOKEN, ...t });
-  }
-  async function getTeachers(opts = {}) {
-    return call({ action: 'getTeachers', token: ADMIN_TOKEN, ...opts });
-  }
-
-  // ══════════════════════════════════════════
-  // 학년-반 구조 저장
-  // ══════════════════════════════════════════
-  async function saveClasses(opts = {}) {
-    return call({ action: 'saveClasses', token: ADMIN_TOKEN, ...opts });
-  }
-
-  // ══════════════════════════════════════════
-  // 이전 연도 취업현황 기록 저장
-  // ══════════════════════════════════════════
-  async function saveEmployData(opts = {}) {
-    return call({ action: 'saveEmployData', token: ADMIN_TOKEN, ...opts });
-  }
-
-  // ══════════════════════════════════════════
-  // 학생 관련
-  // ══════════════════════════════════════════
-  async function loginStudent(dept, id, pw)  { return call({ action: 'loginStudent', dept, id, pw }); }
-  async function loginTeacher(p)             { return call({ action: 'loginTeacher', ...p }); }
 
   async function getStudents(opts = {}) {
     const params = { action: 'getStudents', ...opts };
@@ -179,79 +81,161 @@ const SAMIL_API = (() => {
     return call(params);
   }
 
-  async function addStudent(s)        { return call({ action: 'addStudent', token: ADMIN_TOKEN, ...s }); }
-  async function saveRecord(r, tid)   { return call({ action: 'saveRecord', teacherId: tid, record: JSON.stringify(r) }); }
-  async function saveRecords(rs, tid) { return call({ action: 'saveRecords', teacherId: tid, records: JSON.stringify(rs) }); }
-  async function getMyRecord(studentId) { return call({ action: 'getMyRecord', studentId }); }
-  async function resetStudentPw(id)   { return call({ action: 'resetStudentPw', token: ADMIN_TOKEN, id }); }
-  async function changeStudentPw(studentId, curPw, newPw) { return call({ action: 'changeStudentPw', studentId, curPw, newPw }); }
-  async function changeTeacherPw(p)   { return call({ action: 'changeTeacherPw', ...p }); }
-
-  // ── 취업/진학 상태 업데이트 ──
-  async function updateStudentEmploy(opts = {}) {
-    const params = { action: 'updateStudentEmploy', ...opts };
-    if (!params.teacherId) params.token = ADMIN_TOKEN;
-    return call(params);
+  async function getMyRecord(studentId) {
+    return call({ action: 'getMyRecord', studentId });
   }
 
-  // ══════════════════════════════════════════
-  // 통계
-  // ══════════════════════════════════════════
-  async function saveAnnualStat(p)   { return call({ action: 'saveAnnualStat',   token: ADMIN_TOKEN, ...p }); }
-  async function deleteAnnualStat(p) { return call({ action: 'deleteAnnualStat', token: ADMIN_TOKEN, ...p }); }
-  async function saveEmploy(p)       { return call({ action: 'saveEmploy',        token: ADMIN_TOKEN, ...p }); }
-  async function initSheets()        { return call({ action: 'initSheets',        token: ADMIN_TOKEN }); }
-  async function getJobStats(p)      { return call({ action: 'getJobStats',       ...p }); }
-  async function incrementView(jobId){ return call({ action: 'incrementView',     jobId }); }
+  async function saveRecord(record, teacherId) {
+    return call({ action: 'saveRecord', teacherId, record: JSON.stringify(record) });
+  }
 
-  // ══════════════════════════════════════════
-  // 지원·관심
-  // ══════════════════════════════════════════
-  async function applyJob(p)         { return call({ action: 'applyJob',        ...p }); }
-  async function applyJobs(p)        { return call({ action: 'applyJobs',       ...p }); }
-  async function getApplicants(p)    { return call({ action: 'getApplicants',   token: ADMIN_TOKEN, ...p }); }
-  async function getApplicantsTc(p)  { return call({ action: 'getApplicants',   ...p }); }
-  async function deleteApply(p)      { return call({ action: 'deleteApply',     token: ADMIN_TOKEN, ...p }); }
-  async function deleteApplyTc(p)    { return call({ action: 'deleteApply',     ...p }); }
-  async function toggleInterest(p)   { return call({ action: 'toggleInterest',  ...p }); }
-  async function getInterested(p)    { return call({ action: 'getInterested',   token: ADMIN_TOKEN, ...p }); }
-  async function getMyInterests(p)   { return call({ action: 'getMyInterests',  ...p }); }
+  // 배치 저장 — 단건 반복 대신 1회 호출
+  async function saveRecords(records, teacherId) {
+    return call({ action: 'saveRecords', teacherId, records: JSON.stringify(records) });
+  }
 
-  // ══════════════════════════════════════════
-  // 파일 업로드
-  // ══════════════════════════════════════════
+  async function addStudent(data) {
+    return call({ action: 'addStudent', token: ADMIN_TOKEN, ...data });
+  }
+
+  async function resetStudentPw(id) {
+    return call({ action: 'resetStudentPw', token: ADMIN_TOKEN, id });
+  }
+
+  // ════════════════════════════════════════════
+  // 담임교사 로그인 / 계정
+  // ════════════════════════════════════════════
+  async function loginTeacher(dept, grade, cls, name, pw) {
+    return call({ action: 'loginTeacher', dept, grade, cls, name, pw });
+  }
+
+  async function changeTeacherPw(data) {
+    return call({ action: 'changeTeacherPw', ...data });
+  }
+
+  async function changeStudentPw(data) {
+    return call({ action: 'changeStudentPw', ...data });
+  }
+
+  async function addTeacher(data) {
+    return call({ action: 'addTeacher', token: ADMIN_TOKEN, ...data });
+  }
+
+  async function deleteTeacher(data) {
+    return call({ action: 'deleteTeacher', token: ADMIN_TOKEN, ...data });
+  }
+
+  async function getJobStats()            { return get({ action: 'getJobStats' }); }
+  async function incrementView(jobId)     { return call({ action: 'incrementView', jobId }); }
+
+  async function applyJob(data)         { return call({ action: 'applyJob',       ...data }); }
+  async function applyJobs(data)        { return call({ action: 'applyJobs',      ...data }); }
+  async function getApplicants(data)    { return call({ action: 'getApplicants',  ...data }); }
+  async function deleteApply(data)      { return call({ action: 'deleteApply',    ...data }); }
+  async function toggleInterest(data)   { return call({ action: 'toggleInterest', ...data }); }
+  async function getInterested(data)    { return call({ action: 'getInterested',  token: ADMIN_TOKEN, ...data }); }
+  async function getMyInterests(data)   { return call({ action: 'getMyInterests', ...data }); }
+
+  // ════════════════════════════════════════════
+  // 담임교사 / 학년-반 구조 (ScriptProperties)
+  // ════════════════════════════════════════════
+  async function getTeachers(opts = {}) {
+    return get({ action: 'getTeachers', ...opts });
+  }
+
+  async function getClasses(opts = {}) {
+    return get({ action: 'getClasses', ...opts });
+  }
+
+  async function saveClasses(data) {
+    return call({ action: 'saveClasses', token: ADMIN_TOKEN, ...data });
+  }
+
+  async function updateStudentEmploy(data) {
+    return call({ action: 'updateStudentEmploy', token: ADMIN_TOKEN, ...data });
+  }
+
+  // ════════════════════════════════════════════
+  // 학과
+  // ════════════════════════════════════════════
+  async function getDepts() {
+    return get({ action: 'getDepts' });
+  }
+
+  async function addDept(data) {
+    return call({ action: 'addDept', token: ADMIN_TOKEN, ...data });
+  }
+
+  async function deleteDept(name) {
+    return call({ action: 'deleteDept', token: ADMIN_TOKEN, name });
+  }
+
+  // ════════════════════════════════════════════
+  // 배너
+  // ════════════════════════════════════════════
+  async function getBanners() {
+    return get({ action: 'getBanners' });
+  }
+
+  async function addBanner(data) {
+    return call({ action: 'addBanner', token: ADMIN_TOKEN, ...data });
+  }
+
+  async function deleteBanner(id) {
+    return call({ action: 'deleteBanner', token: ADMIN_TOKEN, id });
+  }
+
+  // ════════════════════════════════════════════
+  // 취업통계
+  // ════════════════════════════════════════════
+  async function getStats() {
+    return get({ action: 'getStats' });
+  }
+
+  async function saveAnnualStat(data) {
+    return call({ action: 'saveAnnualStat', token: ADMIN_TOKEN, ...data });
+  }
+
+  async function deleteAnnualStat(year) {
+    return call({ action: 'deleteAnnualStat', token: ADMIN_TOKEN, year });
+  }
+
+  async function saveEmploy(data) {
+    return call({ action: 'saveEmploy', token: ADMIN_TOKEN, ...data });
+  }
+
+  // ════════════════════════════════════════════
+  // 선배취업아카이브
+  // ════════════════════════════════════════════
+  async function getArchive(dept = '') {
+    return get({ action: 'getArchive', dept });
+  }
+
   async function uploadFile(name, base64, mimeType) {
-    return call({ action: 'uploadFileToDrive', token: ADMIN_TOKEN, name, base64, mimeType });
+    return call({ action: 'uploadFileToDrive', token: ADMIN_TOKEN, name, base64, mimeType: mimeType || 'application/octet-stream' });
+  }
+
+  // ════════════════════════════════════════════
+  // 시트 초기화
+  // ════════════════════════════════════════════
+  async function initSheets() {
+    return call({ action: 'initSheets', token: ADMIN_TOKEN });
   }
 
   return {
-    // reads
-    getDepts, getJobs, getBanners, getStats, getArchive,
-    getClasses, getEmployStats, getEmployData,
-    // 공고 admin
-    addJob, updateJob, deleteJob, toggleJob,
-    // 배너 admin
-    addBanner, deleteBanner,
-    // 학과 admin
-    addDept, deleteDept,
-    // 교사
-    addTeacher, deleteTeacher, getTeachers, saveClasses, changeTeacherPw,
-    // 취업현황 기록
-    saveEmployData,
-    // 학생
-    loginStudent, loginTeacher, getStudents, addStudent,
-    saveRecord, saveRecords, getMyRecord,
-    resetStudentPw, changeStudentPw,
-    updateStudentEmploy,
-    // 통계
-    saveAnnualStat, deleteAnnualStat, saveEmploy, initSheets,
+    getJobs, addJob, updateJob, deleteJob, toggleJob,
     getJobStats, incrementView,
-    // 지원·관심
-    applyJob, applyJobs,
-    getApplicants, getApplicantsTc,
-    deleteApply, deleteApplyTc,
+    loginStudent, getStudents, getMyRecord, saveRecord, saveRecords, addStudent, resetStudentPw,
+    loginTeacher, addTeacher, deleteTeacher, changeTeacherPw, changeStudentPw,
+    getTeachers, getClasses, saveClasses,
+    updateStudentEmploy,
+    getDepts, addDept, deleteDept,
+    getBanners, addBanner, deleteBanner,
+    getStats, saveAnnualStat, deleteAnnualStat, saveEmploy,
+    getArchive,
+    applyJob, applyJobs, getApplicants, deleteApply,
     toggleInterest, getInterested, getMyInterests,
-    // 파일
     uploadFile,
+    initSheets,
   };
 })();

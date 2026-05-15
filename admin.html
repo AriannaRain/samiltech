@@ -248,6 +248,7 @@ tr:last-child td{border-bottom:none}
         <div class="form-group"><label>모집인원</label><input id="j-cnt" type="number" min="1" value="1"></div>
       </div>
       <div class="form-group"><label>태그 (쉼표 구분)</label><input id="j-tags" placeholder="전기,기계,공조"></div>
+      <div class="form-group"><label>붙임파일 URL (선택)</label><input id="j-file" placeholder="https://drive.google.com/..."></div>
       <div class="form-group">
         <label>학교장 추천 전형</label>
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:2px">
@@ -397,6 +398,7 @@ tr:last-child td{border-bottom:none}
         <div class="form-group"><label>모집인원</label><input id="ej-cnt" type="number" min="1"></div>
       </div>
       <div class="form-group"><label>태그</label><input id="ej-tags" placeholder="쉼표 구분"></div>
+      <div class="form-group"><label>붙임파일 URL (선택)</label><input id="ej-file" placeholder="https://drive.google.com/..."></div>
       <div class="form-group">
         <label>학교장 추천 전형</label>
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:2px">
@@ -751,6 +753,7 @@ async function addJob() {
   const recCnt   = rec ? (recUnlim ? -1 : (Number(document.getElementById('j-recCnt').value) || 1)) : 0;
   const tags  = document.getElementById('j-tags').value.trim();
   const type  = document.getElementById('j-type').value;
+  const fileUrl = document.getElementById('j-file').value.trim();
   if (!co || !job) { alert('회사명과 공고제목을 입력하세요'); return; }
 
   // 즉시 UI 반영 (임시 ID)
@@ -758,20 +761,21 @@ async function addJob() {
   DB.jobs.unshift({
     id: tmpId, type, co, job, loc, cnt: Number(cnt)||1, dl, rec, recCnt, recUnlim,
     tags: tags ? tags.split(',').map(t=>t.trim()).filter(Boolean) : [],
-    files: [], active: true, date: today(), views: 0,
+    files: fileUrl ? [{ name: '첨부파일', url: fileUrl }] : [],
+    active: true, date: today(), views: 0,
   });
   save(); renderJobs(); updateDash(); clearJobForm();
 
   // Sheets 저장 후 진짜 ID로 교체
   try {
-    await SAMIL_API.addJob({ type, co, job, loc, cnt, dl, rec: String(rec), recCnt: String(recCnt), tags });
+    await SAMIL_API.addJob({ type, co, job, loc, cnt, dl, rec: String(rec), recCnt: String(recCnt), tags, files: fileUrl ? [{ name: '첨부파일', url: fileUrl }] : [] });
     const fresh = await SAMIL_API.getJobs();
     if (fresh.success) { DB.jobs = fresh.data; save(); renderJobs(); updateDash(); }
   } catch(e) { console.warn('addJob 오류:', e); }
 }
 
 function clearJobForm() {
-  ['j-co','j-job','j-loc','j-tags'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  ['j-co','j-job','j-loc','j-tags','j-file'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('j-cnt').value = '1';
   document.getElementById('j-dl').value = '';
   // 학교장 추천 초기화
@@ -815,9 +819,8 @@ function editJob(id) {
   document.getElementById('ej-loc').value     = j.loc   || '';
   document.getElementById('ej-dl').value      = j.dl    || '';
   document.getElementById('ej-cnt').value     = j.cnt   || 1;
-  document.getElementById('ej-rec').checked   = !!j.rec;
-  document.getElementById('ej-recCnt').value  = j.recCnt|| 0;
   document.getElementById('ej-tags').value    = (j.tags||[]).join(',');
+  document.getElementById('ej-file').value    = (j.files && j.files[0] && j.files[0].url) || '';
   // 학교장 추천 상태 복원
   const recUnlim = j.recCnt === -1;
   _setRecBtn('ej', !!j.rec, recUnlim, recUnlim ? 1 : (j.recCnt || 1));
@@ -831,6 +834,7 @@ async function saveJobEdit() {
   const rec      = document.getElementById('ej-rec-btn').dataset.active === '1';
   const recUnlim = rec && document.getElementById('ej-recUnlim').checked;
   const recCnt   = rec ? (recUnlim ? -1 : (Number(document.getElementById('ej-recCnt').value) || 1)) : 0;
+  const fileUrl  = document.getElementById('ej-file').value.trim();
   const updated = {
     type  : document.getElementById('ej-type').value,
     co    : document.getElementById('ej-co').value.trim(),
@@ -840,6 +844,7 @@ async function saveJobEdit() {
     cnt   : Number(document.getElementById('ej-cnt').value)||1,
     rec, recCnt, recUnlim,
     tags  : document.getElementById('ej-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
+    files : fileUrl ? [{ name: '첨부파일', url: fileUrl }] : [],
   };
   if (!updated.co || !updated.job) { alert('회사명과 공고제목을 입력하세요'); return; }
   DB.jobs[idx] = { ...DB.jobs[idx], ...updated };
