@@ -215,6 +215,23 @@ const SAMIL_API = (() => {
     return get({ action: 'getArchive', dept });
   }
 
+  async function getReviews(dept = '') {
+    return get({ action: 'getReviews', dept });
+  }
+
+  async function addReview(data) {
+    return call({ action: 'addReview', token: ADMIN_TOKEN,
+      sid: data.sid || '', sname: data.sname || '',
+      dept: data.dept || '', year: data.year || '',
+      co: data.co || '', review: data.review || '',
+      essays: JSON.stringify(data.essays || []),
+    });
+  }
+
+  async function deleteReview(id) {
+    return call({ action: 'deleteReview', token: ADMIN_TOKEN, id });
+  }
+
   async function uploadFile(name, base64, mimeType) {
     return call({ action: 'uploadFileToDrive', token: ADMIN_TOKEN, name, base64, mimeType: mimeType || 'application/octet-stream' });
   }
@@ -236,7 +253,7 @@ const SAMIL_API = (() => {
     getDepts, addDept, deleteDept,
     getBanners, addBanner, deleteBanner, updateBanner,
     getStats, saveAnnualStat, deleteAnnualStat, saveEmploy,
-    getArchive,
+    getArchive, getReviews, addReview, deleteReview,
     applyJob, applyJobs, getApplicants, deleteApply,
     toggleInterest, getInterested, getMyInterests,
     uploadFile,

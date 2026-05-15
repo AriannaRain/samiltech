@@ -101,6 +101,12 @@ tr:last-child td{border-bottom:none}
 .cls-dept-label{font-size:11px;font-weight:700;color:var(--text-sub);padding:8px 0 2px;letter-spacing:.3px;border-top:1px solid var(--border);margin-top:8px}
 .cls-dept-label:first-child{border-top:none;margin-top:0;padding-top:0}
 
+/* ── 업체명 자동완성 ── */
+.ac-wrap{position:relative}
+.ac-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);z-index:300;max-height:180px;overflow-y:auto;margin-top:2px;display:none}
+.ac-list.open{display:block}
+.ac-item{padding:8px 12px;font-size:13px;cursor:pointer;transition:.1s}
+.ac-item:hover,.ac-item.ac-focused{background:var(--bg);color:var(--primary)}
 /* ── 파일 드래그앤드롭 ── */
 .drop-zone{border:2px dashed var(--border);border-radius:10px;padding:20px 16px;text-align:center;cursor:pointer;transition:.2s;background:#fafbfc;position:relative}
 .drop-zone:hover,.drop-zone.drag-over{border-color:var(--primary-light);background:#EBF4FF}
@@ -370,13 +376,31 @@ tr:last-child td{border-bottom:none}
     <div class="card">
       <div class="card-title">주요 취업업체 및 합격자소서/후기</div>
       <div class="form-row cols2">
-        <div class="form-group"><label>업체명</label><input id="er-co" placeholder="삼성전자"></div>
-        <div class="form-group"><label>학과</label><select id="er-dept"></select></div>
-      </div>
+        <div class="form-group">
+          <label>업체명</label>
+          <div class="ac-wrap">
+            <input id="er-co" placeholder="삼성전자" autocomplete="off"
+              oninput="acSearch(this,'er-ac-list')" onkeydown="acKeyNav(event,'er-ac-list')" onblur="setTimeout(()=>acClose('er-ac-list'),150)">
+            <div class="ac-list" id="er-ac-list"></div>
+          </div>
+        </div>
       <div class="form-row cols2">
+        <div class="form-group"><label>학과</label><select id="er-dept"></select></div>
         <div class="form-group"><label>연도</label><input id="er-year" type="number" placeholder="2025"></div>
       </div>
-      <div class="form-group"><label>합격자소서 URL (선택)</label><input id="er-essay" placeholder="https://..."></div>
+      <div class="form-row cols2">
+        <div class="form-group"><label>학번</label><input id="er-sid" placeholder="20250001"></div>
+        <div class="form-group"><label>학생 이름</label><input id="er-sname" placeholder="홍길동"></div>
+      </div>
+      <div class="form-group">
+        <label>합격자소서 파일 (선택, 여러 파일 가능)</label>
+        <div class="drop-zone" id="er-dropzone" ondragover="onDragOver(event,'er')" ondragleave="onDragLeave(event,'er')" ondrop="onDrop(event,'er')">
+          <input type="file" id="er-file" multiple onchange="onFileSelect(event,'er')">
+          <div class="drop-icon">📂</div>
+          <div class="drop-text">파일을 끌어다 놓거나 <strong>클릭하여 선택</strong></div>
+        </div>
+        <div class="file-list" id="er-file-list"></div>
+      </div>
       <div class="form-group"><label>합격 후기 (간단 메모)</label><textarea id="er-review" placeholder="면접 준비, 자소서 핵심..."></textarea></div>
       <button class="btn btn-accent" onclick="addReview()">추가</button>
       <div id="reviewList" style="margin-top:16px"></div>
@@ -635,21 +659,23 @@ async function setYear(y) {
 // ══════════════════════════════════════════════
 async function loadFromSheets() {
   try {
-    const [deptsRes, bannersRes, jobsRes, statsRes, teachersRes, classesRes] = await Promise.all([
+    const [deptsRes, bannersRes, jobsRes, statsRes, teachersRes, classesRes, reviewsRes] = await Promise.all([
       SAMIL_API.getDepts(),
       SAMIL_API.getBanners(),
       SAMIL_API.getJobs(),
       SAMIL_API.getStats(),
       SAMIL_API.getTeachers({ year: currentYear }),
       SAMIL_API.getClasses({ year: currentYear }),
+      SAMIL_API.getReviews(),
     ]);
     if (deptsRes.success && deptsRes.data.length)
       DB.depts = deptsRes.data.map(d => ({ name: d.name, code: d.code||'', date: d.startYear||today() }));
-    if (bannersRes.success) DB.banners = bannersRes.data;
-    if (jobsRes.success)    DB.jobs    = jobsRes.data;
-    if (statsRes.success)   DB.statsHistory = statsRes.data;
+    if (bannersRes.success)  DB.banners      = bannersRes.data;
+    if (jobsRes.success)     DB.jobs         = jobsRes.data;
+    if (statsRes.success)    DB.statsHistory = statsRes.data;
     if (teachersRes.success) getYearData(currentYear).teachers = teachersRes.data;
     if (classesRes.success)  getYearData(currentYear).classes  = classesRes.data;
+    if (reviewsRes.success)  DB.reviews      = reviewsRes.data;
     save();
     renderAll();
   } catch(e) {
@@ -820,7 +846,7 @@ function toBase64(file) {
 }
 
 // 드래그앤드롭 파일 상태 (prefix 별로 관리)
-const _pendingFiles = { j: [], ej: [] };
+const _pendingFiles = { j: [], ej: [], er: [] };
 
 function onDragOver(e, prefix) {
   e.preventDefault();
@@ -1401,40 +1427,119 @@ function delEmploy(i) {
 // ══════════════════════════════════════════════
 // 합격자소서 / 후기
 // ══════════════════════════════════════════════
-function addReview() {
+// ══════════════════════════════════════════════
+// 업체명 자동완성
+// ══════════════════════════════════════════════
+function acSearch(input, listId) {
+  const q    = input.value.trim().toLowerCase();
+  const list = document.getElementById(listId);
+  if (!q) { list.classList.remove('open'); return; }
+  const companies = [...new Set((DB.reviews||[]).map(r => r.co).filter(Boolean))];
+  const matched   = companies.filter(c => c.toLowerCase().includes(q));
+  if (!matched.length) { list.classList.remove('open'); return; }
+  list.innerHTML = matched.map(c =>
+    `<div class="ac-item" onmousedown="acSelect(this,'${input.id}','${listId}')">${c}</div>`
+  ).join('');
+  list.classList.add('open');
+}
+
+function acSelect(item, inputId, listId) {
+  document.getElementById(inputId).value = item.textContent;
+  acClose(listId);
+}
+
+function acClose(listId) {
+  document.getElementById(listId)?.classList.remove('open');
+}
+
+function acKeyNav(e, listId) {
+  const list  = document.getElementById(listId);
+  const items = list.querySelectorAll('.ac-item');
+  const cur   = list.querySelector('.ac-focused');
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    const next = cur ? (cur.nextElementSibling || items[0]) : items[0];
+    cur?.classList.remove('ac-focused');
+    next?.classList.add('ac-focused');
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    const prev = cur ? (cur.previousElementSibling || items[items.length-1]) : items[items.length-1];
+    cur?.classList.remove('ac-focused');
+    prev?.classList.add('ac-focused');
+  } else if (e.key === 'Enter' && cur) {
+    e.preventDefault();
+    document.getElementById(e.target.id).value = cur.textContent;
+    acClose(listId);
+  } else if (e.key === 'Escape') {
+    acClose(listId);
+  }
+}
+
+// ══════════════════════════════════════════════
+// 합격자소서/후기
+// ══════════════════════════════════════════════
+async function addReview() {
   const co     = document.getElementById('er-co').value.trim();
   const dept   = document.getElementById('er-dept').value;
   const year   = parseInt(document.getElementById('er-year').value) || new Date().getFullYear()-1;
-  const essay  = document.getElementById('er-essay').value.trim();
+  const sid    = document.getElementById('er-sid').value.trim();
+  const sname  = document.getElementById('er-sname').value.trim();
   const review = document.getElementById('er-review').value.trim();
   if (!co || !dept) { alert('업체명과 학과를 입력하세요'); return; }
+
+  const essays = _pendingFiles.er.length ? await uploadPendingFiles('er') : [];
+
+  // 즉시 UI 반영
   if (!DB.reviews) DB.reviews = [];
-  DB.reviews.push({ co, dept, year, essay, review, date: today() });
+  DB.reviews.push({ co, dept, year, sid, sname, essays, review, date: today() });
   save(); renderReviews();
-  ['er-co','er-essay','er-review'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('er-co').value     = '';
+  document.getElementById('er-sid').value    = '';
+  document.getElementById('er-sname').value  = '';
+  document.getElementById('er-review').value = '';
+  _pendingFiles.er = [];
+  renderPendingFiles('er');
+
+  // Sheets 저장 후 id 포함 데이터로 갱신
+  try {
+    await SAMIL_API.addReview({ co, dept, year, sid, sname, essays, review });
+    const fresh = await SAMIL_API.getReviews();
+    if (fresh.success) { DB.reviews = fresh.data; save(); renderReviews(); }
+  } catch(e) { console.warn('후기 Sheets 저장 오류:', e); }
 }
 
-function delReview(i) {
-  if (confirm('삭제?')) { DB.reviews.splice(i, 1); save(); renderReviews(); }
+async function delReview(id) {
+  if (!confirm('삭제?')) return;
+  DB.reviews = (DB.reviews||[]).filter(r => r.id !== id);
+  save(); renderReviews();
+  try { await SAMIL_API.deleteReview(id); } catch(e) { console.warn('후기 삭제 오류:', e); }
 }
 
 function renderReviews() {
-  const el   = document.getElementById('reviewList');
+  const el = document.getElementById('reviewList');
   if (!el) return;
   const list = DB.reviews || [];
   if (!list.length) { el.innerHTML = '<p style="color:var(--text-sub);font-size:13px">등록된 후기 없음</p>'; return; }
-  el.innerHTML = list.map((r, i) => `
+  el.innerHTML = list.map((r) => {
+    const files = r.essays && r.essays.length ? r.essays
+                : r.essay ? [{ name: '자소서 보기', url: r.essay }] : [];
+    const fileLinks = files.map(f =>
+      `<a href="${f.url}" target="_blank" class="btn btn-sm btn-ghost" style="font-size:11px;margin-left:4px">${fileIcon(f.name)}&nbsp;${f.name}</a>`
+    ).join('');
+    return `
     <div style="border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:8px">
       <div style="display:flex;justify-content:space-between;align-items:start;gap:8px">
-        <div>
+        <div style="flex:1;min-width:0">
           <strong>${r.co}</strong>
           <span style="color:var(--text-sub);font-size:12px;margin-left:8px">${r.dept} · ${r.year}년</span>
-          ${r.essay ? `<a href="${r.essay}" target="_blank" class="btn btn-sm btn-ghost" style="margin-left:8px;font-size:11px">자소서 보기</a>` : ''}
+          ${r.sname ? `<span style="font-size:12px;margin-left:8px;color:var(--text)">👤 ${r.sname}${r.sid ? ` <span style="color:var(--text-sub)">(${r.sid})</span>` : ''}</span>` : ''}
+          ${fileLinks ? `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">${fileLinks}</div>` : ''}
         </div>
-        <button class="btn btn-sm btn-danger" onclick="delReview(${i})">삭제</button>
+        <button class="btn btn-sm btn-danger" onclick="delReview('${r.id}')" style="flex-shrink:0">삭제</button>
       </div>
       ${r.review ? `<p style="color:var(--text-sub);font-size:12px;margin-top:8px;line-height:1.6">${r.review}</p>` : ''}
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // ══════════════════════════════════════════════
