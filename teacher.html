@@ -288,10 +288,10 @@ tr:hover td{background:#fafbfd}
       <h2>담임교사 로그인</h2>
       <p>삼일공업고등학교 취업정보 포털</p>
     </div>
-    <div class="form-group"><label>학과</label><select id="l-dept" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit"><option value="">학과 선택</option></select></div>
+    <div class="form-group"><label>학과</label><select id="l-dept" onchange="updateClsDropdown()" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit"><option value="">학과 선택</option></select></div>
     <div style="display:flex;gap:8px">
-      <div class="form-group" style="flex:1"><label>학년</label><select id="l-grade" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"><option value="">학년</option><option>1</option><option>2</option><option>3</option></select></div>
-      <div class="form-group" style="flex:1"><label>반</label><select id="l-cls" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"><option value="">반</option><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
+      <div class="form-group" style="flex:1"><label>학년</label><select id="l-grade" onchange="updateClsDropdown()" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"><option value="">학년</option><option>1</option><option>2</option><option>3</option></select></div>
+      <div class="form-group" style="flex:1"><label>반</label><select id="l-cls" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"><option value="">반</option></select></div>
     </div>
     <div class="form-group"><label>이름</label><input id="l-name" placeholder="홍길동" onkeydown="if(event.key==='Enter')tryLogin()"></div>
     <div class="form-group"><label>비밀번호</label><input type="password" id="l-pw" placeholder="비밀번호" onkeydown="if(event.key==='Enter')tryLogin()"></div>
@@ -1276,8 +1276,12 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   }
 
   // ── 로그인 화면: 학과 드롭다운 채우기 ──
+  let _loginClasses = [];
   try{
-    const deptsRes = await SAMIL_API.getDepts();
+    const [deptsRes, classesRes] = await Promise.all([
+      SAMIL_API.getDepts(),
+      SAMIL_API.getClasses({ year: new Date().getFullYear() }),
+    ]);
     if(deptsRes.success && deptsRes.data.length){
       deptsRes.data.forEach(d=>{
         const o=document.createElement('option'); o.value=d.name; o.textContent=d.name; sel.appendChild(o);
@@ -1285,8 +1289,28 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     } else {
       sel.parentElement.innerHTML=`<label style="display:block;font-size:12px;font-weight:600;color:var(--text-sub);margin-bottom:5px">학과</label><input id="l-dept" placeholder="학과명 입력 (예: 반도체과)" style="${deptInputStyle}">`;
     }
+    if(classesRes.success) _loginClasses = classesRes.data || [];
   }catch(e){
     sel.parentElement.innerHTML=`<label style="display:block;font-size:12px;font-weight:600;color:var(--text-sub);margin-bottom:5px">학과</label><input id="l-dept" placeholder="학과명 입력 (예: 반도체과)" style="${deptInputStyle}">`;
+  }
+
+  function updateClsDropdown() {
+    const dept  = (document.getElementById('l-dept') || {}).value  || '';
+    const grade = (document.getElementById('l-grade')|| {}).value || '';
+    const clsSel = document.getElementById('l-cls');
+    if (!clsSel) return;
+    clsSel.innerHTML = '<option value="">반</option>';
+    if (!dept || !grade || !_loginClasses.length) return;
+    const matched = _loginClasses
+      .filter(c => c.dept === dept && String(c.grade) === String(grade))
+      .map(c => Number(c.num || c.cls))
+      .filter(n => !isNaN(n))
+      .sort((a,b) => a-b);
+    matched.forEach(n => {
+      const o = document.createElement('option'); o.value = n; o.textContent = n; clsSel.appendChild(o);
+    });
+    // 1개뿐이면 자동 선택
+    if (matched.length === 1) clsSel.value = matched[0];
   }
   document.getElementById('loginScreen').style.display='flex';
 });
