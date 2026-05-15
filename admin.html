@@ -120,6 +120,15 @@ tr:last-child td{border-bottom:none}
 .file-item a:hover{text-decoration:underline}
 .file-item .file-size{color:var(--text-sub);white-space:nowrap}
 .file-item button{background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0 2px;flex-shrink:0}
+/* ── 학생 상세 모달 ── */
+.stu-detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;display:none;align-items:center;justify-content:center;padding:16px}
+.stu-detail-overlay.open{display:flex}
+.stu-detail-modal{background:#fff;border-radius:16px;width:100%;max-width:700px;max-height:88vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.25)}
+.sdm-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:start;position:sticky;top:0;background:#fff;z-index:1;border-radius:16px 16px 0 0}
+.sdm-tabs{display:flex;gap:4px;background:var(--bg);padding:4px;border-radius:10px;margin-bottom:16px;flex-wrap:wrap}
+.sdm-tab{flex:1;padding:7px 4px;border:none;background:none;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;color:var(--text-sub);font-family:inherit;transition:.15s;min-width:50px}
+.sdm-tab.active{background:#fff;color:var(--primary);font-weight:700;box-shadow:0 1px 6px rgba(0,0,0,.1)}
+.sdm-section{display:none}.sdm-section.active{display:block}
 /* ── 모달 ── */
 .edit-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:none;align-items:center;justify-content:center}
 .edit-modal-overlay.open{display:flex}
@@ -488,6 +497,39 @@ tr:last-child td{border-bottom:none}
     <div class="edit-modal-footer">
       <button class="btn btn-ghost" onclick="closeJobEdit()">취소</button>
       <button class="btn btn-accent" onclick="saveJobEdit()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ 모달: 학생 상세 (관리자) ══════ -->
+<div class="stu-detail-overlay" id="adminStuModal" onclick="if(event.target===this)closeAdminStuDetail()">
+  <div class="stu-detail-modal">
+    <div class="sdm-header">
+      <div>
+        <div id="sdm-name" style="font-size:17px;font-weight:700;color:var(--primary)"></div>
+        <div id="sdm-meta" style="font-size:12px;color:var(--text-sub);margin-top:3px"></div>
+      </div>
+      <button onclick="closeAdminStuDetail()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-sub);line-height:1">✕</button>
+    </div>
+    <div style="padding:18px 20px">
+      <div class="sdm-tabs">
+        <button class="sdm-tab active" onclick="sdmTab('attend',this)">출결</button>
+        <button class="sdm-tab" onclick="sdmTab('grade',this)">성적</button>
+        <button class="sdm-tab" onclick="sdmTab('cert',this)">자격증</button>
+        <button class="sdm-tab" onclick="sdmTab('club',this)">동아리</button>
+        <button class="sdm-tab" onclick="sdmTab('leader',this)">임원</button>
+        <button class="sdm-tab" onclick="sdmTab('employ',this)">취업/진학</button>
+      </div>
+      <div class="sdm-section active" id="sdm-attend"></div>
+      <div class="sdm-section" id="sdm-grade"></div>
+      <div class="sdm-section" id="sdm-cert"></div>
+      <div class="sdm-section" id="sdm-club"></div>
+      <div class="sdm-section" id="sdm-leader"></div>
+      <div class="sdm-section" id="sdm-employ"></div>
+    </div>
+    <div style="padding:0 20px 18px;display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn btn-ghost btn-sm" id="sdm-pw-btn">🔑 PW초기화</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeAdminStuDetail()">닫기</button>
     </div>
   </div>
 </div>
@@ -1315,7 +1357,10 @@ async function selectClass(dept, grade, num, el) {
   }
 }
 
+let _currentStudents = [];
+
 function renderStudentPanel(students) {
+  _currentStudents = students;
   if (!students.length) {
     document.getElementById('studentPanelContent').innerHTML =
       '<p style="text-align:center;padding:48px 0;color:var(--text-sub)">등록된 학생이 없습니다</p>';
@@ -1323,20 +1368,156 @@ function renderStudentPanel(students) {
   }
   document.getElementById('studentPanelContent').innerHTML = `
     <div class="tbl-wrap"><table>
-      <thead><tr><th>학번</th><th>이름</th><th>취업</th><th>진학</th><th>관리</th></tr></thead>
-      <tbody>${students.map(s => `<tr>
-        <td>${s.id}</td>
-        <td><strong>${s.name}</strong></td>
-        <td>${s.employed
-          ? `<button class="btn btn-sm" style="background:#F0FFF4;color:var(--green);border:1px solid #C6F6D5;white-space:nowrap" onclick="cancelEmployStatus('${s.id}','employ')">✅ ${s.company||'취업'}</button>`
-          : `<button class="btn btn-sm btn-ghost" onclick="openStudentEmployModal('${s.id}','employ')">—</button>`}</td>
-        <td>${s.advanced
-          ? `<button class="btn btn-sm" style="background:#EBF4FF;color:var(--primary);border:1px solid #BEE3F8;white-space:nowrap" onclick="cancelEmployStatus('${s.id}','advance')">✅ ${s.school||'진학'}</button>`
-          : `<button class="btn btn-sm btn-ghost" onclick="openStudentEmployModal('${s.id}','advance')">—</button>`}</td>
-        <td><button class="btn btn-sm btn-ghost" onclick="resetStudentPwById('${s.id}')">PW초기화</button></td>
-      </tr>`).join('')}
+      <thead><tr>
+        <th>학번</th><th>이름</th><th>성별</th>
+        <th>미인정<br>결석</th><th>지각<br>(합계)</th>
+        <th>자격증</th><th>전과목<br>평균등급</th><th>전문교과<br>평균등급</th><th>동아리</th>
+        <th>취업</th><th>진학</th><th>관리</th>
+      </tr></thead>
+      <tbody>${students.map(s => {
+        const ua  = (s.attend||[]).reduce((a,r)=>a+(r.abs ?r.abs.unauth :0),0);
+        const lat = (s.attend||[]).reduce((a,r)=>a+(r.late?r.late.unauth:0),0);
+        const ag  = s.summary ? s.summary.allGrade : '—';
+        const pg  = s.summary ? s.summary.proGrade : '—';
+        return `<tr>
+          <td style="font-size:12px">${s.id}</td>
+          <td><strong style="cursor:pointer;color:var(--primary-light);text-decoration:underline" onclick="openAdminStuDetail('${s.id}')">${s.name}</strong></td>
+          <td>${s.gender||'—'}</td>
+          <td>${ua>0?`<span class="badge" style="background:#FFF5F5;color:var(--red)">${ua}일</span>`:'<span class="badge" style="background:#F0FFF4;color:var(--green)">없음</span>'}</td>
+          <td>${lat>0?`<span class="badge" style="background:#FFF3E0;color:var(--accent)">${lat}회</span>`:'0'}</td>
+          <td>${s.certCount?`<span class="badge" style="background:#FFF3E0;color:var(--accent)">${s.certCount}개</span>`:'—'}</td>
+          <td>${ag!=='—'?`<strong>${ag}</strong>`:'—'}</td>
+          <td>${pg!=='—'?`<strong>${pg}</strong>`:'—'}</td>
+          <td>${(s.clubs||[]).length?`<span class="badge badge-closed">${(s.clubs||[]).length}개</span>`:'—'}</td>
+          <td>${s.employed
+            ? `<button class="btn btn-sm" style="background:#F0FFF4;color:var(--green);border:1px solid #C6F6D5;white-space:nowrap" onclick="cancelEmployStatus('${s.id}','employ')">✅ ${s.company||'취업'}</button>`
+            : `<button class="btn btn-sm btn-ghost" onclick="openStudentEmployModal('${s.id}','employ')">—</button>`}</td>
+          <td>${s.advanced
+            ? `<button class="btn btn-sm" style="background:#EBF4FF;color:var(--primary);border:1px solid #BEE3F8;white-space:nowrap" onclick="cancelEmployStatus('${s.id}','advance')">✅ ${s.school||'진학'}</button>`
+            : `<button class="btn btn-sm btn-ghost" onclick="openStudentEmployModal('${s.id}','advance')">—</button>`}</td>
+          <td><button class="btn btn-sm btn-ghost" onclick="resetStudentPwById('${s.id}')">PW</button></td>
+        </tr>`;
+      }).join('')}
       </tbody>
     </table></div>`;
+}
+
+function sdmTab(id, btn) {
+  document.querySelectorAll('.sdm-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('#adminStuModal .sdm-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('sdm-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function openAdminStuDetail(sid) {
+  const s = _currentStudents.find(x => String(x.id) === String(sid));
+  if (!s) return;
+
+  document.getElementById('sdm-name').textContent = s.name;
+  document.getElementById('sdm-meta').textContent =
+    `${s.dept} ${s.grade}학년 ${s.cls}반 | 학번: ${s.id} | 성별: ${s.gender||'—'}`;
+  document.getElementById('sdm-pw-btn').onclick = () => { closeAdminStuDetail(); resetStudentPwById(s.id); };
+
+  const cellStyle = 'padding:9px 12px;border-bottom:1px solid var(--border);text-align:center';
+  const thStyle   = `background:var(--bg);padding:9px 12px;text-align:center;font-size:12px;font-weight:600;color:var(--text-sub);border-bottom:2px solid var(--border)`;
+
+  // 출결
+  const aRows = s.attend || [];
+  document.getElementById('sdm-attend').innerHTML = aRows.length
+    ? `<table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr>${['학년','수업일수','결석','지각','조퇴','결과','미인정결석'].map(h=>`<th style="${thStyle}">${h}</th>`).join('')}</tr></thead>
+        <tbody>${aRows.map(a => {
+          const absT=(a.abs ?a.abs.sick +a.abs.unauth +a.abs.etc :0);
+          const latT=(a.late?a.late.sick+a.late.unauth+a.late.etc:0);
+          const earT=(a.early?a.early.sick+a.early.unauth+a.early.etc:0);
+          const levT=(a.leave?a.leave.sick+a.leave.unauth+a.leave.etc:0);
+          const ua  =(a.abs?a.abs.unauth:0);
+          return `<tr>
+            <td style="${cellStyle}">${a.grade}학년</td>
+            <td style="${cellStyle}">${a.days}일</td>
+            <td style="${cellStyle};${absT>0?'color:var(--red);font-weight:700':''}">${absT}</td>
+            <td style="${cellStyle};${latT>0?'color:var(--red);font-weight:700':''}">${latT}</td>
+            <td style="${cellStyle}">${earT}</td>
+            <td style="${cellStyle}">${levT}</td>
+            <td style="${cellStyle};${ua>0?'color:var(--red);font-weight:700':''}">${ua}일</td></tr>`;
+        }).join('')}</tbody>
+      </table>`
+    : '<p style="color:var(--text-sub);font-size:13px">출결 데이터 없음 (생기부 미업로드)</p>';
+
+  // 성적
+  const sm = s.summary;
+  document.getElementById('sdm-grade').innerHTML = sm
+    ? `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+        ${[['전 과목 평균등급',sm.allGrade,sm.allUnit],['보통교과 평균등급',sm.genGrade,sm.genUnit],['전문교과 평균등급',sm.proGrade,sm.proUnit]].map(([lbl,val,unit])=>
+          `<div style="background:var(--bg);border-radius:8px;padding:14px;text-align:center">
+            <div style="font-size:11px;color:var(--text-sub);margin-bottom:6px">${lbl}</div>
+            <div style="font-size:24px;font-weight:700;color:var(--primary)">${val||'—'}</div>
+            <div style="font-size:11px;color:var(--text-sub);margin-top:3px">${unit?`이수 ${unit}학점`:''}</div>
+          </div>`).join('')}
+      </div>`
+    : '<p style="color:var(--text-sub);font-size:13px">성적 데이터 없음 (생기부 미업로드)</p>';
+
+  // 자격증
+  document.getElementById('sdm-cert').innerHTML = (s.certs||[]).length
+    ? `<div style="display:flex;flex-wrap:wrap;gap:8px">${(s.certs||[]).map(c=>
+        `<div style="display:inline-flex;align-items:center;gap:5px;background:#FFF3E0;border:1px solid #FBBF24;border-radius:20px;padding:5px 13px;font-size:13px;font-weight:600;color:#92400E">🏅 ${c.name}${c.date?` <span style="font-size:11px;font-weight:400;opacity:.7">(${c.date})</span>`:''}</div>`
+      ).join('')}</div>`
+    : '<p style="color:var(--text-sub);font-size:13px">자격증 없음</p>';
+
+  // 동아리
+  document.getElementById('sdm-club').innerHTML = (s.clubs||[]).length
+    ? `<table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr>${['학년','동아리명','구분','시간'].map(h=>`<th style="${thStyle};text-align:left">${h}</th>`).join('')}</tr></thead>
+        <tbody>${(s.clubs||[]).map(cl=>
+          `<tr><td style="${cellStyle};text-align:left">${cl.grade}학년</td>
+           <td style="${cellStyle};text-align:left"><strong>${cl.name}</strong></td>
+           <td style="${cellStyle};text-align:left">${cl.type||'—'}</td>
+           <td style="${cellStyle};text-align:left">${cl.hours||0}시간</td></tr>`
+        ).join('')}</tbody>
+      </table>`
+    : '<p style="color:var(--text-sub);font-size:13px">동아리 정보 없음</p>';
+
+  // 임원
+  document.getElementById('sdm-leader').innerHTML = (s.leaders||[]).length
+    ? `<table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr>${['시작','종료','직책'].map(h=>`<th style="${thStyle};text-align:left">${h}</th>`).join('')}</tr></thead>
+        <tbody>${(s.leaders||[]).map(l=>
+          `<tr><td style="${cellStyle};text-align:left">${l.startYear}</td>
+           <td style="${cellStyle};text-align:left">${l.endYear}</td>
+           <td style="${cellStyle};text-align:left"><span style="display:inline-block;background:#EDE9FE;color:#7C3AED;border-radius:12px;padding:3px 10px;font-size:12px;font-weight:600">${l.role}</span></td></tr>`
+        ).join('')}</tbody>
+      </table>`
+    : '<p style="color:var(--text-sub);font-size:13px">임원 이력 없음</p>';
+
+  // 취업/진학
+  document.getElementById('sdm-employ').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg);border-radius:10px">
+        <div style="flex:1">
+          <strong>취업</strong>
+          <span style="color:var(--text-sub);font-size:12px;margin-left:8px">${s.company||'미입력'}</span>
+        </div>
+        ${s.employed
+          ? `<button class="btn btn-sm btn-ghost" style="color:var(--red)" onclick="closeAdminStuDetail();cancelEmployStatus('${s.id}','employ')">취소</button>`
+          : `<button class="btn btn-sm btn-accent" onclick="closeAdminStuDetail();openStudentEmployModal('${s.id}','employ')">입력</button>`}
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg);border-radius:10px">
+        <div style="flex:1">
+          <strong>진학</strong>
+          <span style="color:var(--text-sub);font-size:12px;margin-left:8px">${s.school||'미입력'}</span>
+        </div>
+        ${s.advanced
+          ? `<button class="btn btn-sm btn-ghost" style="color:var(--red)" onclick="closeAdminStuDetail();cancelEmployStatus('${s.id}','advance')">취소</button>`
+          : `<button class="btn btn-sm btn-accent" onclick="closeAdminStuDetail();openStudentEmployModal('${s.id}','advance')">입력</button>`}
+      </div>
+    </div>`;
+
+  sdmTab('attend', document.querySelector('#adminStuModal .sdm-tab'));
+  document.getElementById('adminStuModal').classList.add('open');
+}
+
+function closeAdminStuDetail() {
+  document.getElementById('adminStuModal').classList.remove('open');
 }
 
 function openStudentEmployModal(studentId, type) {
