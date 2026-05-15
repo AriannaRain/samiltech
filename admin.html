@@ -375,35 +375,42 @@ tr:last-child td{border-bottom:none}
     <!-- 주요 취업업체 / 합격자소서 -->
     <div class="card">
       <div class="card-title">주요 취업업체 및 합격자소서/후기</div>
-      <div class="form-row cols2">
-        <div class="form-group">
-          <label>업체명</label>
-          <div class="ac-wrap">
-            <input id="er-co" placeholder="삼성전자" autocomplete="off"
-              oninput="acSearch(this,'er-ac-list')" onkeydown="acKeyNav(event,'er-ac-list')" onblur="setTimeout(()=>acClose('er-ac-list'),150)">
-            <div class="ac-list" id="er-ac-list"></div>
+
+      <!-- 입력 폼 -->
+      <div style="background:var(--bg);border-radius:10px;padding:16px;margin-bottom:16px">
+        <div class="form-row cols3" style="margin-bottom:0">
+          <div class="form-group">
+            <label>업체명</label>
+            <div class="ac-wrap">
+              <input id="er-co" placeholder="삼성전자" autocomplete="off"
+                oninput="acSearch(this,'er-ac-list')" onkeydown="acKeyNav(event,'er-ac-list')" onblur="setTimeout(()=>acClose('er-ac-list'),150)">
+              <div class="ac-list" id="er-ac-list"></div>
+            </div>
           </div>
+          <div class="form-group"><label>학과</label><select id="er-dept"></select></div>
+          <div class="form-group"><label>연도</label><input id="er-year" type="number" placeholder="2025"></div>
         </div>
-      <div class="form-row cols2">
-        <div class="form-group"><label>학과</label><select id="er-dept"></select></div>
-        <div class="form-group"><label>연도</label><input id="er-year" type="number" placeholder="2025"></div>
-      </div>
-      <div class="form-row cols2">
-        <div class="form-group"><label>학번</label><input id="er-sid" placeholder="20250001"></div>
-        <div class="form-group"><label>학생 이름</label><input id="er-sname" placeholder="홍길동"></div>
-      </div>
-      <div class="form-group">
-        <label>합격자소서 파일 (선택, 여러 파일 가능)</label>
-        <div class="drop-zone" id="er-dropzone" ondragover="onDragOver(event,'er')" ondragleave="onDragLeave(event,'er')" ondrop="onDrop(event,'er')">
-          <input type="file" id="er-file" multiple onchange="onFileSelect(event,'er')">
-          <div class="drop-icon">📂</div>
-          <div class="drop-text">파일을 끌어다 놓거나 <strong>클릭하여 선택</strong></div>
+        <div class="form-row cols2" style="margin-bottom:0">
+          <div class="form-group"><label>학번</label><input id="er-sid" placeholder="20250001"></div>
+          <div class="form-group"><label>학생 이름</label><input id="er-sname" placeholder="홍길동"></div>
         </div>
-        <div class="file-list" id="er-file-list"></div>
+        <div class="form-group">
+          <label>합격자소서 파일 (선택, 여러 파일 가능)</label>
+          <div class="drop-zone" id="er-dropzone" ondragover="onDragOver(event,'er')" ondragleave="onDragLeave(event,'er')" ondrop="onDrop(event,'er')">
+            <input type="file" id="er-file" multiple onchange="onFileSelect(event,'er')">
+            <div class="drop-icon">📂</div>
+            <div class="drop-text">파일을 끌어다 놓거나 <strong>클릭하여 선택</strong></div>
+          </div>
+          <div class="file-list" id="er-file-list"></div>
+        </div>
+        <div class="form-group"><label>합격 후기 (간단 메모)</label><textarea id="er-review" placeholder="면접 준비, 자소서 핵심..."></textarea></div>
+        <button class="btn btn-accent" onclick="addReview()">+ 추가</button>
       </div>
-      <div class="form-group"><label>합격 후기 (간단 메모)</label><textarea id="er-review" placeholder="면접 준비, 자소서 핵심..."></textarea></div>
-      <button class="btn btn-accent" onclick="addReview()">추가</button>
-      <div id="reviewList" style="margin-top:16px"></div>
+
+      <!-- 등록 후기 목록: 좌(업체) / 우(학생) 2패널 -->
+      <div id="reviewList">
+        <p style="color:var(--text-sub);font-size:13px">등록된 후기 없음</p>
+      </div>
     </div>
   </div>
 
@@ -529,6 +536,43 @@ tr:last-child td{border-bottom:none}
     <div class="edit-modal-footer">
       <button class="btn btn-ghost" onclick="closeEmployDataModal()">취소</button>
       <button class="btn btn-accent" onclick="saveEmployDataEntry()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ 모달: 후기 수정 ══════ -->
+<div class="edit-modal-overlay" id="reviewEditModal" onclick="if(event.target===this)closeReviewEdit()">
+  <div class="edit-modal" style="max-width:520px">
+    <div class="edit-modal-header">
+      <h3>후기 수정</h3>
+      <button class="edit-modal-close" onclick="closeReviewEdit()">✕</button>
+    </div>
+    <div class="edit-modal-body">
+      <input type="hidden" id="re-id">
+      <div class="form-row cols2">
+        <div class="form-group"><label>업체명</label><input id="re-co"></div>
+        <div class="form-group"><label>학과</label><select id="re-dept"></select></div>
+      </div>
+      <div class="form-row cols3">
+        <div class="form-group"><label>연도</label><input id="re-year" type="number"></div>
+        <div class="form-group"><label>학번</label><input id="re-sid"></div>
+        <div class="form-group"><label>학생 이름</label><input id="re-sname"></div>
+      </div>
+      <div class="form-group">
+        <label>합격자소서 파일</label>
+        <div id="re-file-current" class="file-list" style="margin-bottom:8px"></div>
+        <div class="drop-zone" id="re-dropzone" ondragover="onDragOver(event,'re')" ondragleave="onDragLeave(event,'re')" ondrop="onDrop(event,'re')">
+          <input type="file" id="re-file" multiple onchange="onFileSelect(event,'re')">
+          <div class="drop-icon">📂</div>
+          <div class="drop-text">파일을 끌어다 놓거나 <strong>클릭하여 추가</strong></div>
+        </div>
+        <div class="file-list" id="re-file-list"></div>
+      </div>
+      <div class="form-group"><label>합격 후기</label><textarea id="re-review"></textarea></div>
+    </div>
+    <div class="edit-modal-footer">
+      <button class="btn btn-ghost" onclick="closeReviewEdit()">취소</button>
+      <button class="btn btn-accent" onclick="saveReviewEdit()">저장</button>
     </div>
   </div>
 </div>
@@ -659,14 +703,13 @@ async function setYear(y) {
 // ══════════════════════════════════════════════
 async function loadFromSheets() {
   try {
-    const [deptsRes, bannersRes, jobsRes, statsRes, teachersRes, classesRes, reviewsRes] = await Promise.all([
+    const [deptsRes, bannersRes, jobsRes, statsRes, teachersRes, classesRes] = await Promise.all([
       SAMIL_API.getDepts(),
       SAMIL_API.getBanners(),
       SAMIL_API.getJobs(),
       SAMIL_API.getStats(),
       SAMIL_API.getTeachers({ year: currentYear }),
       SAMIL_API.getClasses({ year: currentYear }),
-      SAMIL_API.getReviews(),
     ]);
     if (deptsRes.success && deptsRes.data.length)
       DB.depts = deptsRes.data.map(d => ({ name: d.name, code: d.code||'', date: d.startYear||today() }));
@@ -675,9 +718,14 @@ async function loadFromSheets() {
     if (statsRes.success)    DB.statsHistory = statsRes.data;
     if (teachersRes.success) getYearData(currentYear).teachers = teachersRes.data;
     if (classesRes.success)  getYearData(currentYear).classes  = classesRes.data;
-    if (reviewsRes.success)  DB.reviews      = reviewsRes.data;
-    save();
-    renderAll();
+    save(); renderAll();
+    // 후기는 별도 로드 (실패해도 나머지 데이터에 영향 없음)
+    try {
+      if (typeof SAMIL_API.getReviews === 'function') {
+        const reviewsRes = await SAMIL_API.getReviews();
+        if (reviewsRes.success) { DB.reviews = reviewsRes.data; save(); renderReviews(); }
+      }
+    } catch(e) { console.warn('후기 로드 오류:', e); }
   } catch(e) {
     console.warn('Sheets 로드 오류:', e);
     renderAll();
@@ -716,7 +764,7 @@ function updateDash() {
 
 function updateDeptSelects() {
   const depts = DB.depts || [];
-  ['clsDept','tcDept','er-dept','edm-dept'].forEach(id => {
+  ['clsDept','tcDept','er-dept','re-dept','edm-dept'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     el.innerHTML = depts.map(d => `<option value="${d.name}">${d.name}</option>`).join('');
@@ -846,7 +894,7 @@ function toBase64(file) {
 }
 
 // 드래그앤드롭 파일 상태 (prefix 별로 관리)
-const _pendingFiles = { j: [], ej: [], er: [] };
+const _pendingFiles = { j: [], ej: [], er: [], re: [] };
 
 function onDragOver(e, prefix) {
   e.preventDefault();
@@ -1515,31 +1563,126 @@ async function delReview(id) {
   try { await SAMIL_API.deleteReview(id); } catch(e) { console.warn('후기 삭제 오류:', e); }
 }
 
+let _selectedCo = null;
+
 function renderReviews() {
-  const el = document.getElementById('reviewList');
+  const el   = document.getElementById('reviewList');
   if (!el) return;
   const list = DB.reviews || [];
-  if (!list.length) { el.innerHTML = '<p style="color:var(--text-sub);font-size:13px">등록된 후기 없음</p>'; return; }
-  el.innerHTML = list.map((r) => {
+  if (!list.length) {
+    el.innerHTML = '<p style="color:var(--text-sub);font-size:13px">등록된 후기 없음</p>';
+    _selectedCo = null;
+    return;
+  }
+
+  // 업체명 목록 (중복 제거, 등록수 표시)
+  const coMap = {};
+  list.forEach(r => { coMap[r.co] = (coMap[r.co] || 0) + 1; });
+  const companies = Object.keys(coMap);
+  if (!_selectedCo || !coMap[_selectedCo]) _selectedCo = companies[0];
+
+  const leftItems = companies.map(co => `
+    <div class="cls-btn ${co === _selectedCo ? 'cls-active' : ''}"
+      onclick="_selectedCo='${co.replace(/'/g,"\\'")}';renderReviews()"
+      style="display:flex;justify-content:space-between;align-items:center">
+      <span>${co}</span>
+      <span style="font-size:11px;color:var(--text-sub);background:var(--bg);padding:1px 6px;border-radius:10px">${coMap[co]}</span>
+    </div>`).join('');
+
+  const rightList = list.filter(r => r.co === _selectedCo);
+  const rightItems = rightList.map(r => {
     const files = r.essays && r.essays.length ? r.essays
-                : r.essay ? [{ name: '자소서 보기', url: r.essay }] : [];
+                : r.essay ? [{ name: '자소서', url: r.essay }] : [];
     const fileLinks = files.map(f =>
-      `<a href="${f.url}" target="_blank" class="btn btn-sm btn-ghost" style="font-size:11px;margin-left:4px">${fileIcon(f.name)}&nbsp;${f.name}</a>`
+      `<a href="${f.url}" target="_blank" class="btn btn-sm btn-ghost" style="font-size:11px">${fileIcon(f.name)} ${f.name}</a>`
     ).join('');
     return `
-    <div style="border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:8px">
+    <div style="border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:start;gap:8px">
         <div style="flex:1;min-width:0">
-          <strong>${r.co}</strong>
-          <span style="color:var(--text-sub);font-size:12px;margin-left:8px">${r.dept} · ${r.year}년</span>
-          ${r.sname ? `<span style="font-size:12px;margin-left:8px;color:var(--text)">👤 ${r.sname}${r.sid ? ` <span style="color:var(--text-sub)">(${r.sid})</span>` : ''}</span>` : ''}
-          ${fileLinks ? `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">${fileLinks}</div>` : ''}
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            ${r.sname ? `<strong>${r.sname}</strong>` : '<span style="color:var(--text-sub)">이름 없음</span>'}
+            ${r.sid   ? `<span style="font-size:12px;color:var(--text-sub)">${r.sid}</span>` : ''}
+            <span style="font-size:12px;color:var(--text-sub)">${r.dept || ''} · ${r.year || ''}년</span>
+          </div>
+          ${fileLinks ? `<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px">${fileLinks}</div>` : ''}
+          ${r.review  ? `<p style="color:var(--text-sub);font-size:12px;margin-top:8px;line-height:1.6;white-space:pre-wrap">${r.review}</p>` : ''}
         </div>
-        <button class="btn btn-sm btn-danger" onclick="delReview('${r.id}')" style="flex-shrink:0">삭제</button>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          <button class="btn btn-sm btn-ghost" onclick="openReviewEdit('${r.id}')">수정</button>
+          <button class="btn btn-sm btn-danger" onclick="delReview('${r.id}')">삭제</button>
+        </div>
       </div>
-      ${r.review ? `<p style="color:var(--text-sub);font-size:12px;margin-top:8px;line-height:1.6">${r.review}</p>` : ''}
     </div>`;
-  }).join('');
+  }).join('') || '<p style="color:var(--text-sub);font-size:13px;padding:12px 0">등록된 학생 없음</p>';
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:200px 1fr;gap:12px;align-items:start">
+      <div style="border:1px solid var(--border);border-radius:10px;padding:10px;background:#fff">
+        <div style="font-size:11px;font-weight:700;color:var(--text-sub);padding:0 4px 8px;letter-spacing:.3px">업체 목록</div>
+        ${leftItems}
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:10px;padding:0 2px">
+          ${_selectedCo} <span style="font-size:12px;font-weight:400;color:var(--text-sub)">합격 학생 ${rightList.length}명</span>
+        </div>
+        ${rightItems}
+      </div>
+    </div>`;
+}
+
+function openReviewEdit(id) {
+  const r = (DB.reviews||[]).find(r => r.id === id);
+  if (!r) return;
+  document.getElementById('re-id').value     = id;
+  document.getElementById('re-co').value     = r.co    || '';
+  document.getElementById('re-year').value   = r.year  || '';
+  document.getElementById('re-sid').value    = r.sid   || '';
+  document.getElementById('re-sname').value  = r.sname || '';
+  document.getElementById('re-review').value = r.review|| '';
+  // 학과 선택
+  const deptEl = document.getElementById('re-dept');
+  if (deptEl) deptEl.value = r.dept || '';
+  // 기존 파일 표시
+  const curFiles = r.essays || [];
+  document.getElementById('re-file-current').innerHTML = curFiles.length
+    ? curFiles.map(f => `<div class="file-item"><span>${fileIcon(f.name)}</span><a href="${f.url}" target="_blank">${f.name}</a><span style="font-size:11px;color:var(--text-sub)">기존</span></div>`).join('')
+    : '<p style="font-size:12px;color:var(--text-sub)">없음</p>';
+  _pendingFiles.re = [];
+  renderPendingFiles('re');
+  document.getElementById('reviewEditModal').classList.add('open');
+}
+
+function closeReviewEdit() {
+  document.getElementById('reviewEditModal').classList.remove('open');
+  _pendingFiles.re = [];
+  renderPendingFiles('re');
+}
+
+async function saveReviewEdit() {
+  const id     = document.getElementById('re-id').value;
+  const idx    = (DB.reviews||[]).findIndex(r => r.id === id);
+  if (idx === -1) return;
+  const newUploads = _pendingFiles.re.length ? await uploadPendingFiles('re') : [];
+  const essays = [...(DB.reviews[idx].essays || []), ...newUploads];
+  const updated = {
+    co    : document.getElementById('re-co').value.trim(),
+    dept  : document.getElementById('re-dept').value,
+    year  : parseInt(document.getElementById('re-year').value) || DB.reviews[idx].year,
+    sid   : document.getElementById('re-sid').value.trim(),
+    sname : document.getElementById('re-sname').value.trim(),
+    review: document.getElementById('re-review').value.trim(),
+    essays,
+  };
+  DB.reviews[idx] = { ...DB.reviews[idx], ...updated };
+  save(); renderReviews(); closeReviewEdit();
+  // Sheets 수정은 삭제 후 재등록 방식
+  try {
+    await SAMIL_API.deleteReview(id);
+    await SAMIL_API.addReview({ ...updated });
+    const fresh = await SAMIL_API.getReviews();
+    if (fresh.success) { DB.reviews = fresh.data; save(); renderReviews(); }
+  } catch(e) { console.warn('후기 수정 오류:', e); }
 }
 
 // ══════════════════════════════════════════════
