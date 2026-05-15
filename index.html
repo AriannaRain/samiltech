@@ -238,10 +238,10 @@ footer strong{color:#fff}
         <button class="btn-submit" onclick="loginStudent()">로그인</button>
       </div>
       <div id="tab-tc" style="display:none">
-        <div class="form-group"><label>학과</label><select id="t-dept" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"><option value="">학과 선택</option></select></div>
+        <div class="form-group"><label>학과</label><select id="t-dept" onchange="updateTcCls()" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"><option value="">학과 선택</option></select></div>
         <div style="display:flex;gap:8px">
-          <div class="form-group" style="flex:1"><label>학년</label><select id="t-grade" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"><option value="">학년</option><option>1</option><option>2</option><option>3</option></select></div>
-          <div class="form-group" style="flex:1"><label>반</label><select id="t-cls" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"><option value="">반</option><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
+          <div class="form-group" style="flex:1"><label>학년</label><select id="t-grade" onchange="updateTcCls()" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"><option value="">학년</option><option>1</option><option>2</option><option>3</option></select></div>
+          <div class="form-group" style="flex:1"><label>반</label><select id="t-cls" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"><option value="">반</option></select></div>
         </div>
         <div class="form-group"><label>이름</label><input id="t-name" placeholder="홍길동" onkeydown="if(event.key==='Enter')loginTeacher()"></div>
         <div class="form-group"><label>비밀번호</label><input type="password" id="t-pw" onkeydown="if(event.key==='Enter')loginTeacher()"></div>
@@ -360,18 +360,21 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   }
 
   // ── Sheets에서 데이터 로드 ──
-  const [jobsSet, bannersSet, statsSet, deptsSet, jobStatsSet] = await Promise.allSettled([
+  const [jobsSet, bannersSet, statsSet, deptsSet, jobStatsSet, classesSet] = await Promise.allSettled([
     SAMIL_API.getJobs(false),
     SAMIL_API.getBanners(),
     SAMIL_API.getStats(),
     SAMIL_API.getDepts(),
     SAMIL_API.getJobStats(),
+    SAMIL_API.getClasses({ year: new Date().getFullYear() }),
   ]);
-  const jobsRes   = jobsSet.status   === 'fulfilled' ? jobsSet.value   : {};
-  const bannersRes= bannersSet.status === 'fulfilled' ? bannersSet.value : {};
-  const statsRes  = statsSet.status  === 'fulfilled' ? statsSet.value  : {};
-  const deptsRes    = deptsSet.status    === 'fulfilled' ? deptsSet.value    : {};
-  const jobStatsRes = jobStatsSet.status === 'fulfilled' ? jobStatsSet.value : {};
+  const jobsRes    = jobsSet.status    === 'fulfilled' ? jobsSet.value    : {};
+  const bannersRes = bannersSet.status === 'fulfilled' ? bannersSet.value : {};
+  const statsRes   = statsSet.status   === 'fulfilled' ? statsSet.value   : {};
+  const deptsRes   = deptsSet.status   === 'fulfilled' ? deptsSet.value   : {};
+  const jobStatsRes= jobStatsSet.status=== 'fulfilled' ? jobStatsSet.value: {};
+  const classesRes = classesSet.status === 'fulfilled' ? classesSet.value : {};
+  DATA.classes = (classesRes.success && classesRes.data) ? classesRes.data : [];
   if(jobStatsRes.success){
     const {interest={}, apply={}} = jobStatsRes;
     const allIds = new Set([...Object.keys(interest), ...Object.keys(apply)]);
@@ -714,6 +717,24 @@ async function openAdminSubModal(type, jobId){
 
 function closeModal(id,e){if(!e||e.target.id===id) document.getElementById(id).classList.remove('open');}
 function openLogin(){document.getElementById('loginModal').classList.add('open');}
+function updateTcCls() {
+  const dept  = (document.getElementById('t-dept') || {}).value || '';
+  const grade = (document.getElementById('t-grade')|| {}).value || '';
+  const sel   = document.getElementById('t-cls');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">반</option>';
+  if (!dept || !grade || !DATA.classes || !DATA.classes.length) return;
+  const nums = DATA.classes
+    .filter(c => c.dept === dept && String(c.grade) === String(grade))
+    .map(c => Number(c.num || c.cls))
+    .filter(n => !isNaN(n))
+    .sort((a,b) => a-b);
+  nums.forEach(n => {
+    const o = document.createElement('option'); o.value = n; o.textContent = n; sel.appendChild(o);
+  });
+  if (nums.length === 1) sel.value = nums[0];
+}
+
 function switchTab(tab,btn){
   ['st','tc','ad'].forEach(t=>document.getElementById('tab-'+t).style.display='none');
   document.getElementById('tab-'+tab).style.display='block';
