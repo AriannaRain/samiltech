@@ -402,11 +402,9 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   // 학과 드롭다운 (항상 실행)
   const depts = deptsRes.success && deptsRes.data && deptsRes.data.length ? deptsRes.data : SAMPLE.depts;
   const selS = document.getElementById('l-dept');
-  const selT = document.getElementById('t-dept');
   depts.forEach(d=>{
     const name = d.name||d.dept;
     const o=document.createElement('option'); o.value=name; o.textContent=name; selS.appendChild(o);
-    const o2=document.createElement('option'); o2.value=name; o2.textContent=name; selT.appendChild(o2);
   });
   DATA.depts = depts.map(d=>({dept:d.name||d.dept,g:0,e:0,a:0}));
 
