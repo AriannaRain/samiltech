@@ -101,6 +101,19 @@ tr:last-child td{border-bottom:none}
 .cls-dept-label{font-size:11px;font-weight:700;color:var(--text-sub);padding:8px 0 2px;letter-spacing:.3px;border-top:1px solid var(--border);margin-top:8px}
 .cls-dept-label:first-child{border-top:none;margin-top:0;padding-top:0}
 
+/* ── 파일 드래그앤드롭 ── */
+.drop-zone{border:2px dashed var(--border);border-radius:10px;padding:20px 16px;text-align:center;cursor:pointer;transition:.2s;background:#fafbfc;position:relative}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--primary-light);background:#EBF4FF}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-zone .drop-icon{font-size:24px;margin-bottom:6px}
+.drop-zone .drop-text{font-size:13px;color:var(--text-sub)}
+.drop-zone .drop-text strong{color:var(--primary-light)}
+.file-list{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.file-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:#fff;font-size:12px}
+.file-item a{flex:1;color:var(--primary-light);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-item a:hover{text-decoration:underline}
+.file-item .file-size{color:var(--text-sub);white-space:nowrap}
+.file-item button{background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0 2px;flex-shrink:0}
 /* ── 모달 ── */
 .edit-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:none;align-items:center;justify-content:center}
 .edit-modal-overlay.open{display:flex}
@@ -249,8 +262,13 @@ tr:last-child td{border-bottom:none}
       </div>
       <div class="form-group"><label>태그 (쉼표 구분)</label><input id="j-tags" placeholder="전기,기계,공조"></div>
       <div class="form-group">
-        <label>붙임파일 (선택)</label>
-        <input type="file" id="j-file" style="padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:#fff;cursor:pointer">
+        <label>붙임파일 (선택, 여러 파일 가능)</label>
+        <div class="drop-zone" id="j-dropzone" ondragover="onDragOver(event,'j')" ondragleave="onDragLeave(event,'j')" ondrop="onDrop(event,'j')">
+          <input type="file" id="j-file" multiple onchange="onFileSelect(event,'j')">
+          <div class="drop-icon">📂</div>
+          <div class="drop-text">파일을 여기에 끌어다 놓거나 <strong>클릭하여 선택</strong></div>
+        </div>
+        <div class="file-list" id="j-file-list"></div>
       </div>
       <div class="form-group">
         <label>학교장 추천 전형</label>
@@ -403,9 +421,13 @@ tr:last-child td{border-bottom:none}
       <div class="form-group"><label>태그</label><input id="ej-tags" placeholder="쉼표 구분"></div>
       <div class="form-group">
         <label>붙임파일</label>
-        <div id="ej-file-current" style="font-size:12px;color:var(--text-sub);margin-bottom:6px"></div>
-        <input type="file" id="ej-file" style="padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:#fff;cursor:pointer">
-        <p style="font-size:11px;color:var(--text-sub);margin-top:4px">새 파일 선택 시 기존 파일이 교체됩니다</p>
+        <div id="ej-file-current" class="file-list" style="margin-bottom:8px"></div>
+        <div class="drop-zone" id="ej-dropzone" ondragover="onDragOver(event,'ej')" ondragleave="onDragLeave(event,'ej')" ondrop="onDrop(event,'ej')">
+          <input type="file" id="ej-file" multiple onchange="onFileSelect(event,'ej')">
+          <div class="drop-icon">📂</div>
+          <div class="drop-text">파일을 끌어다 놓거나 <strong>클릭하여 추가</strong></div>
+        </div>
+        <div class="file-list" id="ej-file-list"></div>
       </div>
       <div class="form-group">
         <label>학교장 추천 전형</label>
@@ -756,6 +778,80 @@ function toBase64(file) {
   });
 }
 
+// 드래그앤드롭 파일 상태 (prefix 별로 관리)
+const _pendingFiles = { j: [], ej: [] };
+
+function onDragOver(e, prefix) {
+  e.preventDefault();
+  document.getElementById(prefix + '-dropzone').classList.add('drag-over');
+}
+function onDragLeave(e, prefix) {
+  document.getElementById(prefix + '-dropzone').classList.remove('drag-over');
+}
+function onDrop(e, prefix) {
+  e.preventDefault();
+  document.getElementById(prefix + '-dropzone').classList.remove('drag-over');
+  addPendingFiles(prefix, Array.from(e.dataTransfer.files));
+}
+function onFileSelect(e, prefix) {
+  addPendingFiles(prefix, Array.from(e.target.files));
+  e.target.value = ''; // 같은 파일 재선택 가능하도록 초기화
+}
+
+function addPendingFiles(prefix, files) {
+  files.forEach(f => {
+    if (!_pendingFiles[prefix].find(x => x.name === f.name && x.size === f.size))
+      _pendingFiles[prefix].push(f);
+  });
+  renderPendingFiles(prefix);
+}
+
+function removePendingFile(prefix, idx) {
+  _pendingFiles[prefix].splice(idx, 1);
+  renderPendingFiles(prefix);
+}
+
+function renderPendingFiles(prefix) {
+  const el = document.getElementById(prefix + '-file-list');
+  if (!el) return;
+  el.innerHTML = _pendingFiles[prefix].map((f, i) => `
+    <div class="file-item">
+      <span style="font-size:16px">${fileIcon(f.name)}</span>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</span>
+      <span class="file-size">${formatSize(f.size)}</span>
+      <button onclick="removePendingFile('${prefix}',${i})" title="제거">✕</button>
+    </div>`).join('');
+}
+
+function fileIcon(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  if (['pdf'].includes(ext)) return '📄';
+  if (['xlsx','xls','csv'].includes(ext)) return '📊';
+  if (['docx','doc','hwp'].includes(ext)) return '📝';
+  if (['jpg','jpeg','png','gif'].includes(ext)) return '🖼️';
+  if (['zip','rar'].includes(ext)) return '🗜️';
+  return '📎';
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + 'B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + 'KB';
+  return (bytes/1024/1024).toFixed(1) + 'MB';
+}
+
+async function uploadPendingFiles(prefix) {
+  const results = [];
+  for (const file of _pendingFiles[prefix]) {
+    try {
+      const base64 = await toBase64(file);
+      const res    = await SAMIL_API.uploadFile(file.name, base64, file.type);
+      if (res.success) results.push({ name: file.name, url: res.url });
+      else console.warn('업로드 실패:', file.name, res.error);
+    } catch(e) { console.warn('업로드 오류:', file.name, e.message); }
+  }
+  return results;
+}
+
 // ══════════════════════════════════════════════
 // 채용공고 (id 기반, async 동기화)
 // ══════════════════════════════════════════════
@@ -770,20 +866,10 @@ async function addJob() {
   const recCnt   = rec ? (recUnlim ? -1 : (Number(document.getElementById('j-recCnt').value) || 1)) : 0;
   const tags  = document.getElementById('j-tags').value.trim();
   const type  = document.getElementById('j-type').value;
-  const fileInput = document.getElementById('j-file');
   if (!co || !job) { alert('회사명과 공고제목을 입력하세요'); return; }
 
-  // 파일 업로드 (선택)
-  let files = [];
-  if (fileInput.files.length) {
-    const file = fileInput.files[0];
-    try {
-      const base64 = await toBase64(file);
-      const upRes  = await SAMIL_API.uploadFile(file.name, base64, file.type);
-      if (upRes.success) files = [{ name: file.name, url: upRes.url }];
-      else alert('파일 업로드 실패: ' + (upRes.error || ''));
-    } catch(e) { alert('파일 업로드 오류: ' + e.message); }
-  }
+  // 파일 업로드
+  const files = _pendingFiles.j.length ? await uploadPendingFiles('j') : [];
 
   // 즉시 UI 반영 (임시 ID)
   const tmpId = 'tmp_' + Date.now();
@@ -805,6 +891,8 @@ async function addJob() {
 function clearJobForm() {
   ['j-co','j-job','j-loc','j-tags'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('j-file').value = '';
+  _pendingFiles.j = [];
+  renderPendingFiles('j');
   document.getElementById('j-cnt').value = '1';
   document.getElementById('j-dl').value = '';
   // 학교장 추천 초기화
@@ -850,10 +938,13 @@ function editJob(id) {
   document.getElementById('ej-cnt').value     = j.cnt   || 1;
   document.getElementById('ej-tags').value    = (j.tags||[]).join(',');
   document.getElementById('ej-file').value    = '';
-  const curFile = j.files && j.files[0];
-  document.getElementById('ej-file-current').innerHTML = curFile
-    ? `현재: <a href="${curFile.url}" target="_blank" style="color:var(--primary-light)">${curFile.name}</a>`
-    : '없음';
+  _pendingFiles.ej = [];
+  renderPendingFiles('ej');
+  const curFileEl = document.getElementById('ej-file-current');
+  const curFiles  = j.files || [];
+  curFileEl.innerHTML = curFiles.length
+    ? curFiles.map(f => `<div class="file-item"><span style="font-size:16px">${fileIcon(f.name)}</span><a href="${f.url}" target="_blank">${f.name}</a><span style="font-size:11px;color:var(--text-sub)">기존</span></div>`).join('')
+    : '<p style="font-size:12px;color:var(--text-sub)">없음</p>';
   // 학교장 추천 상태 복원
   const recUnlim = j.recCnt === -1;
   _setRecBtn('ej', !!j.rec, recUnlim, recUnlim ? 1 : (j.recCnt || 1));
@@ -867,19 +958,10 @@ async function saveJobEdit() {
   const rec      = document.getElementById('ej-rec-btn').dataset.active === '1';
   const recUnlim = rec && document.getElementById('ej-recUnlim').checked;
   const recCnt   = rec ? (recUnlim ? -1 : (Number(document.getElementById('ej-recCnt').value) || 1)) : 0;
-  const fileInput = document.getElementById('ej-file');
 
-  // 기존 파일 유지 또는 새 파일 업로드
-  let files = DB.jobs[idx].files || [];
-  if (fileInput.files.length) {
-    const file = fileInput.files[0];
-    try {
-      const base64 = await toBase64(file);
-      const upRes  = await SAMIL_API.uploadFile(file.name, base64, file.type);
-      if (upRes.success) files = [{ name: file.name, url: upRes.url }];
-      else alert('파일 업로드 실패: ' + (upRes.error || ''));
-    } catch(e) { alert('파일 업로드 오류: ' + e.message); }
-  }
+  // 새 파일 업로드 후 기존 파일에 추가
+  const newUploads = _pendingFiles.ej.length ? await uploadPendingFiles('ej') : [];
+  const files = [...(DB.jobs[idx].files || []), ...newUploads];
 
   const updated = {
     type  : document.getElementById('ej-type').value,
@@ -927,7 +1009,11 @@ async function delJob(id) {
   } catch(e) {}
 }
 
-function closeJobEdit() { document.getElementById('jobEditModal').classList.remove('open'); }
+function closeJobEdit() {
+  document.getElementById('jobEditModal').classList.remove('open');
+  _pendingFiles.ej = [];
+  renderPendingFiles('ej');
+}
 
 // ── 학교장 추천 전형 토글 ──
 function _setRecBtn(prefix, active, unlim, cnt) {
