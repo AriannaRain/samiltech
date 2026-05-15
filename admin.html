@@ -248,7 +248,10 @@ tr:last-child td{border-bottom:none}
         <div class="form-group"><label>모집인원</label><input id="j-cnt" type="number" min="1" value="1"></div>
       </div>
       <div class="form-group"><label>태그 (쉼표 구분)</label><input id="j-tags" placeholder="전기,기계,공조"></div>
-      <div class="form-group"><label>붙임파일 URL (선택)</label><input id="j-file" placeholder="https://drive.google.com/..."></div>
+      <div class="form-group">
+        <label>붙임파일 (선택)</label>
+        <input type="file" id="j-file" style="padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:#fff;cursor:pointer">
+      </div>
       <div class="form-group">
         <label>학교장 추천 전형</label>
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:2px">
@@ -398,7 +401,12 @@ tr:last-child td{border-bottom:none}
         <div class="form-group"><label>모집인원</label><input id="ej-cnt" type="number" min="1"></div>
       </div>
       <div class="form-group"><label>태그</label><input id="ej-tags" placeholder="쉼표 구분"></div>
-      <div class="form-group"><label>붙임파일 URL (선택)</label><input id="ej-file" placeholder="https://drive.google.com/..."></div>
+      <div class="form-group">
+        <label>붙임파일</label>
+        <div id="ej-file-current" style="font-size:12px;color:var(--text-sub);margin-bottom:6px"></div>
+        <input type="file" id="ej-file" style="padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:#fff;cursor:pointer">
+        <p style="font-size:11px;color:var(--text-sub);margin-top:4px">새 파일 선택 시 기존 파일이 교체됩니다</p>
+      </div>
       <div class="form-group">
         <label>학교장 추천 전형</label>
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:2px">
@@ -739,6 +747,15 @@ function renderTeachers() {
   : '<tr><td colspan="6" style="text-align:center;color:var(--text-sub)">없음</td></tr>';
 }
 
+function toBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result.split(',')[1]);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
 // ══════════════════════════════════════════════
 // 채용공고 (id 기반, async 동기화)
 // ══════════════════════════════════════════════
@@ -753,29 +770,41 @@ async function addJob() {
   const recCnt   = rec ? (recUnlim ? -1 : (Number(document.getElementById('j-recCnt').value) || 1)) : 0;
   const tags  = document.getElementById('j-tags').value.trim();
   const type  = document.getElementById('j-type').value;
-  const fileUrl = document.getElementById('j-file').value.trim();
+  const fileInput = document.getElementById('j-file');
   if (!co || !job) { alert('회사명과 공고제목을 입력하세요'); return; }
+
+  // 파일 업로드 (선택)
+  let files = [];
+  if (fileInput.files.length) {
+    const file = fileInput.files[0];
+    try {
+      const base64 = await toBase64(file);
+      const upRes  = await SAMIL_API.uploadFile(file.name, base64, file.type);
+      if (upRes.success) files = [{ name: file.name, url: upRes.url }];
+      else alert('파일 업로드 실패: ' + (upRes.error || ''));
+    } catch(e) { alert('파일 업로드 오류: ' + e.message); }
+  }
 
   // 즉시 UI 반영 (임시 ID)
   const tmpId = 'tmp_' + Date.now();
   DB.jobs.unshift({
     id: tmpId, type, co, job, loc, cnt: Number(cnt)||1, dl, rec, recCnt, recUnlim,
     tags: tags ? tags.split(',').map(t=>t.trim()).filter(Boolean) : [],
-    files: fileUrl ? [{ name: '첨부파일', url: fileUrl }] : [],
-    active: true, date: today(), views: 0,
+    files, active: true, date: today(), views: 0,
   });
   save(); renderJobs(); updateDash(); clearJobForm();
 
   // Sheets 저장 후 진짜 ID로 교체
   try {
-    await SAMIL_API.addJob({ type, co, job, loc, cnt, dl, rec: String(rec), recCnt: String(recCnt), tags, files: fileUrl ? [{ name: '첨부파일', url: fileUrl }] : [] });
+    await SAMIL_API.addJob({ type, co, job, loc, cnt, dl, rec: String(rec), recCnt: String(recCnt), tags, files });
     const fresh = await SAMIL_API.getJobs();
     if (fresh.success) { DB.jobs = fresh.data; save(); renderJobs(); updateDash(); }
   } catch(e) { console.warn('addJob 오류:', e); }
 }
 
 function clearJobForm() {
-  ['j-co','j-job','j-loc','j-tags','j-file'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  ['j-co','j-job','j-loc','j-tags'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('j-file').value = '';
   document.getElementById('j-cnt').value = '1';
   document.getElementById('j-dl').value = '';
   // 학교장 추천 초기화
@@ -820,7 +849,11 @@ function editJob(id) {
   document.getElementById('ej-dl').value      = j.dl    || '';
   document.getElementById('ej-cnt').value     = j.cnt   || 1;
   document.getElementById('ej-tags').value    = (j.tags||[]).join(',');
-  document.getElementById('ej-file').value    = (j.files && j.files[0] && j.files[0].url) || '';
+  document.getElementById('ej-file').value    = '';
+  const curFile = j.files && j.files[0];
+  document.getElementById('ej-file-current').innerHTML = curFile
+    ? `현재: <a href="${curFile.url}" target="_blank" style="color:var(--primary-light)">${curFile.name}</a>`
+    : '없음';
   // 학교장 추천 상태 복원
   const recUnlim = j.recCnt === -1;
   _setRecBtn('ej', !!j.rec, recUnlim, recUnlim ? 1 : (j.recCnt || 1));
@@ -834,7 +867,20 @@ async function saveJobEdit() {
   const rec      = document.getElementById('ej-rec-btn').dataset.active === '1';
   const recUnlim = rec && document.getElementById('ej-recUnlim').checked;
   const recCnt   = rec ? (recUnlim ? -1 : (Number(document.getElementById('ej-recCnt').value) || 1)) : 0;
-  const fileUrl  = document.getElementById('ej-file').value.trim();
+  const fileInput = document.getElementById('ej-file');
+
+  // 기존 파일 유지 또는 새 파일 업로드
+  let files = DB.jobs[idx].files || [];
+  if (fileInput.files.length) {
+    const file = fileInput.files[0];
+    try {
+      const base64 = await toBase64(file);
+      const upRes  = await SAMIL_API.uploadFile(file.name, base64, file.type);
+      if (upRes.success) files = [{ name: file.name, url: upRes.url }];
+      else alert('파일 업로드 실패: ' + (upRes.error || ''));
+    } catch(e) { alert('파일 업로드 오류: ' + e.message); }
+  }
+
   const updated = {
     type  : document.getElementById('ej-type').value,
     co    : document.getElementById('ej-co').value.trim(),
@@ -844,7 +890,7 @@ async function saveJobEdit() {
     cnt   : Number(document.getElementById('ej-cnt').value)||1,
     rec, recCnt, recUnlim,
     tags  : document.getElementById('ej-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
-    files : fileUrl ? [{ name: '첨부파일', url: fileUrl }] : [],
+    files,
   };
   if (!updated.co || !updated.job) { alert('회사명과 공고제목을 입력하세요'); return; }
   DB.jobs[idx] = { ...DB.jobs[idx], ...updated };
