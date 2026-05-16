@@ -193,13 +193,13 @@ const SAMIL_API = (() => {
   // ════════════════════════════════════════════
   // 학과 (캐시 적용)
   // ════════════════════════════════════════════
-  async function getDepts() {
+  async function getDepts(year) {
     const cached = cacheGet('depts');
     if (cached) {
-      get({ action: 'getDepts' }).then(r => { if (r.success) cacheSet('depts', r.data); });
+      get({ action: 'getDepts', year: year || new Date().getFullYear() }).then(r => { if (r.success) cacheSet('depts', r.data); });
       return { success: true, data: cached };
     }
-    const r = await get({ action: 'getDepts' });
+    const r = await get({ action: 'getDepts', year: year || new Date().getFullYear() });
     if (r.success) cacheSet('depts', r.data);
     return r;
   }
@@ -209,26 +209,26 @@ const SAMIL_API = (() => {
     return call({ action: 'addDept', token: ADMIN_TOKEN, ...data });
   }
 
-  async function deleteDept(name) {
+  async function deleteDept(name, year) {
     cacheClear('depts');
-    return call({ action: 'deleteDept', token: ADMIN_TOKEN, name });
+    return call({ action: 'deleteDept', token: ADMIN_TOKEN, name, year: year || new Date().getFullYear() });
   }
 
-  async function updateDept(oldName, newName) {
+  async function updateDept(oldName, newName, year) {
     cacheClear('depts');
-    return call({ action: 'updateDept', token: ADMIN_TOKEN, oldName, newName });
+    return call({ action: 'updateDept', token: ADMIN_TOKEN, oldName, newName, year: year || new Date().getFullYear() });
   }
 
   // ════════════════════════════════════════════
   // 배너 (캐시 적용)
   // ════════════════════════════════════════════
-  async function getBanners() {
+  async function getBanners(year) {
     const cached = cacheGet('banners');
     if (cached) {
-      get({ action: 'getBanners' }).then(r => { if (r.success) cacheSet('banners', r.data); });
+      get({ action: 'getBanners', year: year || new Date().getFullYear() }).then(r => { if (r.success) cacheSet('banners', r.data); });
       return { success: true, data: cached };
     }
-    const r = await get({ action: 'getBanners' });
+    const r = await get({ action: 'getBanners', year: year || new Date().getFullYear() });
     if (r.success) cacheSet('banners', r.data);
     return r;
   }
@@ -238,14 +238,22 @@ const SAMIL_API = (() => {
     return call({ action: 'addBanner', token: ADMIN_TOKEN, ...data });
   }
 
-  async function deleteBanner(id) {
+  async function deleteBanner(id, year) {
     cacheClear('banners');
-    return call({ action: 'deleteBanner', token: ADMIN_TOKEN, id });
+    return call({ action: 'deleteBanner', token: ADMIN_TOKEN, id, year: year || new Date().getFullYear() });
   }
 
   async function updateBanner(data) {
     cacheClear('banners');
     return call({ action: 'updateBanner', token: ADMIN_TOKEN, ...data });
+  }
+
+  async function getStudentCountByClass(year) {
+    return get({ action: 'getStudentCountByClass', year: year || new Date().getFullYear() });
+  }
+
+  async function migrateDepts(year) {
+    return call({ action: 'migrateDepts', token: ADMIN_TOKEN, year: year || new Date().getFullYear() });
   }
 
   // ════════════════════════════════════════════
@@ -362,10 +370,10 @@ const SAMIL_API = (() => {
     getArchive, getReviews, addReview, deleteReview,
     applyJob, applyJobs, getApplicants, deleteApply,
     toggleInterest, getInterested, getMyInterests,
-    uploadFile,
-    initSheets,
+    uploadFile, initSheets,
     getYears, addYear, deleteYear,
     verifyAdminPw, saveAdminPw,
+    getStudentCountByClass, migrateDepts,
     cacheGet, cacheSet, cacheClear,
   };
 })();

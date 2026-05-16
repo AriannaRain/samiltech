@@ -770,12 +770,17 @@ async function setYear(y) {
   currentYear = parseInt(y);
   DB.year = currentYear;
   save();
-  // 해당 연도 teachers/classes Sheets에서 재로드
   try {
-    const [tRes, cRes] = await Promise.all([
+    const [allRes, tRes, cRes] = await Promise.all([
+      SAMIL_API.getAll(currentYear),
       SAMIL_API.getTeachers({ year: currentYear }),
       SAMIL_API.getClasses({ year: currentYear }),
     ]);
+    if (allRes.success) {
+      if (allRes.depts?.length)  DB.depts   = allRes.depts.map(d => ({ name: d.name, code: d.code||'', date: d.startYear||today() }));
+      if (allRes.banners)        DB.banners = allRes.banners;
+      if (allRes.jobs)           DB.jobs    = allRes.jobs;
+    }
     if (tRes.success) getYearData(currentYear).teachers = tRes.data;
     if (cRes.success) getYearData(currentYear).classes  = cRes.data;
     save();
@@ -787,26 +792,27 @@ async function setYear(y) {
 // Sheets 동기화
 // ══════════════════════════════════════════════
 async function loadFromSheets() {
+  showSyncResult('Sheets에서 데이터를 불러오는 중...');
+  // TTL 캐시 초기화
+  ['jobs','banners','depts','years'].forEach(k => { try { localStorage.removeItem('sc_'+k); } catch(_){} });
   try {
-    // getAll 배치 호출 (Cold Start 1회)
     const all = await SAMIL_API.getAll(currentYear);
     if (all.success) {
-      if (all.depts?.length) DB.depts = all.depts.map(d => ({ name: d.name, code: d.code||'', date: d.startYear||today() }));
-      if (all.banners)       DB.banners      = all.banners;
-      if (all.jobs)          DB.jobs         = all.jobs;
-      if (all.stats)         DB.statsHistory = all.stats;
+      if (all.depts?.length)  DB.depts        = all.depts.map(d => ({ name: d.name, code: d.code||'', date: d.startYear||today() }));
+      if (all.banners)        DB.banners       = all.banners;
+      if (all.jobs)           DB.jobs          = all.jobs;
+      if (all.stats)          DB.statsHistory  = all.stats;
     }
-    // 담임/반구조는 연도별 별도 조회
     const [teachersRes, classesRes] = await Promise.all([
       SAMIL_API.getTeachers({ year: currentYear }),
       SAMIL_API.getClasses({ year: currentYear }),
     ]);
     if (teachersRes.success) getYearData(currentYear).teachers = teachersRes.data;
     if (classesRes.success)  getYearData(currentYear).classes  = classesRes.data;
-    save();
-    renderAll();
+    save(); renderAll();
+    showSyncResult(`✅ ${currentYear}년 데이터 동기화 완료`);
   } catch(e) {
-    console.warn('loadFromSheets 오류:', e);
+    showSyncResult('⚠️ 동기화 오류: ' + e.message, true);
   }
   // 후기는 별도 로드
   try {
@@ -827,7 +833,7 @@ function renderAll() {
   document.getElementById('dash-year').textContent = yr;
   updateDeptSelects();
   renderDepts();
-  renderClasses();
+  loadStudentCounts().then(() => renderClasses());
   renderTeachers();
   renderJobs();
   renderBanners();
@@ -866,25 +872,24 @@ async function addDept() {
   DB.depts.push({ name, date: today() });
   save(); renderDepts(); updateDeptSelects();
   document.getElementById('deptInput').value = '';
-  try { await SAMIL_API.addDept({ name }); } catch(e) {}
+  try { await SAMIL_API.addDept({ name, year: currentYear }); } catch(e) {}
 }
 
 async function editDept(oldName) {
   const newName = prompt(`학과명 수정\n현재: ${oldName}\n새 이름:`, oldName);
   if (!newName || newName.trim() === oldName) return;
-  const confirm1 = confirm(`"${oldName}" → "${newName.trim()}" 으로 수정하시겠습니까?`);
-  if (!confirm1) return;
+  if (!confirm(`"${oldName}" → "${newName.trim()}" 으로 수정하시겠습니까?`)) return;
   DB.depts = DB.depts.map(d => d.name === oldName ? { ...d, name: newName.trim() } : d);
   save(); renderDepts(); updateDeptSelects();
-  const res = await SAMIL_API.updateDept(oldName, newName.trim());
-  showSyncResult(res.success ? `학과 수정 완료: "${oldName}" → "${newName.trim()}"` : `오류: ${res.error}`);
+  const res = await SAMIL_API.updateDept(oldName, newName.trim(), currentYear);
+  showSyncResult(res.success ? `학과 수정 완료: "${oldName}" → "${newName.trim()}"` : `오류: ${res.error}`, !res.success);
 }
 
 async function delDept(name) {
   if (!confirm(`"${name}" 학과를 삭제하시겠습니까?`)) return;
   DB.depts = DB.depts.filter(d => d.name !== name);
   save(); renderDepts(); updateDeptSelects();
-  try { await SAMIL_API.deleteDept(name); } catch(e) {}
+  try { await SAMIL_API.deleteDept(name, currentYear); } catch(e) {}
 }
 
 function renderDepts() {
@@ -905,6 +910,15 @@ function renderDepts() {
 // ══════════════════════════════════════════════
 // 학년-반 구조 (yearData 기반)
 // ══════════════════════════════════════════════
+// 학반별 실제 학생 수 캐시
+let _studentCounts = {};
+async function loadStudentCounts() {
+  try {
+    const res = await SAMIL_API.getStudentCountByClass(currentYear);
+    if (res.success) _studentCounts = res.data;
+  } catch(e) {}
+}
+
 async function addClass() {
   const dept  = document.getElementById('clsDept').value;
   const grade = document.getElementById('clsGrade').value;
@@ -915,7 +929,22 @@ async function addClass() {
   if (yd.classes.find(c => c.dept===dept && c.grade===grade && String(c.num)===String(num)))
     { alert('이미 등록된 학반입니다'); return; }
   yd.classes.push({ dept, grade: String(grade), num: String(num), count: Number(count)||0 });
-  save(); renderClasses(); renderClassListPanel();
+  // 담임 행 자동 추가 (이름/비밀번호 빈칸)
+  if (!yd.teachers.find(t => t.dept===dept && t.grade===String(grade) && String(t.cls)===String(num))) {
+    yd.teachers.push({ dept, grade: String(grade), cls: String(num), name: '', pw: '', year: currentYear, _auto: true });
+  }
+  save(); renderClasses(); renderTeachers(); renderClassListPanel();
+  try { await SAMIL_API.saveClasses({ year: currentYear, classes: JSON.stringify(yd.classes) }); } catch(e) {}
+}
+
+async function editClassCount(dept, grade, num) {
+  const yd  = getYearData(currentYear);
+  const cls = yd.classes.find(c => c.dept===dept && c.grade===grade && String(c.num)===String(num));
+  if (!cls) return;
+  const newCount = prompt(`${dept} ${grade}학년 ${num}반 인원 수정\n현재: ${cls.count||0}명`, cls.count||0);
+  if (newCount === null) return;
+  cls.count = Number(newCount) || 0;
+  save(); renderClasses();
   try { await SAMIL_API.saveClasses({ year: currentYear, classes: JSON.stringify(yd.classes) }); } catch(e) {}
 }
 
@@ -923,7 +952,9 @@ async function delClass(dept, grade, num) {
   if (!confirm('삭제하시겠습니까?')) return;
   const yd = getYearData(currentYear);
   yd.classes = yd.classes.filter(c => !(c.dept===dept && c.grade===grade && String(c.num)===String(num)));
-  save(); renderClasses(); renderClassListPanel();
+  // 자동생성된 빈 담임 행도 함께 제거
+  yd.teachers = yd.teachers.filter(t => !(t.dept===dept && t.grade===String(grade) && String(t.cls)===String(num) && t._auto && !t.name));
+  save(); renderClasses(); renderTeachers(); renderClassListPanel();
   try { await SAMIL_API.saveClasses({ year: currentYear, classes: JSON.stringify(yd.classes) }); } catch(e) {}
 }
 
@@ -933,11 +964,23 @@ function renderClasses() {
   const list = getYearData(currentYear).classes || [];
   el.innerHTML = list.length ? [...list]
     .sort((a,b) => a.dept.localeCompare(b.dept)||Number(a.grade)-Number(b.grade)||Number(a.num)-Number(b.num))
-    .map(c => `<tr>
-      <td>${c.dept}</td><td>${c.grade}학년</td><td>${c.num}반</td>
-      <td>${c.count||'—'}명</td>
-      <td><button class="btn btn-sm btn-danger" onclick="delClass('${c.dept}','${c.grade}','${c.num}')">삭제</button></td>
-    </tr>`).join('')
+    .map(c => {
+      const key    = `${c.dept}_${c.grade}_${c.num}`;
+      const actual = _studentCounts[key] || 0;
+      const set    = Number(c.count) || 0;
+      const diff   = set > 0 && actual > 0 && set !== actual;
+      const cntTxt = diff
+        ? `<span style="color:#E53E3E;font-weight:700">${set}명설정/${actual}명실제 ⚠️</span>`
+        : `${set||'—'}명`;
+      return `<tr>
+        <td>${c.dept}</td><td>${c.grade}학년</td><td>${c.num}반</td>
+        <td>${cntTxt}</td>
+        <td style="display:flex;gap:4px">
+          <button class="btn btn-sm" style="background:#2563eb;color:#fff" onclick="editClassCount('${c.dept}','${c.grade}','${c.num}')">인원수정</button>
+          <button class="btn btn-sm btn-danger" onclick="delClass('${c.dept}','${c.grade}','${c.num}')">삭제</button>
+        </td>
+      </tr>`;
+    }).join('')
   : '<tr><td colspan="5" style="text-align:center;color:var(--text-sub)">없음</td></tr>';
 }
 
@@ -990,16 +1033,42 @@ function renderTeachers() {
   const el   = document.getElementById('teacherList');
   if (!el) return;
   const list = getYearData(currentYear).teachers || [];
-  el.innerHTML = list.length ? list.map((t, i) => `<tr>
-    <td>${t.dept}</td><td>${t.grade}학년</td><td>${t.cls}반</td>
-    <td>${t.name}</td>
-    <td style="font-family:monospace">${'*'.repeat((t.pw||'').length||4)}</td>
-    <td style="display:flex;gap:4px">
-      <button class="btn btn-sm" style="background:#2563eb;color:#fff" onclick="editTeacher(${i})">수정</button>
-      <button class="btn btn-sm btn-danger" onclick="delTeacher(${i})">삭제</button>
-    </td>
-  </tr>`).join('')
+  el.innerHTML = list.length ? list.map((t, i) => {
+    if (t._auto || !t.name) {
+      // 자동생성 빈 행 → 입력칸
+      return `<tr style="background:#FFFBEB">
+        <td>${t.dept}</td><td>${t.grade}학년</td><td>${t.cls}반</td>
+        <td><input id="tc-name-${i}" placeholder="이름" value="${t.name||''}" style="width:80px;padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:13px"></td>
+        <td><input id="tc-pw-${i}" placeholder="비밀번호" value="${t.pw||''}" style="width:80px;padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:13px"></td>
+        <td style="display:flex;gap:4px">
+          <button class="btn btn-sm" style="background:#38A169;color:#fff" onclick="saveAutoTeacher(${i})">저장</button>
+          <button class="btn btn-sm btn-danger" onclick="delTeacher(${i})">삭제</button>
+        </td>
+      </tr>`;
+    }
+    return `<tr>
+      <td>${t.dept}</td><td>${t.grade}학년</td><td>${t.cls}반</td>
+      <td>${t.name}</td>
+      <td style="font-family:monospace">${'*'.repeat((t.pw||'').length||4)}</td>
+      <td style="display:flex;gap:4px">
+        <button class="btn btn-sm" style="background:#2563eb;color:#fff" onclick="editTeacher(${i})">수정</button>
+        <button class="btn btn-sm btn-danger" onclick="delTeacher(${i})">삭제</button>
+      </td>
+    </tr>`;
+  }).join('')
   : '<tr><td colspan="6" style="text-align:center;color:var(--text-sub)">없음</td></tr>';
+}
+
+async function saveAutoTeacher(i) {
+  const yd   = getYearData(currentYear);
+  const t    = yd.teachers[i];
+  const name = document.getElementById(`tc-name-${i}`)?.value.trim();
+  const pw   = document.getElementById(`tc-pw-${i}`)?.value.trim();
+  if (!name || !pw) { alert('이름과 비밀번호를 모두 입력하세요'); return; }
+  yd.teachers[i] = { ...t, name, pw, _auto: false };
+  save(); renderTeachers();
+  const res = await SAMIL_API.addTeacher({ dept: t.dept, grade: t.grade, cls: t.cls, name, pw, year: currentYear });
+  showSyncResult(res.success ? `✅ ${t.dept} ${t.grade}학년 ${t.cls}반 담임 저장 완료` : `오류: ${res.error}`, !res.success);
 }
 
 // ══════════════════════════════════════════════

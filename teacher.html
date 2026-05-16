@@ -1295,11 +1295,10 @@ window.addEventListener('DOMContentLoaded', async ()=>{
 async function loadTeacherData(){
   try{
     const [studRes, jobsRes] = await Promise.all([
-      SAMIL_API.getStudents({ teacherId: ME.id }),
+      SAMIL_API.getStudents({ teacherId: ME.id, year: ME.year }),
       SAMIL_API.getJobs(true),
     ]);
     if(studRes.success){
-      // Sheets를 단일 소스로 사용 — localStorage merge 불필요
       DB.students = studRes.data.map(s => ({
         ...s,
         id    : String(s.id),
