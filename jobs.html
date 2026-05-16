@@ -666,13 +666,11 @@ function renderArchive(){
       const displayName = showFull ? (a.sname||'—') : maskName(a.sname);
       const certsStr = a.certs ? `<span class="alumni-certs">🎖 ${a.certs}</span>` : '';
       const middleStr = a.middle ? `<span class="alumni-certs">🏫 ${a.middle}</span>` : '';
-      const essayBtn = a.essays&&a.essays.length ? `<button class="alumni-btn" onclick="openArchiveModal(${a._fi})">📄 자소서</button>` : '';
-      const reviewBtn = a.review ? `<button class="alumni-btn" onclick="openArchiveModal(${a._fi})">💬 후기</button>` : '';
       return `<div class="alumni-row">
         <span class="alumni-name">${displayName}</span>
         <span class="alumni-meta">${a.dept||''} · ${a.year||''}년 졸업</span>
         ${middleStr}${certsStr}
-        <div style="display:flex;gap:4px;margin-left:auto">${essayBtn}${reviewBtn}</div>
+        <div style="margin-left:auto"><button class="alumni-btn" onclick="openArchiveModal(${a._fi})">상세보기</button></div>
       </div>`;
     }).join('');
     const cardId = 'co-'+co.replace(/\s/g,'_');
