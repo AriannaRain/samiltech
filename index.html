@@ -387,16 +387,23 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   // 통계
   const st = statsRes.success && statsRes.latest ? statsRes.latest : {};
   const today2 = new Date();
+  const todayStr2 = getTodayStr();
+  const thisYear = today2.getFullYear();
   const closing = DATA.jobs.filter(j=>{
     const diff=Math.ceil((new Date(j.dl)-today2)/86400000);
     return diff>=0&&diff<=7;
+  }).length;
+  const done = DATA.jobs.filter(j=>{
+    const dl=(j.dl||'').substring(0,10);
+    const expired = dl < todayStr2;
+    return (expired || !j.active) && dl.startsWith(thisYear);
   }).length;
   DATA.stats = {
     grad    : st.grad     ? st.grad+'명'    : SAMPLE.stats.grad,
     rate    : st.rate     ? st.rate+'%'     : SAMPLE.stats.rate,
     active  : DATA.jobs.length+'개',
     closing : closing+'개',
-    done    : SAMPLE.stats.done,
+    done    : done+'개',
   };
 
   // 학과 드롭다운 (항상 실행)
