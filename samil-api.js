@@ -6,6 +6,24 @@ const SAMIL_API = (() => {
   const GAS_URL     = 'https://script.google.com/macros/s/AKfycby6UpyOV0rxKOUbQkerpniceHPAgZOkLfNKJC5JFyEJqxmJbe_4BcK-HOPCHOmahnnA_g/exec';
   const ADMIN_TOKEN = 'samil_admin_2024';
 
+  // ── TTL 캐시 ──────────────────────────────
+  const TTL = { jobs: 5*60*1000, banners: 60*60*1000, depts: 60*60*1000, years: 60*60*1000 };
+  function cacheGet(key) {
+    try {
+      const raw = localStorage.getItem('sc_'+key);
+      if (!raw) return null;
+      const { data, ts } = JSON.parse(raw);
+      if (Date.now() - ts > (TTL[key] || 5*60*1000)) return null;
+      return data;
+    } catch(_) { return null; }
+  }
+  function cacheSet(key, data) {
+    try { localStorage.setItem('sc_'+key, JSON.stringify({ data, ts: Date.now() })); } catch(_) {}
+  }
+  function cacheClear(key) {
+    try { localStorage.removeItem('sc_'+key); } catch(_) {}
+  }
+
   async function call(params) {
     try {
       const res = await fetch(GAS_URL, {
@@ -33,10 +51,27 @@ const SAMIL_API = (() => {
   }
 
   // ════════════════════════════════════════════
-  // 채용공고
+  // 배치 로드 (Cold Start 최소화)
+  // ════════════════════════════════════════════
+  async function getAll(year) {
+    return get({ action: 'getAll', year: year || new Date().getFullYear() });
+  }
+
+  // ════════════════════════════════════════════
+  // 채용공고 (캐시 적용)
   // ════════════════════════════════════════════
   async function getJobs(activeOnly = false) {
-    return get({ action: 'getJobs', activeOnly });
+    if (!activeOnly) {
+      const cached = cacheGet('jobs');
+      if (cached) {
+        // 백그라운드 갱신
+        get({ action: 'getJobs', activeOnly }).then(r => { if (r.success) cacheSet('jobs', r.data); });
+        return { success: true, data: cached };
+      }
+    }
+    const r = await get({ action: 'getJobs', activeOnly });
+    if (r.success) cacheSet('jobs', r.data);
+    return r;
   }
 
   async function addJob(data) {
@@ -156,37 +191,103 @@ const SAMIL_API = (() => {
   }
 
   // ════════════════════════════════════════════
-  // 학과
+  // 학과 (캐시 적용)
   // ════════════════════════════════════════════
   async function getDepts() {
-    return get({ action: 'getDepts' });
+    const cached = cacheGet('depts');
+    if (cached) {
+      get({ action: 'getDepts' }).then(r => { if (r.success) cacheSet('depts', r.data); });
+      return { success: true, data: cached };
+    }
+    const r = await get({ action: 'getDepts' });
+    if (r.success) cacheSet('depts', r.data);
+    return r;
   }
 
   async function addDept(data) {
+    cacheClear('depts');
     return call({ action: 'addDept', token: ADMIN_TOKEN, ...data });
   }
 
   async function deleteDept(name) {
+    cacheClear('depts');
     return call({ action: 'deleteDept', token: ADMIN_TOKEN, name });
   }
 
+  async function updateDept(oldName, newName) {
+    cacheClear('depts');
+    return call({ action: 'updateDept', token: ADMIN_TOKEN, oldName, newName });
+  }
+
   // ════════════════════════════════════════════
-  // 배너
+  // 배너 (캐시 적용)
   // ════════════════════════════════════════════
   async function getBanners() {
-    return get({ action: 'getBanners' });
+    const cached = cacheGet('banners');
+    if (cached) {
+      get({ action: 'getBanners' }).then(r => { if (r.success) cacheSet('banners', r.data); });
+      return { success: true, data: cached };
+    }
+    const r = await get({ action: 'getBanners' });
+    if (r.success) cacheSet('banners', r.data);
+    return r;
   }
 
   async function addBanner(data) {
+    cacheClear('banners');
     return call({ action: 'addBanner', token: ADMIN_TOKEN, ...data });
   }
 
   async function deleteBanner(id) {
+    cacheClear('banners');
     return call({ action: 'deleteBanner', token: ADMIN_TOKEN, id });
   }
 
   async function updateBanner(data) {
+    cacheClear('banners');
     return call({ action: 'updateBanner', token: ADMIN_TOKEN, ...data });
+  }
+
+  // ════════════════════════════════════════════
+  // 관리연도 (ScriptProperties)
+  // ════════════════════════════════════════════
+  async function getYears() {
+    const cached = cacheGet('years');
+    if (cached) {
+      get({ action: 'getYears' }).then(r => { if (r.success) cacheSet('years', r.data); });
+      return { success: true, data: cached };
+    }
+    const r = await get({ action: 'getYears' });
+    if (r.success) cacheSet('years', r.data);
+    return r;
+  }
+
+  async function addYear(year) {
+    cacheClear('years');
+    return call({ action: 'addYear', token: ADMIN_TOKEN, year });
+  }
+
+  async function deleteYear(year) {
+    cacheClear('years');
+    return call({ action: 'deleteYear', token: ADMIN_TOKEN, year });
+  }
+
+  // ════════════════════════════════════════════
+  // 관리자 비밀번호 (ScriptProperties)
+  // ════════════════════════════════════════════
+  async function verifyAdminPw(pw) {
+    return call({ action: 'verifyAdminPw', pw });
+  }
+
+  async function saveAdminPw(data) {
+    return call({ action: 'saveAdminPw', token: ADMIN_TOKEN, ...data });
+  }
+
+  // ════════════════════════════════════════════
+  // 담임교사 수정
+  // ════════════════════════════════════════════
+  async function updateTeacher(data) {
+    return call({ action: 'updateTeacher', token: ADMIN_TOKEN, ...data });
   }
 
   // ════════════════════════════════════════════
@@ -248,13 +349,14 @@ const SAMIL_API = (() => {
   }
 
   return {
+    getAll,
     getJobs, addJob, updateJob, deleteJob, toggleJob,
     getJobStats, incrementView,
     loginStudent, getStudents, getMyRecord, saveRecord, saveRecords, addStudent, resetStudentPw,
-    loginTeacher, addTeacher, deleteTeacher, changeTeacherPw, changeStudentPw,
+    loginTeacher, addTeacher, deleteTeacher, updateTeacher, changeTeacherPw, changeStudentPw,
     getTeachers, getClasses, saveClasses,
     updateStudentEmploy,
-    getDepts, addDept, deleteDept,
+    getDepts, addDept, deleteDept, updateDept,
     getBanners, addBanner, deleteBanner, updateBanner,
     getStats, saveAnnualStat, deleteAnnualStat, saveEmploy,
     getArchive, getReviews, addReview, deleteReview,
@@ -262,5 +364,8 @@ const SAMIL_API = (() => {
     toggleInterest, getInterested, getMyInterests,
     uploadFile,
     initSheets,
+    getYears, addYear, deleteYear,
+    verifyAdminPw, saveAdminPw,
+    cacheGet, cacheSet, cacheClear,
   };
 })();
