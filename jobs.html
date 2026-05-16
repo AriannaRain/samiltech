@@ -709,7 +709,6 @@ function openArchiveModal(i){
     essaysEl.style.display='block';
   } else essaysEl.style.display='none';
   const reviewEl = document.getElementById('ar-review');
-  const showFull = canSeeFullName();
   const infoLines = [];
   if(a.certs)              infoLines.push(`🎖 자격증: ${a.certs}`);
   if(a.attend)             infoLines.push(`📋 출결: ${a.attend}`);
