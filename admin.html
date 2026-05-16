@@ -1694,6 +1694,34 @@ function delEmploy(i) {
 
 // ══════════════════════════════════════════════
 // 학번으로 학생정보 자동불러오기
+function formatAttend(attend) {
+  if(!attend || attend === '[]') return '';
+  try {
+    const arr = typeof attend === 'string' ? JSON.parse(attend) : attend;
+    if(!Array.isArray(arr)) return '';
+    let abs=0, late=0, early=0;
+    arr.forEach(g=>{
+      const a=g.abs||{}, l=g.late||{}, e=g.early||{};
+      abs  += (a.sick||0)+(a.unauth||0)+(a.etc||0);
+      late += (l.sick||0)+(l.unauth||0)+(l.etc||0);
+      early+= (e.sick||0)+(e.unauth||0)+(e.etc||0);
+    });
+    return `결석${abs}일 지각${late}회 조퇴${early}회`;
+  } catch(e){ return ''; }
+}
+
+function formatSummary(summary) {
+  if(!summary) return '';
+  try {
+    const s = typeof summary === 'string' ? JSON.parse(summary) : summary;
+    if(!s || typeof s !== 'object') return '';
+    const parts = [];
+    if(s.allUnit)  parts.push(`전체 ${s.allUnit}단위/평균 ${s.allGrade}등급`);
+    if(s.genUnit)  parts.push(`보통 ${s.genUnit}단위/${s.genGrade}등급`);
+    if(s.proUnit)  parts.push(`전문 ${s.proUnit}단위/${s.proGrade}등급`);
+    return parts.join(' · ');
+  } catch(e){ return ''; }
+}
 async function loadStudentToReview() {
   const sid = document.getElementById('er-sid').value.trim();
   if (!sid) { alert('학번을 입력하세요'); return; }
@@ -1703,9 +1731,9 @@ async function loadStudentToReview() {
   if (!s) { alert('해당 학번 학생을 찾을 수 없습니다'); return; }
   document.getElementById('er-sname').value   = s.name   || '';
   document.getElementById('er-certs').value   = Array.isArray(s.certs)   ? s.certs.map(c=>c.name||c).join(', ')  : (s.certs||'');
-  document.getElementById('er-attend').value  = typeof s.attend === 'object' ? JSON.stringify(s.attend) : (s.attend||'');
+  document.getElementById('er-attend').value  = formatAttend(s.attend);
   document.getElementById('er-clubs').value   = Array.isArray(s.clubs)   ? s.clubs.map(c=>c.name||c).join(', ')  : (s.clubs||'');
-  document.getElementById('er-summary').value = typeof s.summary === 'object' ? JSON.stringify(s.summary) : (s.summary||'');
+  document.getElementById('er-summary').value = formatSummary(s.summary);
   // 학과 자동선택
   const deptSel = document.getElementById('er-dept');
   if (deptSel) { [...deptSel.options].forEach(o=>{ if(o.value===s.dept) deptSel.value=s.dept; }); }

@@ -625,6 +625,18 @@ function canSeeFullName(){
   return sessionStorage.getItem('samilAdminAuth')==='1' || !!sessionStorage.getItem('samilTeacherAuth');
 }
 
+function formatSummary(summary){
+  if(!summary) return '';
+  try{
+    const s = typeof summary === 'string' ? JSON.parse(summary) : summary;
+    if(!s || typeof s !== 'object') return summary;
+    const parts = [];
+    if(s.allUnit)  parts.push(`전체 ${s.allUnit}단위/평균 ${s.allGrade}등급`);
+    if(s.proUnit)  parts.push(`전문 ${s.proUnit}단위/${s.proGrade}등급`);
+    return parts.join(' · ');
+  }catch(e){ return summary||''; }
+}
+
 function renderArchive(){
   const list = document.getElementById('archiveList');
   const empty = document.getElementById('archiveEmpty');
@@ -697,11 +709,15 @@ function openArchiveModal(i){
     essaysEl.style.display='block';
   } else essaysEl.style.display='none';
   const reviewEl = document.getElementById('ar-review');
-  if(a.review){
-    reviewEl.style.display='block';
-    reviewEl.innerHTML=`<div style="font-size:13px;font-weight:600;color:var(--text-sub);margin-bottom:8px">💬 합격 후기</div>`+
-      `<div style="font-size:14px;line-height:1.8;white-space:pre-line">${a.review}</div>`;
-  } else reviewEl.style.display='none';
+  const infoLines = [];
+  if(a.certs)   infoLines.push(`🎖 자격증: ${a.certs}`);
+  if(a.attend)  infoLines.push(`📋 출결: ${a.attend}`);
+  if(a.clubs)   infoLines.push(`🎨 동아리: ${a.clubs}`);
+  if(a.summary) infoLines.push(`📊 성적: ${formatSummary(a.summary)}`);
+  reviewEl.style.display='block';
+  reviewEl.innerHTML=
+    (infoLines.length ? `<div style="background:var(--bg);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;line-height:2">${infoLines.join('<br>')}</div>` : '')+
+    (a.review ? `<div style="font-size:13px;font-weight:600;color:var(--text-sub);margin-bottom:8px">💬 합격 후기</div><div style="font-size:14px;line-height:1.8;white-space:pre-line">${a.review}</div>` : '');
   document.getElementById('archiveModal').classList.add('open');
 }
 
