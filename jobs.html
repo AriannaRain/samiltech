@@ -653,12 +653,13 @@ function renderArchive(){
     const alumni = g.list.map(a=>{
       const displayName = showFull ? (a.sname||'—') : maskName(a.sname);
       const certsStr = a.certs ? `<span class="alumni-certs">🎖 ${a.certs}</span>` : '';
+      const middleStr = a.middle ? `<span class="alumni-certs">🏫 ${a.middle}</span>` : '';
       const essayBtn = a.essays&&a.essays.length ? `<button class="alumni-btn" onclick="openArchiveModal(${a._fi})">📄 자소서</button>` : '';
       const reviewBtn = a.review ? `<button class="alumni-btn" onclick="openArchiveModal(${a._fi})">💬 후기</button>` : '';
       return `<div class="alumni-row">
         <span class="alumni-name">${displayName}</span>
         <span class="alumni-meta">${a.dept||''} · ${a.year||''}년 졸업</span>
-        ${certsStr}
+        ${middleStr}${certsStr}
         <div style="display:flex;gap:4px;margin-left:auto">${essayBtn}${reviewBtn}</div>
       </div>`;
     }).join('');
@@ -688,7 +689,7 @@ function openArchiveModal(i){
   const showFull = canSeeFullName();
   const displayName = showFull ? (a.sname||'—') : maskName(a.sname);
   document.getElementById('ar-co').textContent = a.co||'';
-  document.getElementById('ar-meta').textContent = `${a.dept||''} · ${a.year||''}년 졸업 · ${displayName}`;
+  document.getElementById('ar-meta').textContent = `${a.dept||''} · ${a.year||''}년 졸업 · ${displayName}${a.middle?' · '+a.middle+' 출신':''}`;
   const essaysEl = document.getElementById('ar-essays');
   if(a.essays && a.essays.length){
     essaysEl.innerHTML=`<div style="font-size:13px;font-weight:600;color:var(--text-sub);margin-bottom:8px">📎 합격자소서</div>`+

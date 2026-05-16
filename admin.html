@@ -415,6 +415,9 @@ tr:last-child td{border-bottom:none}
         </div>
         <div class="form-row cols2" style="margin-bottom:0">
           <div class="form-group"><label>학생 이름</label><input id="er-sname" placeholder="홍길동"></div>
+          <div class="form-group"><label>출신중학교</label><input id="er-middle" placeholder="매향중학교"></div>
+        </div>
+        <div class="form-row cols2" style="margin-bottom:0">
           <div class="form-group"><label>자격증 <span style="font-size:11px;color:var(--text-sub)">(불러오기 자동입력)</span></label><input id="er-certs" placeholder="자동입력 또는 직접입력"></div>
         </div>
         <div class="form-row cols2" style="margin-bottom:0">
@@ -628,13 +631,14 @@ tr:last-child td{border-bottom:none}
         <div class="form-group"><label>학생 이름</label><input id="re-sname"></div>
       </div>
       <div class="form-row cols2">
+        <div class="form-group"><label>출신중학교</label><input id="re-middle"></div>
         <div class="form-group"><label>자격증</label><input id="re-certs"></div>
-        <div class="form-group"><label>출결 요약</label><input id="re-attend"></div>
       </div>
       <div class="form-row cols2">
+        <div class="form-group"><label>출결 요약</label><input id="re-attend"></div>
         <div class="form-group"><label>동아리</label><input id="re-clubs"></div>
-        <div class="form-group"><label>성적요약</label><input id="re-summary"></div>
       </div>
+      <div class="form-group"><label>성적요약</label><input id="re-summary"></div>
       <div class="form-group">
         <label>합격자소서 파일</label>
         <div id="re-file-current" class="file-list" style="margin-bottom:8px"></div>
@@ -1767,6 +1771,7 @@ async function addReview() {
   const year    = parseInt(document.getElementById('er-year').value) || new Date().getFullYear()-1;
   const sid     = document.getElementById('er-sid').value.trim();
   const sname   = document.getElementById('er-sname').value.trim();
+  const middle  = document.getElementById('er-middle').value.trim();
   const certs   = document.getElementById('er-certs').value.trim();
   const attend  = document.getElementById('er-attend').value.trim();
   const clubs   = document.getElementById('er-clubs').value.trim();
@@ -1777,15 +1782,15 @@ async function addReview() {
   const essays = _pendingFiles.er.length ? await uploadPendingFiles('er') : [];
 
   if (!DB.reviews) DB.reviews = [];
-  DB.reviews.push({ co, type, dept, year, sid, sname, certs, attend, clubs, summary, essays, review, date: today() });
+  DB.reviews.push({ co, type, dept, year, sid, sname, middle, certs, attend, clubs, summary, essays, review, date: today() });
   save(); renderReviews();
-  ['er-co','er-sid','er-sname','er-certs','er-attend','er-clubs','er-summary','er-review'].forEach(id=>{ document.getElementById(id).value=''; });
+  ['er-co','er-sid','er-sname','er-middle','er-certs','er-attend','er-clubs','er-summary','er-review'].forEach(id=>{ document.getElementById(id).value=''; });
   document.getElementById('er-type').value = '';
   _pendingFiles.er = [];
   renderPendingFiles('er');
 
   try {
-    await SAMIL_API.addReview({ co, type, dept, year, sid, sname, certs, attend, clubs, summary, essays, review });
+    await SAMIL_API.addReview({ co, type, dept, year, sid, sname, middle, certs, attend, clubs, summary, essays, review });
     const fresh = await SAMIL_API.getReviews();
     if (fresh.success) { DB.reviews = fresh.data; save(); renderReviews(); }
   } catch(e) { console.warn('후기 Sheets 저장 오류:', e); }
@@ -1876,6 +1881,7 @@ function openReviewEdit(id) {
   document.getElementById('re-year').value    = r.year    || '';
   document.getElementById('re-sid').value     = r.sid     || '';
   document.getElementById('re-sname').value   = r.sname   || '';
+  document.getElementById('re-middle').value  = r.middle  || '';
   document.getElementById('re-certs').value   = r.certs   || '';
   document.getElementById('re-attend').value  = r.attend  || '';
   document.getElementById('re-clubs').value   = r.clubs   || '';
@@ -1913,6 +1919,7 @@ async function saveReviewEdit() {
     year   : parseInt(document.getElementById('re-year').value) || DB.reviews[idx].year,
     sid    : document.getElementById('re-sid').value.trim(),
     sname  : document.getElementById('re-sname').value.trim(),
+    middle : document.getElementById('re-middle').value.trim(),
     certs  : document.getElementById('re-certs').value.trim(),
     attend : document.getElementById('re-attend').value.trim(),
     clubs  : document.getElementById('re-clubs').value.trim(),

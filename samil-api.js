@@ -224,6 +224,7 @@ const SAMIL_API = (() => {
       year: data.year || '', type: data.type || '',
       co: data.co || '', dept: data.dept || '',
       sid: data.sid || '', sname: data.sname || '',
+      middle: data.middle || '',
       certs: data.certs || '', attend: data.attend || '',
       clubs: data.clubs || '', summary: data.summary || '',
       review: data.review || '',
