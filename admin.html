@@ -1918,14 +1918,35 @@ function openReviewEdit(id) {
   // 학과 선택
   const deptEl = document.getElementById('re-dept');
   if (deptEl) deptEl.value = r.dept || '';
-  // 기존 파일 표시
+  // 기존 파일 표시 (삭제 버튼 포함)
   const curFiles = r.essays || [];
+  window._keepFiles = [...curFiles]; // 삭제 후 남길 파일 추적
   document.getElementById('re-file-current').innerHTML = curFiles.length
-    ? curFiles.map(f => `<div class="file-item"><span>${fileIcon(f.name)}</span><a href="${f.url}" target="_blank">${f.name}</a><span style="font-size:11px;color:var(--text-sub)">기존</span></div>`).join('')
+    ? curFiles.map((f,i) => `<div class="file-item" id="re-cur-${i}">
+        <span>${fileIcon(f.name)}</span>
+        <a href="${f.url}" target="_blank" style="flex:1">${f.name}</a>
+        <span style="font-size:11px;color:var(--text-sub);margin-right:6px">기존</span>
+        <button style="font-size:11px;padding:2px 8px;border:1px solid #E53E3E;border-radius:5px;color:#E53E3E;background:#fff;cursor:pointer" onclick="removeKeepFile(${i})">삭제</button>
+      </div>`).join('')
     : '<p style="font-size:12px;color:var(--text-sub)">없음</p>';
   _pendingFiles.re = [];
   renderPendingFiles('re');
   document.getElementById('reviewEditModal').classList.add('open');
+}
+
+function removeKeepFile(i){
+  if(!window._keepFiles) return;
+  window._keepFiles.splice(i, 1);
+  // UI 갱신
+  const el = document.getElementById('re-file-current');
+  el.innerHTML = window._keepFiles.length
+    ? window._keepFiles.map((f,j) => `<div class="file-item" id="re-cur-${j}">
+        <span>${fileIcon(f.name)}</span>
+        <a href="${f.url}" target="_blank" style="flex:1">${f.name}</a>
+        <span style="font-size:11px;color:var(--text-sub);margin-right:6px">기존</span>
+        <button style="font-size:11px;padding:2px 8px;border:1px solid #E53E3E;border-radius:5px;color:#E53E3E;background:#fff;cursor:pointer" onclick="removeKeepFile(${j})">삭제</button>
+      </div>`).join('')
+    : '<p style="font-size:12px;color:var(--text-sub)">없음</p>';
 }
 
 function closeReviewEdit() {
@@ -1939,7 +1960,7 @@ async function saveReviewEdit() {
   const idx    = (DB.reviews||[]).findIndex(r => r.id === id);
   if (idx === -1) return;
   const newUploads = _pendingFiles.re.length ? await uploadPendingFiles('re') : [];
-  const essays = [...(DB.reviews[idx].essays || []), ...newUploads];
+  const essays = [...(window._keepFiles || []), ...newUploads];
   const updated = {
     co     : document.getElementById('re-co').value.trim(),
     type   : document.getElementById('re-type').value,
