@@ -396,13 +396,32 @@ tr:last-child td{border-bottom:none}
               <div class="ac-list" id="er-ac-list"></div>
             </div>
           </div>
+          <div class="form-group"><label>기업구분</label>
+            <select id="er-type">
+              <option value="">선택</option>
+              <option>공무원</option><option>공공기관</option><option>대기업</option><option>중소기업</option><option>기타</option>
+            </select>
+          </div>
           <div class="form-group"><label>학과</label><select id="er-dept"></select></div>
-          <div class="form-group"><label>연도</label><input id="er-year" type="number" placeholder="2025"></div>
         </div>
         <div class="form-row cols2" style="margin-bottom:0">
-          <div class="form-group"><label>학번</label><input id="er-sid" placeholder="20250001"></div>
-          <div class="form-group"><label>학생 이름</label><input id="er-sname" placeholder="홍길동"></div>
+          <div class="form-group"><label>연도</label><input id="er-year" type="number" placeholder="2025"></div>
+          <div class="form-group"><label>학번</label>
+            <div style="display:flex;gap:6px">
+              <input id="er-sid" placeholder="3102" style="flex:1">
+              <button class="btn btn-ghost" style="white-space:nowrap;padding:0 10px;font-size:12px" onclick="loadStudentToReview()">불러오기</button>
+            </div>
+          </div>
         </div>
+        <div class="form-row cols2" style="margin-bottom:0">
+          <div class="form-group"><label>학생 이름</label><input id="er-sname" placeholder="홍길동"></div>
+          <div class="form-group"><label>자격증 <span style="font-size:11px;color:var(--text-sub)">(불러오기 자동입력)</span></label><input id="er-certs" placeholder="자동입력 또는 직접입력"></div>
+        </div>
+        <div class="form-row cols2" style="margin-bottom:0">
+          <div class="form-group"><label>출결 요약</label><input id="er-attend" placeholder="자동입력 또는 직접입력"></div>
+          <div class="form-group"><label>동아리</label><input id="er-clubs" placeholder="자동입력 또는 직접입력"></div>
+        </div>
+        <div class="form-group"><label>성적요약</label><input id="er-summary" placeholder="자동입력 또는 직접입력"></div>
         <div class="form-group">
           <label>합격자소서 파일 (선택, 여러 파일 가능)</label>
           <div class="drop-zone" id="er-dropzone" ondragover="onDragOver(event,'er')" ondragleave="onDragLeave(event,'er')" ondrop="onDrop(event,'er')">
@@ -593,12 +612,28 @@ tr:last-child td{border-bottom:none}
       <input type="hidden" id="re-id">
       <div class="form-row cols2">
         <div class="form-group"><label>업체명</label><input id="re-co"></div>
-        <div class="form-group"><label>학과</label><select id="re-dept"></select></div>
+        <div class="form-group"><label>기업구분</label>
+          <select id="re-type">
+            <option value="">선택</option>
+            <option>공무원</option><option>공공기관</option><option>대기업</option><option>중소기업</option><option>기타</option>
+          </select>
+        </div>
       </div>
-      <div class="form-row cols3">
+      <div class="form-row cols2">
+        <div class="form-group"><label>학과</label><select id="re-dept"></select></div>
         <div class="form-group"><label>연도</label><input id="re-year" type="number"></div>
+      </div>
+      <div class="form-row cols2">
         <div class="form-group"><label>학번</label><input id="re-sid"></div>
         <div class="form-group"><label>학생 이름</label><input id="re-sname"></div>
+      </div>
+      <div class="form-row cols2">
+        <div class="form-group"><label>자격증</label><input id="re-certs"></div>
+        <div class="form-group"><label>출결 요약</label><input id="re-attend"></div>
+      </div>
+      <div class="form-row cols2">
+        <div class="form-group"><label>동아리</label><input id="re-clubs"></div>
+        <div class="form-group"><label>성적요약</label><input id="re-summary"></div>
       </div>
       <div class="form-group">
         <label>합격자소서 파일</label>
@@ -1654,6 +1689,24 @@ function delEmploy(i) {
 }
 
 // ══════════════════════════════════════════════
+// 학번으로 학생정보 자동불러오기
+async function loadStudentToReview() {
+  const sid = document.getElementById('er-sid').value.trim();
+  if (!sid) { alert('학번을 입력하세요'); return; }
+  const res = await SAMIL_API.getStudents({ adminMode: true });
+  if (!res.success) { alert('학생정보 조회 실패'); return; }
+  const s = res.data.find(s => String(s.id) === String(sid));
+  if (!s) { alert('해당 학번 학생을 찾을 수 없습니다'); return; }
+  document.getElementById('er-sname').value   = s.name   || '';
+  document.getElementById('er-certs').value   = Array.isArray(s.certs)   ? s.certs.map(c=>c.name||c).join(', ')  : (s.certs||'');
+  document.getElementById('er-attend').value  = typeof s.attend === 'object' ? JSON.stringify(s.attend) : (s.attend||'');
+  document.getElementById('er-clubs').value   = Array.isArray(s.clubs)   ? s.clubs.map(c=>c.name||c).join(', ')  : (s.clubs||'');
+  document.getElementById('er-summary').value = typeof s.summary === 'object' ? JSON.stringify(s.summary) : (s.summary||'');
+  // 학과 자동선택
+  const deptSel = document.getElementById('er-dept');
+  if (deptSel) { [...deptSel.options].forEach(o=>{ if(o.value===s.dept) deptSel.value=s.dept; }); }
+}
+
 // 합격자소서 / 후기
 // ══════════════════════════════════════════════
 // ══════════════════════════════════════════════
@@ -1708,30 +1761,31 @@ function acKeyNav(e, listId) {
 // 합격자소서/후기
 // ══════════════════════════════════════════════
 async function addReview() {
-  const co     = document.getElementById('er-co').value.trim();
-  const dept   = document.getElementById('er-dept').value;
-  const year   = parseInt(document.getElementById('er-year').value) || new Date().getFullYear()-1;
-  const sid    = document.getElementById('er-sid').value.trim();
-  const sname  = document.getElementById('er-sname').value.trim();
-  const review = document.getElementById('er-review').value.trim();
+  const co      = document.getElementById('er-co').value.trim();
+  const type    = document.getElementById('er-type').value;
+  const dept    = document.getElementById('er-dept').value;
+  const year    = parseInt(document.getElementById('er-year').value) || new Date().getFullYear()-1;
+  const sid     = document.getElementById('er-sid').value.trim();
+  const sname   = document.getElementById('er-sname').value.trim();
+  const certs   = document.getElementById('er-certs').value.trim();
+  const attend  = document.getElementById('er-attend').value.trim();
+  const clubs   = document.getElementById('er-clubs').value.trim();
+  const summary = document.getElementById('er-summary').value.trim();
+  const review  = document.getElementById('er-review').value.trim();
   if (!co || !dept) { alert('업체명과 학과를 입력하세요'); return; }
 
   const essays = _pendingFiles.er.length ? await uploadPendingFiles('er') : [];
 
-  // 즉시 UI 반영
   if (!DB.reviews) DB.reviews = [];
-  DB.reviews.push({ co, dept, year, sid, sname, essays, review, date: today() });
+  DB.reviews.push({ co, type, dept, year, sid, sname, certs, attend, clubs, summary, essays, review, date: today() });
   save(); renderReviews();
-  document.getElementById('er-co').value     = '';
-  document.getElementById('er-sid').value    = '';
-  document.getElementById('er-sname').value  = '';
-  document.getElementById('er-review').value = '';
+  ['er-co','er-sid','er-sname','er-certs','er-attend','er-clubs','er-summary','er-review'].forEach(id=>{ document.getElementById(id).value=''; });
+  document.getElementById('er-type').value = '';
   _pendingFiles.er = [];
   renderPendingFiles('er');
 
-  // Sheets 저장 후 id 포함 데이터로 갱신
   try {
-    await SAMIL_API.addReview({ co, dept, year, sid, sname, essays, review });
+    await SAMIL_API.addReview({ co, type, dept, year, sid, sname, certs, attend, clubs, summary, essays, review });
     const fresh = await SAMIL_API.getReviews();
     if (fresh.success) { DB.reviews = fresh.data; save(); renderReviews(); }
   } catch(e) { console.warn('후기 Sheets 저장 오류:', e); }
@@ -1782,6 +1836,7 @@ function renderReviews() {
       <div style="display:flex;justify-content:space-between;align-items:start;gap:8px">
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            ${r.type ? `<span style="font-size:11px;padding:1px 7px;border-radius:10px;background:#EBF8FF;color:#2B6CB0;font-weight:600">${r.type}</span>` : ''}
             ${r.sname ? `<strong>${r.sname}</strong>` : '<span style="color:var(--text-sub)">이름 없음</span>'}
             ${r.sid   ? `<span style="font-size:12px;color:var(--text-sub)">${r.sid}</span>` : ''}
             <span style="font-size:12px;color:var(--text-sub)">${r.dept || ''} · ${r.year || ''}년</span>
@@ -1815,12 +1870,17 @@ function renderReviews() {
 function openReviewEdit(id) {
   const r = (DB.reviews||[]).find(r => r.id === id);
   if (!r) return;
-  document.getElementById('re-id').value     = id;
-  document.getElementById('re-co').value     = r.co    || '';
-  document.getElementById('re-year').value   = r.year  || '';
-  document.getElementById('re-sid').value    = r.sid   || '';
-  document.getElementById('re-sname').value  = r.sname || '';
-  document.getElementById('re-review').value = r.review|| '';
+  document.getElementById('re-id').value      = id;
+  document.getElementById('re-co').value      = r.co      || '';
+  document.getElementById('re-type').value    = r.type    || '';
+  document.getElementById('re-year').value    = r.year    || '';
+  document.getElementById('re-sid').value     = r.sid     || '';
+  document.getElementById('re-sname').value   = r.sname   || '';
+  document.getElementById('re-certs').value   = r.certs   || '';
+  document.getElementById('re-attend').value  = r.attend  || '';
+  document.getElementById('re-clubs').value   = r.clubs   || '';
+  document.getElementById('re-summary').value = r.summary || '';
+  document.getElementById('re-review').value  = r.review  || '';
   // 학과 선택
   const deptEl = document.getElementById('re-dept');
   if (deptEl) deptEl.value = r.dept || '';
@@ -1847,12 +1907,17 @@ async function saveReviewEdit() {
   const newUploads = _pendingFiles.re.length ? await uploadPendingFiles('re') : [];
   const essays = [...(DB.reviews[idx].essays || []), ...newUploads];
   const updated = {
-    co    : document.getElementById('re-co').value.trim(),
-    dept  : document.getElementById('re-dept').value,
-    year  : parseInt(document.getElementById('re-year').value) || DB.reviews[idx].year,
-    sid   : document.getElementById('re-sid').value.trim(),
-    sname : document.getElementById('re-sname').value.trim(),
-    review: document.getElementById('re-review').value.trim(),
+    co     : document.getElementById('re-co').value.trim(),
+    type   : document.getElementById('re-type').value,
+    dept   : document.getElementById('re-dept').value,
+    year   : parseInt(document.getElementById('re-year').value) || DB.reviews[idx].year,
+    sid    : document.getElementById('re-sid').value.trim(),
+    sname  : document.getElementById('re-sname').value.trim(),
+    certs  : document.getElementById('re-certs').value.trim(),
+    attend : document.getElementById('re-attend').value.trim(),
+    clubs  : document.getElementById('re-clubs').value.trim(),
+    summary: document.getElementById('re-summary').value.trim(),
+    review : document.getElementById('re-review').value.trim(),
     essays,
   };
   DB.reviews[idx] = { ...DB.reviews[idx], ...updated };
