@@ -703,11 +703,15 @@ function openArchiveModal(i){
   document.getElementById('ar-co').textContent = a.co||'';
   document.getElementById('ar-meta').textContent = `${a.dept||''} · ${a.year||''}년 졸업 · ${displayName}${a.middle?' · '+a.middle+' 출신':''}`;
   const essaysEl = document.getElementById('ar-essays');
-  if(a.essays && a.essays.length){
+  const validEssays = (a.essays||[]).filter(f => f.url && !f.url.includes('GMT') && f.url.startsWith('http'));
+  if(validEssays.length){
     essaysEl.innerHTML=`<div style="font-size:13px;font-weight:600;color:var(--text-sub);margin-bottom:8px">📎 합격자소서</div>`+
-      a.essays.map(f=>`<a class="file-item" href="${f.url}" target="_blank">📄 ${f.name}</a>`).join('');
-    essaysEl.style.display='block';
-  } else essaysEl.style.display='none';
+      validEssays.map(f=>`<a class="file-item" href="${f.url}" target="_blank">📄 ${f.name}</a>`).join('');
+  } else {
+    essaysEl.innerHTML=`<div style="font-size:13px;font-weight:600;color:var(--text-sub);margin-bottom:8px">📎 합격자소서</div>`+
+      `<p style="font-size:13px;color:var(--text-sub);padding:8px 0">붙임파일 없음</p>`;
+  }
+  essaysEl.style.display='block';
   const reviewEl = document.getElementById('ar-review');
   const infoLines = [];
   if(a.certs)              infoLines.push(`🎖 자격증: ${a.certs}`);
@@ -717,7 +721,8 @@ function openArchiveModal(i){
   reviewEl.style.display='block';
   reviewEl.innerHTML=
     (infoLines.length ? `<div style="background:var(--bg);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;line-height:2">${infoLines.join('<br>')}</div>` : '')+
-    (a.review ? `<div style="font-size:13px;font-weight:600;color:var(--text-sub);margin-bottom:8px">💬 합격 후기</div><div style="font-size:14px;line-height:1.8;white-space:pre-line">${a.review}</div>` : '');
+    `<div style="font-size:13px;font-weight:600;color:var(--text-sub);margin-bottom:8px">💬 합격 후기</div>`+
+    (a.review ? `<div style="font-size:14px;line-height:1.8;white-space:pre-line">${a.review}</div>` : `<p style="font-size:13px;color:var(--text-sub)">내용 없음</p>`);
   document.getElementById('archiveModal').classList.add('open');
 }
 
