@@ -808,19 +808,13 @@ async function loadFromSheets() {
   } catch(e) {
     console.warn('loadFromSheets 오류:', e);
   }
-}
-    save(); renderAll();
-    // 후기는 별도 로드 (실패해도 나머지 데이터에 영향 없음)
-    try {
-      if (typeof SAMIL_API.getReviews === 'function') {
-        const reviewsRes = await SAMIL_API.getReviews();
-        if (reviewsRes.success) { DB.reviews = reviewsRes.data; save(); renderReviews(); }
-      }
-    } catch(e) { console.warn('후기 로드 오류:', e); }
-  } catch(e) {
-    console.warn('Sheets 로드 오류:', e);
-    renderAll();
-  }
+  // 후기는 별도 로드
+  try {
+    if (typeof SAMIL_API.getReviews === 'function') {
+      const reviewsRes = await SAMIL_API.getReviews();
+      if (reviewsRes.success) { DB.reviews = reviewsRes.data; save(); renderReviews(); }
+    }
+  } catch(e) { console.warn('후기 로드 오류:', e); }
 }
 
 // ══════════════════════════════════════════════
@@ -2088,15 +2082,6 @@ async function delStat(year) {
     DB.statsHistory = (DB.statsHistory||[]).filter(s => Number(s.year) !== year);
     save(); loadStats();
   } catch(e) { alert('삭제 실패'); }
-}
-
-// ══════════════════════════════════════════════
-// 초기화
-// ══════════════════════════════════════════════
-async function init() {
-  initYearSelect();
-  renderAll();
-  loadFromSheets();
 }
 
 window.onload = init;
