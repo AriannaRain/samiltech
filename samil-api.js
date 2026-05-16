@@ -221,9 +221,12 @@ const SAMIL_API = (() => {
 
   async function addReview(data) {
     return call({ action: 'addReview', token: ADMIN_TOKEN,
+      year: data.year || '', type: data.type || '',
+      co: data.co || '', dept: data.dept || '',
       sid: data.sid || '', sname: data.sname || '',
-      dept: data.dept || '', year: data.year || '',
-      co: data.co || '', review: data.review || '',
+      certs: data.certs || '', attend: data.attend || '',
+      clubs: data.clubs || '', summary: data.summary || '',
+      review: data.review || '',
       essays: JSON.stringify(data.essays || []),
     });
   }
