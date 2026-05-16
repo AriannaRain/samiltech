@@ -709,11 +709,12 @@ function openArchiveModal(i){
     essaysEl.style.display='block';
   } else essaysEl.style.display='none';
   const reviewEl = document.getElementById('ar-review');
+  const showFull = canSeeFullName();
   const infoLines = [];
-  if(a.certs)   infoLines.push(`🎖 자격증: ${a.certs}`);
-  if(a.attend)  infoLines.push(`📋 출결: ${a.attend}`);
-  if(a.clubs)   infoLines.push(`🎨 동아리: ${a.clubs}`);
-  if(a.summary) infoLines.push(`📊 성적: ${formatSummary(a.summary)}`);
+  if(a.certs)              infoLines.push(`🎖 자격증: ${a.certs}`);
+  if(a.attend)             infoLines.push(`📋 출결: ${a.attend}`);
+  if(a.clubs)              infoLines.push(`🎨 동아리: ${a.clubs}`);
+  if(a.summary && showFull) infoLines.push(`📊 성적: ${formatSummary(a.summary)}`);
   reviewEl.style.display='block';
   reviewEl.innerHTML=
     (infoLines.length ? `<div style="background:var(--bg);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;line-height:2">${infoLines.join('<br>')}</div>` : '')+
