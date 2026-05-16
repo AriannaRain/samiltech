@@ -401,7 +401,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   DATA.stats = {
     grad    : st.grad     ? st.grad+'명'    : SAMPLE.stats.grad,
     rate    : st.rate     ? st.rate+'%'     : SAMPLE.stats.rate,
-    active  : DATA.jobs.length+'개',
+    active  : DATA.jobs.filter(j=>{ const dl=(j.dl||'').substring(0,10); return j.active && dl >= todayStr2; }).length+'개',
     closing : closing+'개',
     done    : done+'개',
   };
