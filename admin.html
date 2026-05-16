@@ -770,21 +770,28 @@ async function setYear(y) {
   currentYear = parseInt(y);
   DB.year = currentYear;
   save();
-  // 연도별 캐시 초기화
-  ['jobs','years'].forEach(k => { try { localStorage.removeItem('sc_'+k); } catch(_){} });
   try { localStorage.removeItem(`sc_depts_${currentYear}`); } catch(_) {}
   try { localStorage.removeItem(`sc_banners_${currentYear}`); } catch(_) {}
   try {
-    const [allRes, tRes, cRes] = await Promise.all([
-      SAMIL_API.getAll(currentYear),
+    const all = await SAMIL_API.getAll(currentYear);
+    if (all && all.success) {
+      DB.depts   = (all.depts   || []).map(d => ({ name: d.name, code: d.code||'', date: d.startYear||today() }));
+      DB.banners = all.banners  || [];
+      DB.jobs    = all.jobs     || [];
+    } else {
+      const [deptsRes, bannersRes, jobsRes] = await Promise.all([
+        SAMIL_API.getDepts(currentYear),
+        SAMIL_API.getBanners(currentYear),
+        SAMIL_API.getJobs(),
+      ]);
+      if (deptsRes.success)   DB.depts   = (deptsRes.data||[]).map(d => ({ name: d.name, code: d.code||'', date: d.startYear||today() }));
+      if (bannersRes.success) DB.banners = bannersRes.data || [];
+      if (jobsRes.success)    DB.jobs    = jobsRes.data    || [];
+    }
+    const [tRes, cRes] = await Promise.all([
       SAMIL_API.getTeachers({ year: currentYear }),
       SAMIL_API.getClasses({ year: currentYear }),
     ]);
-    if (allRes.success) {
-      DB.depts   = allRes.depts?.length ? allRes.depts.map(d => ({ name: d.name, code: d.code||'', date: d.startYear||today() })) : [];
-      DB.banners = allRes.banners || [];
-      if (allRes.jobs) DB.jobs = allRes.jobs;
-    }
     if (tRes.success) getYearData(currentYear).teachers = tRes.data;
     if (cRes.success) getYearData(currentYear).classes  = cRes.data;
     save();
@@ -797,16 +804,31 @@ async function setYear(y) {
 // ══════════════════════════════════════════════
 async function loadFromSheets() {
   showSyncResult('Sheets에서 데이터를 불러오는 중...');
-  // TTL 캐시 초기화
-  ['jobs','banners','depts','years'].forEach(k => { try { localStorage.removeItem('sc_'+k); } catch(_){} });
+  ['jobs','years'].forEach(k => { try { localStorage.removeItem('sc_'+k); } catch(_){} });
+  try { localStorage.removeItem(`sc_depts_${currentYear}`); } catch(_) {}
+  try { localStorage.removeItem(`sc_banners_${currentYear}`); } catch(_) {}
   try {
+    // getAll 배치 시도
     const all = await SAMIL_API.getAll(currentYear);
-    if (all.success) {
-      if (all.depts?.length)  DB.depts        = all.depts.map(d => ({ name: d.name, code: d.code||'', date: d.startYear||today() }));
-      if (all.banners)        DB.banners       = all.banners;
-      if (all.jobs)           DB.jobs          = all.jobs;
-      if (all.stats)          DB.statsHistory  = all.stats;
+    if (all && all.success) {
+      DB.depts        = (all.depts   || []).map(d => ({ name: d.name, code: d.code||'', date: d.startYear||today() }));
+      DB.banners      = all.banners  || [];
+      DB.jobs         = all.jobs     || [];
+      if (all.stats)  DB.statsHistory = all.stats;
+    } else {
+      // getAll 실패 시 개별 호출
+      const [deptsRes, bannersRes, jobsRes, statsRes] = await Promise.all([
+        SAMIL_API.getDepts(currentYear),
+        SAMIL_API.getBanners(currentYear),
+        SAMIL_API.getJobs(),
+        SAMIL_API.getStats(),
+      ]);
+      if (deptsRes.success)   DB.depts        = (deptsRes.data||[]).map(d => ({ name: d.name, code: d.code||'', date: d.startYear||today() }));
+      if (bannersRes.success) DB.banners      = bannersRes.data || [];
+      if (jobsRes.success)    DB.jobs         = jobsRes.data    || [];
+      if (statsRes.success)   DB.statsHistory = statsRes.data   || [];
     }
+    // 담임/반구조
     const [teachersRes, classesRes] = await Promise.all([
       SAMIL_API.getTeachers({ year: currentYear }),
       SAMIL_API.getClasses({ year: currentYear }),
@@ -817,8 +839,8 @@ async function loadFromSheets() {
     showSyncResult(`✅ ${currentYear}년 데이터 동기화 완료`);
   } catch(e) {
     showSyncResult('⚠️ 동기화 오류: ' + e.message, true);
+    console.warn('loadFromSheets 오류:', e);
   }
-  // 후기는 별도 로드
   try {
     if (typeof SAMIL_API.getReviews === 'function') {
       const reviewsRes = await SAMIL_API.getReviews();
