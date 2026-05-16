@@ -209,7 +209,7 @@ tr:last-child td{border-bottom:none}
 
     <!-- 학과 관리 -->
     <div class="card">
-      <div class="card-title">학과 관리</div>
+      <div class="card-title">학과 관리 <span id="deptYearLabel" style="font-size:13px;color:var(--text-sub);font-weight:400"></span></div>
       <div class="form-row">
         <div class="form-group" style="flex:1"><label>학과명</label><input id="deptInput" placeholder="예: 전자과"></div>
         <div style="display:flex;align-items:flex-end;padding-bottom:1px">
@@ -770,6 +770,10 @@ async function setYear(y) {
   currentYear = parseInt(y);
   DB.year = currentYear;
   save();
+  // 연도별 캐시 초기화
+  ['jobs','years'].forEach(k => { try { localStorage.removeItem('sc_'+k); } catch(_){} });
+  try { localStorage.removeItem(`sc_depts_${currentYear}`); } catch(_) {}
+  try { localStorage.removeItem(`sc_banners_${currentYear}`); } catch(_) {}
   try {
     const [allRes, tRes, cRes] = await Promise.all([
       SAMIL_API.getAll(currentYear),
@@ -777,9 +781,9 @@ async function setYear(y) {
       SAMIL_API.getClasses({ year: currentYear }),
     ]);
     if (allRes.success) {
-      if (allRes.depts?.length)  DB.depts   = allRes.depts.map(d => ({ name: d.name, code: d.code||'', date: d.startYear||today() }));
-      if (allRes.banners)        DB.banners = allRes.banners;
-      if (allRes.jobs)           DB.jobs    = allRes.jobs;
+      DB.depts   = allRes.depts?.length ? allRes.depts.map(d => ({ name: d.name, code: d.code||'', date: d.startYear||today() })) : [];
+      DB.banners = allRes.banners || [];
+      if (allRes.jobs) DB.jobs = allRes.jobs;
     }
     if (tRes.success) getYearData(currentYear).teachers = tRes.data;
     if (cRes.success) getYearData(currentYear).classes  = cRes.data;
@@ -831,6 +835,8 @@ function renderAll() {
   document.getElementById('clsYear').textContent = yr + '년';
   document.getElementById('tcYear').textContent  = yr + '년';
   document.getElementById('dash-year').textContent = yr;
+  const deptLabel = document.getElementById('deptYearLabel');
+  if (deptLabel) deptLabel.textContent = `(${yr}년)`;
   updateDeptSelects();
   renderDepts();
   loadStudentCounts().then(() => renderClasses());

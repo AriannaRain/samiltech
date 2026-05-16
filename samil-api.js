@@ -194,28 +194,30 @@ const SAMIL_API = (() => {
   // 학과 (캐시 적용)
   // ════════════════════════════════════════════
   async function getDepts(year) {
-    const cached = cacheGet('depts');
+    const yr  = year || new Date().getFullYear();
+    const key = `depts_${yr}`;
+    const cached = cacheGet(key);
     if (cached) {
-      get({ action: 'getDepts', year: year || new Date().getFullYear() }).then(r => { if (r.success) cacheSet('depts', r.data); });
+      get({ action: 'getDepts', year: yr }).then(r => { if (r.success) cacheSet(key, r.data); });
       return { success: true, data: cached };
     }
-    const r = await get({ action: 'getDepts', year: year || new Date().getFullYear() });
-    if (r.success) cacheSet('depts', r.data);
+    const r = await get({ action: 'getDepts', year: yr });
+    if (r.success) cacheSet(key, r.data);
     return r;
   }
 
   async function addDept(data) {
-    cacheClear('depts');
+    cacheClear(`depts_${data.year || new Date().getFullYear()}`);
     return call({ action: 'addDept', token: ADMIN_TOKEN, ...data });
   }
 
   async function deleteDept(name, year) {
-    cacheClear('depts');
+    cacheClear(`depts_${year || new Date().getFullYear()}`);
     return call({ action: 'deleteDept', token: ADMIN_TOKEN, name, year: year || new Date().getFullYear() });
   }
 
   async function updateDept(oldName, newName, year) {
-    cacheClear('depts');
+    cacheClear(`depts_${year || new Date().getFullYear()}`);
     return call({ action: 'updateDept', token: ADMIN_TOKEN, oldName, newName, year: year || new Date().getFullYear() });
   }
 
@@ -223,28 +225,30 @@ const SAMIL_API = (() => {
   // 배너 (캐시 적용)
   // ════════════════════════════════════════════
   async function getBanners(year) {
-    const cached = cacheGet('banners');
+    const yr  = year || new Date().getFullYear();
+    const key = `banners_${yr}`;
+    const cached = cacheGet(key);
     if (cached) {
-      get({ action: 'getBanners', year: year || new Date().getFullYear() }).then(r => { if (r.success) cacheSet('banners', r.data); });
+      get({ action: 'getBanners', year: yr }).then(r => { if (r.success) cacheSet(key, r.data); });
       return { success: true, data: cached };
     }
-    const r = await get({ action: 'getBanners', year: year || new Date().getFullYear() });
-    if (r.success) cacheSet('banners', r.data);
+    const r = await get({ action: 'getBanners', year: yr });
+    if (r.success) cacheSet(key, r.data);
     return r;
   }
 
   async function addBanner(data) {
-    cacheClear('banners');
+    cacheClear(`banners_${data.year || new Date().getFullYear()}`);
     return call({ action: 'addBanner', token: ADMIN_TOKEN, ...data });
   }
 
   async function deleteBanner(id, year) {
-    cacheClear('banners');
+    cacheClear(`banners_${year || new Date().getFullYear()}`);
     return call({ action: 'deleteBanner', token: ADMIN_TOKEN, id, year: year || new Date().getFullYear() });
   }
 
   async function updateBanner(data) {
-    cacheClear('banners');
+    cacheClear(`banners_${data.year || new Date().getFullYear()}`);
     return call({ action: 'updateBanner', token: ADMIN_TOKEN, ...data });
   }
 
