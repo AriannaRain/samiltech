@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>현장실습 자료실 — 삼일공업고등학교</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#1A3A6B;--primary-light:#2E5FAD;--accent:#E8740A;--accent-light:#FF9E3A;
+  --bg:#F4F6FA;--card:#fff;--text:#1C2B3A;--text-sub:#5A6A7E;--border:#DDE3EE;
+  --nav-h:60px;--radius:12px;--shadow:0 2px 12px rgba(26,58,107,.10)
+}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);padding-top:var(--nav-h)}
+nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:var(--primary);z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:0 24px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.nav-brand{display:flex;align-items:center;gap:10px}
+.nav-logo{width:36px;height:36px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:10px;line-height:1.2;text-align:center}
+.nav-title{color:#fff;font-weight:700;font-size:16px}
+.nav-title span{color:rgba(255,255,255,.65);font-size:10px;display:block;font-weight:400}
+.nav-menu{display:flex;gap:4px;align-items:center}
+.nav-menu a{color:rgba(255,255,255,.8);text-decoration:none;padding:7px 14px;border-radius:8px;font-size:14px;font-weight:500;transition:.2s}
+.nav-menu a:hover,.nav-menu a.active{background:rgba(255,255,255,.15);color:#fff}
+.nav-login{background:var(--accent)!important;color:#fff!important}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:4px}
+.hamburger span{width:22px;height:2px;background:#fff;border-radius:2px}
+@media(max-width:768px){
+  .nav-menu{display:none;position:fixed;top:var(--nav-h);left:0;right:0;background:var(--primary);flex-direction:column;padding:12px}
+  .nav-menu.open{display:flex}
+  .nav-menu a{padding:12px 16px}
+  .hamburger{display:flex}
+}
+/* 페이지 헤더 */
+.page-hero{background:var(--primary);padding:32px 24px 28px;color:#fff}
+.page-hero-inner{max-width:860px;margin:0 auto}
+.page-hero h1{font-size:22px;font-weight:700;margin-bottom:6px}
+.page-hero p{font-size:13px;color:rgba(255,255,255,.7)}
+/* 컨테이너 */
+.container{max-width:860px;margin:0 auto;padding:28px 16px}
+/* 로그인 게이트 */
+.login-gate{background:var(--card);border-radius:var(--radius);padding:56px 24px;text-align:center;box-shadow:var(--shadow);border:1px solid var(--border)}
+.login-gate h3{font-size:20px;font-weight:700;margin-bottom:10px}
+.login-gate p{font-size:13px;color:var(--text-sub);margin-bottom:24px;line-height:1.7}
+.login-gate-btn{padding:12px 32px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
+/* 자료실 */
+.section-block{margin-bottom:24px}
+.section-divider{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.section-divider-line{flex:1;height:2px;background:var(--primary)}
+.section-divider-title{background:var(--primary);color:#fff;padding:6px 18px;border-radius:20px;font-size:14px;font-weight:700;white-space:nowrap}
+.file-list{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden}
+.file-item{display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--border);transition:.15s}
+.file-item:last-child{border-bottom:none}
+.file-item:hover{background:var(--bg)}
+.file-icon{font-size:22px;width:32px;text-align:center;flex-shrink:0}
+.file-info{flex:1;min-width:0}
+.file-name{font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-date{font-size:11px;color:var(--text-sub);margin-top:2px}
+.file-download{display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--primary);color:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;transition:.2s;flex-shrink:0}
+.file-download:hover{background:var(--primary-light)}
+.empty-section{padding:20px 18px;color:var(--text-sub);font-size:13px;text-align:center}
+.loading{text-align:center;padding:48px;color:var(--text-sub);font-size:14px}
+/* 로그인 모달 */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:16px;max-width:400px;width:100%;overflow:hidden}
+.modal-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-sub)}
+.modal-body{padding:20px}
+.login-tab{display:flex;gap:4px;margin-bottom:18px;background:var(--bg);padding:4px;border-radius:10px}
+.login-tab button{flex:1;padding:8px;border:none;background:none;border-radius:8px;font-size:13px;cursor:pointer;color:var(--text-sub);font-family:inherit}
+.login-tab button.active{background:#fff;color:var(--primary);box-shadow:var(--shadow)}
+.form-group{margin-bottom:13px}
+.form-group label{display:block;font-size:13px;font-weight:500;margin-bottom:5px}
+.form-group input,.form-group select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none}
+.form-group input:focus,.form-group select:focus{border-color:var(--primary-light)}
+.btn-submit{width:100%;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+footer{background:var(--primary);color:rgba(255,255,255,.65);text-align:center;padding:20px;font-size:12px;margin-top:48px}
+footer strong{color:#fff}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">삼일<br>공고</div>
+    <div class="nav-title">취업정보 포털<span>SAMIL JOBS</span></div>
+  </div>
+  <div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+  <div class="nav-menu" id="navMenu">
+    <a href="index.html">홈</a>
+    <a href="jobs.html">채용공고</a>
+    <a href="#status">취업현황</a>
+    <a href="practice.html" class="active">현장실습</a>
+    <span id="nav-auth">
+      <a href="#" class="nav-login" onclick="openLogin();closeMenu();return false">로그인</a>
+    </span>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <h1>🏭 현장실습 자료실</h1>
+    <p>현장실습 단계별 필요 서류와 자료를 다운로드할 수 있습니다.</p>
+  </div>
+</div>
+
+<div class="container">
+  <div id="mainContent"></div>
+</div>
+
+<footer><strong>삼일공업고등학교</strong> 특성화취창업지원부 | 경기도 수원시</footer>
+
+<!-- 로그인 모달 -->
+<div class="modal-overlay" id="loginModal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div style="font-size:17px;font-weight:700">로그인</div>
+      <button class="modal-close" onclick="document.getElementById('loginModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="login-tab">
+        <button class="active" onclick="switchTab('tc',this)">담임교사</button>
+        <button onclick="switchTab('ad',this)">관리자</button>
+      </div>
+      <div id="tab-tc">
+        <div class="form-group"><label>학과</label><select id="l-dept"><option value="">선택</option></select></div>
+        <div style="display:flex;gap:8px">
+          <div class="form-group" style="flex:1"><label>학년</label><select id="l-grade" onchange="updateCls()"><option value="">학년</option><option>1</option><option>2</option><option>3</option></select></div>
+          <div class="form-group" style="flex:1"><label>반</label><select id="l-cls"><option value="">반</option></select></div>
+        </div>
+        <div class="form-group"><label>이름</label><input id="l-name" placeholder="홍길동" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        <div class="form-group"><label>비밀번호</label><input type="password" id="l-pw" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        <button class="btn-submit" onclick="doLogin()">로그인</button>
+      </div>
+      <div id="tab-ad" style="display:none">
+        <div class="form-group"><label>관리자 비밀번호</label><input type="password" id="a-pw" onkeydown="if(event.key==='Enter')doAdminLogin()"></div>
+        <button class="btn-submit" onclick="doAdminLogin()">로그인</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let _classes = [];
+
+function isLoggedIn() {
+  return sessionStorage.getItem('samilAdminAuth') === '1' || !!sessionStorage.getItem('samilTeacherAuth');
+}
+
+function getFileIcon(name) {
+  if (!name) return '📄';
+  const ext = (name.split('.').pop()||'').toLowerCase();
+  return {hwp:'📝',docx:'📝',doc:'📝',xlsx:'📊',xls:'📊',pdf:'📕',pptx:'📊',zip:'📦',jpg:'🖼',png:'🖼'}[ext] || '📄';
+}
+
+async function render() {
+  const el = document.getElementById('mainContent');
+  updateNavAuth();
+
+  if (!isLoggedIn()) {
+    el.innerHTML = `<div class="login-gate">
+      <h3>🔐 로그인이 필요합니다</h3>
+      <p>현장실습 자료실은 담임교사 또는 관리자 로그인 후 이용할 수 있습니다.<br>자료 다운로드는 로그인 후 진행해주세요.</p>
+      <button class="login-gate-btn" onclick="openLogin()">로그인하기</button>
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = '<div class="loading">자료를 불러오는 중...</div>';
+
+  const [secRes, fileRes] = await Promise.all([
+    SAMIL_API.getPracticeSections(),
+    SAMIL_API.getPracticeFiles(''),
+  ]);
+
+  const sections = secRes.success ? secRes.data : [];
+  const allFiles = fileRes.success ? fileRes.data : [];
+
+  if (!sections.length) {
+    el.innerHTML = '<div class="login-gate"><h3>등록된 자료가 없습니다</h3><p>관리자에게 문의해주세요.</p></div>';
+    return;
+  }
+
+  el.innerHTML = sections.map(sec => {
+    const files = allFiles.filter(f => f.secId === sec.id).sort((a,b) => a.order - b.order);
+    const fileHtml = files.length ? files.map(f => `
+      <div class="file-item">
+        <span class="file-icon">${getFileIcon(f.name)}</span>
+        <div class="file-info">
+          <div class="file-name">${f.name}</div>
+          <div class="file-date">${(f.date||'').substring(0,10)}</div>
+        </div>
+        <a class="file-download" href="${f.url}" target="_blank">⬇ 다운로드</a>
+      </div>`).join('')
+    : `<div class="empty-section">등록된 자료가 없습니다.</div>`;
+    return `<div class="section-block">
+      <div class="section-divider">
+        <div class="section-divider-line"></div>
+        <div class="section-divider-title">${sec.title}</div>
+        <div class="section-divider-line"></div>
+      </div>
+      <div class="file-list">${fileHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── 로그인 ──
+function openLogin() { document.getElementById('loginModal').classList.add('open'); loadDepts(); }
+function closeModal(e) { if (e.target.id==='loginModal') document.getElementById('loginModal').classList.remove('open'); }
+
+function switchTab(tab, btn) {
+  ['tc','ad'].forEach(t => document.getElementById('tab-'+t).style.display = t===tab?'block':'none');
+  document.querySelectorAll('.login-tab button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+async function loadDepts() {
+  const sel = document.getElementById('l-dept');
+  if (sel.options.length > 1) return;
+  try {
+    const res = await SAMIL_API.getDepts();
+    (res.data||[]).forEach(d => { const o=document.createElement('option'); o.value=o.textContent=d.name||d; sel.appendChild(o); });
+    const cRes = await SAMIL_API.getClasses({ year: new Date().getFullYear() });
+    _classes = cRes.success ? cRes.data : [];
+  } catch(_) {}
+}
+
+function updateCls() {
+  const dept  = document.getElementById('l-dept').value;
+  const grade = document.getElementById('l-grade').value;
+  const sel   = document.getElementById('l-cls');
+  sel.innerHTML = '<option value="">반</option>';
+  if (!dept||!grade) return;
+  const nums = _classes.filter(c=>c.dept===dept&&String(c.grade)===String(grade)).map(c=>Number(c.num||c.cls)).filter(n=>!isNaN(n)).sort((a,b)=>a-b);
+  nums.forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
+}
+
+async function doLogin() {
+  const dept=document.getElementById('l-dept').value;
+  const grade=document.getElementById('l-grade').value;
+  const cls=document.getElementById('l-cls').value;
+  const name=document.getElementById('l-name').value.trim();
+  const pw=document.getElementById('l-pw').value;
+  if(!dept||!grade||!cls||!name||!pw){alert('모든 항목을 입력하세요');return;}
+  const btn=document.querySelector('#tab-tc .btn-submit');
+  btn.textContent='확인중…';btn.disabled=true;
+  const res=await SAMIL_API.loginTeacher(dept,grade,cls,name,pw);
+  btn.textContent='로그인';btn.disabled=false;
+  if(res.success){
+    sessionStorage.setItem('samilTeacherAuth',res.teacher.id);
+    sessionStorage.setItem('samilTeacherME',JSON.stringify(res.teacher));
+    document.getElementById('loginModal').classList.remove('open');
+    render();
+  } else { document.getElementById('l-pw').value=''; alert(res.error||'로그인 실패'); }
+}
+
+async function doAdminLogin() {
+  const pw=document.getElementById('a-pw').value;
+  const res=await SAMIL_API.verifyAdminPw(pw);
+  if(res.success){
+    sessionStorage.setItem('samilAdminAuth','1');
+    document.getElementById('loginModal').classList.remove('open');
+    render();
+  } else { document.getElementById('a-pw').value=''; alert('비밀번호가 맞지 않습니다'); }
+}
+
+function doLogout() {
+  ['samilAdminAuth','samilTeacherAuth','samilTeacherME'].forEach(k=>sessionStorage.removeItem(k));
+  updateNavAuth(); render();
+}
+
+function updateNavAuth() {
+  const el=document.getElementById('nav-auth');
+  if(sessionStorage.getItem('samilAdminAuth')==='1'){
+    el.innerHTML=`<a href="admin.html" class="nav-login" style="background:#38A169!important">관리자 페이지</a><a href="#" onclick="doLogout();return false" style="color:rgba(255,255,255,.7);font-size:13px;padding:7px 10px">로그아웃</a>`;
+  } else if(sessionStorage.getItem('samilTeacherAuth')){
+    const t=JSON.parse(sessionStorage.getItem('samilTeacherME')||'{}');
+    el.innerHTML=`<span style="color:rgba(255,255,255,.8);font-size:13px;padding:7px 10px">${t.name||'담임'}선생님</span><a href="#" onclick="doLogout();return false" style="color:rgba(255,255,255,.7);font-size:13px;padding:7px 10px">로그아웃</a>`;
+  } else {
+    el.innerHTML=`<a href="#" class="nav-login" onclick="openLogin();closeMenu();return false">로그인</a>`;
+  }
+}
+
+function toggleMenu(){ document.getElementById('navMenu').classList.toggle('open'); }
+function closeMenu(){ document.getElementById('navMenu').classList.remove('open'); }
+
+window.addEventListener('DOMContentLoaded', render);
+</script>
+<script src="samil-api.js"></script>
+</body>
+</html>
