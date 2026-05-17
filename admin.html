@@ -41,13 +41,16 @@ a{text-decoration:none;color:inherit}
 .nav-item .nav-icon{font-size:16px;width:20px;text-align:center}
 /* 현장실습 */
 .pr-section-card{margin-bottom:14px}
-.pr-section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:12px;border-bottom:2px solid var(--primary);gap:8px}
-.pr-file-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
-.pr-file-row{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--border)}
-.pr-file-icon{font-size:16px}
+.pr-section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:2px solid var(--primary);gap:8px}
+.pr-file-row{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--border);margin-bottom:6px}
 .pr-file-name{flex:1;font-size:13px;font-weight:500}
-.pr-file-actions{display:flex;gap:4px}
-.pr-add-file{display:flex;gap:8px;align-items:center;padding-top:8px;border-top:1px dashed var(--border)}
+.pr-add-file{padding-top:10px;border-top:1px dashed var(--border);margin-top:8px}
+.pr-drop-zone{border:2px dashed var(--border);border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:.2s;background:#fff;margin-bottom:8px}
+.pr-drop-zone:hover,.pr-drop-zone.drag{border-color:var(--primary-light);background:var(--bg)}
+.pr-drop-zone p{font-size:13px;color:var(--text-sub);margin-bottom:6px}
+.pr-drop-zone input[type=file]{display:none}
+.pr-pending{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#EBF8FF;border-radius:6px;font-size:12px;margin-top:6px}
+.pr-progress{font-size:11px;color:var(--primary-light);margin-left:auto}
 .sidebar-footer{padding:16px 20px;border-top:1px solid rgba(255,255,255,.1);font-size:11px;color:rgba(255,255,255,.35)}
 
 /* ── 카드 & 공통 ── */
@@ -2219,8 +2222,8 @@ async function loadPractice() {
     SAMIL_API.getPracticeFiles(''),
   ]);
   _prSections = secRes.success ? secRes.data : [];
+  _prFiles = {};
   if (fileRes.success) {
-    _prFiles = {};
     fileRes.data.forEach(f => {
       if (!_prFiles[f.secId]) _prFiles[f.secId] = [];
       _prFiles[f.secId].push(f);
@@ -2229,54 +2232,91 @@ async function loadPractice() {
   renderPrSections();
 }
 
+function prFileIcon(name) {
+  if (!name) return '📄';
+  const ext = (name.split('.').pop()||'').toLowerCase();
+  return {hwp:'📝',docx:'📝',doc:'📝',xlsx:'📊',xls:'📊',pdf:'📕',pptx:'📊',zip:'📦',jpg:'🖼',png:'🖼'}[ext]||'📄';
+}
+
 function renderPrSections() {
   const el = document.getElementById('prSectionList');
   if (!el) return;
   if (!_prSections.length) {
-    el.innerHTML = '<div class="card" style="text-align:center;color:var(--text-sub)">등록된 단계가 없습니다. 단계를 추가해주세요.</div>';
+    el.innerHTML = '<div class="card" style="text-align:center;color:var(--text-sub);padding:32px">단계를 추가해주세요.</div>';
     return;
   }
   el.innerHTML = _prSections.map((sec, si) => {
-    const files = (_prFiles[sec.id] || []).sort((a,b) => a.order - b.order);
-    const fileRows = files.map((f, fi) => `
-      <div class="pr-file-row" id="pf-${f.id}">
-        <span class="pr-file-icon">${getFileIcon(f.name)}</span>
+    const files = (_prFiles[sec.id]||[]).sort((a,b)=>a.order-b.order);
+    const fileRows = files.map((f,fi) => `
+      <div class="pr-file-row">
+        <span>${prFileIcon(f.name)}</span>
         <span class="pr-file-name">${f.name}</span>
-        <div class="pr-file-actions">
-          <button class="btn btn-sm" style="background:#2563eb;color:#fff" onclick="editPrFile('${sec.id}','${f.id}')">수정</button>
-          <button class="btn btn-sm btn-danger" onclick="delPrFile('${f.id}')">삭제</button>
-          ${fi > 0 ? `<button class="btn btn-sm btn-ghost" onclick="movePrFile('${sec.id}',${fi},-1)">▲</button>` : ''}
-          ${fi < files.length-1 ? `<button class="btn btn-sm btn-ghost" onclick="movePrFile('${sec.id}',${fi},1)">▼</button>` : ''}
-        </div>
+        <a href="${f.url}" target="_blank" style="font-size:12px;color:var(--primary-light);margin-right:4px">열기</a>
+        <button class="btn btn-sm btn-danger" onclick="delPrFile('${f.id}')">삭제</button>
+        ${fi>0?`<button class="btn btn-sm btn-ghost" onclick="movePrFile('${sec.id}',${fi},-1)">▲</button>`:''}
+        ${fi<files.length-1?`<button class="btn btn-sm btn-ghost" onclick="movePrFile('${sec.id}',${fi},1)">▼</button>`:''}
       </div>`).join('');
     return `<div class="card pr-section-card">
       <div class="pr-section-header">
-        <div style="display:flex;align-items:center;gap:10px;flex:1">
-          <span style="font-size:16px">📂</span>
-          <strong id="prs-title-${sec.id}" style="font-size:15px">${sec.title}</strong>
-        </div>
+        <strong style="font-size:15px">📂 ${sec.title}</strong>
         <div style="display:flex;gap:6px">
-          ${si > 0 ? `<button class="btn btn-sm btn-ghost" onclick="movePrSection(${si},-1)">▲</button>` : ''}
-          ${si < _prSections.length-1 ? `<button class="btn btn-sm btn-ghost" onclick="movePrSection(${si},1)">▼</button>` : ''}
+          ${si>0?`<button class="btn btn-sm btn-ghost" onclick="movePrSection(${si},-1)">▲</button>`:''}
+          ${si<_prSections.length-1?`<button class="btn btn-sm btn-ghost" onclick="movePrSection(${si},1)">▼</button>`:''}
           <button class="btn btn-sm" style="background:#2563eb;color:#fff" onclick="editPrSection('${sec.id}')">수정</button>
           <button class="btn btn-sm btn-danger" onclick="delPrSection('${sec.id}')">삭제</button>
         </div>
       </div>
-      <div class="pr-file-list">${fileRows}</div>
+      ${fileRows}
       <div class="pr-add-file">
-        <input id="pf-name-${sec.id}" placeholder="파일명 (예: 현장실습신청서.hwp)" style="flex:2;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit">
-        <input id="pf-url-${sec.id}"  placeholder="파일 URL (Google Drive 링크)" style="flex:3;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit">
-        <button class="btn btn-sm" style="background:#38A169;color:#fff;white-space:nowrap" onclick="addPrFile('${sec.id}')">+ 파일 추가</button>
+        <div class="pr-drop-zone" id="drop-${sec.id}"
+          ondragover="event.preventDefault();this.classList.add('drag')"
+          ondragleave="this.classList.remove('drag')"
+          ondrop="handlePrDrop(event,'${sec.id}')"
+          onclick="document.getElementById('pf-input-${sec.id}').click()">
+          <p>📎 파일을 드래그하거나 클릭해서 업로드</p>
+          <p style="font-size:11px">hwp, docx, xlsx, pdf 등 지원</p>
+          <input type="file" id="pf-input-${sec.id}" onchange="handlePrFileSelect(event,'${sec.id}')">
+        </div>
+        <div id="pr-pending-${sec.id}"></div>
       </div>
     </div>`;
   }).join('');
 }
 
-function getFileIcon(name) {
-  if (!name) return '📄';
-  const ext = name.split('.').pop().toLowerCase();
-  const icons = { hwp:'📝', docx:'📝', doc:'📝', xlsx:'📊', xls:'📊', pdf:'📕', pptx:'📊', zip:'📦', jpg:'🖼', png:'🖼' };
-  return icons[ext] || '📄';
+async function handlePrDrop(event, secId) {
+  event.preventDefault();
+  document.getElementById('drop-'+secId)?.classList.remove('drag');
+  const files = [...event.dataTransfer.files];
+  for (const file of files) await uploadPrFile(file, secId);
+}
+
+async function handlePrFileSelect(event, secId) {
+  const files = [...event.target.files];
+  for (const file of files) await uploadPrFile(file, secId);
+  event.target.value = '';
+}
+
+async function uploadPrFile(file, secId) {
+  const pendEl = document.getElementById(`pr-pending-${secId}`);
+  if (pendEl) pendEl.innerHTML = `<div class="pr-pending">⏳ ${file.name} 업로드 중...<span class="pr-progress">잠시만 기다려주세요</span></div>`;
+  try {
+    const base64 = await new Promise((res,rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result.split(',')[1]);
+      r.onerror = () => rej(new Error('읽기 실패'));
+      r.readAsDataURL(file);
+    });
+    const upRes = await SAMIL_API.uploadFile(file.name, base64, file.type||'application/octet-stream');
+    if (!upRes.success) { alert('업로드 실패: '+(upRes.error||'')); if(pendEl) pendEl.innerHTML=''; return; }
+    const addRes = await SAMIL_API.addPracticeFile({ secId, name: file.name, url: upRes.url });
+    if (!addRes.success) { alert('저장 실패'); if(pendEl) pendEl.innerHTML=''; return; }
+    if (pendEl) pendEl.innerHTML = `<div class="pr-pending" style="background:#F0FFF4">✅ ${file.name} 업로드 완료</div>`;
+    setTimeout(() => { if(pendEl) pendEl.innerHTML=''; }, 2000);
+    await loadPractice();
+  } catch(e) {
+    alert('오류: '+e.message);
+    if (pendEl) pendEl.innerHTML = '';
+  }
 }
 
 async function addPrSection() {
@@ -2289,13 +2329,12 @@ async function addPrSection() {
 }
 
 async function editPrSection(id) {
-  const sec = _prSections.find(s => s.id === id);
+  const sec = _prSections.find(s=>s.id===id);
   if (!sec) return;
-  const newTitle = prompt('단계명 수정:', sec.title);
-  if (!newTitle || newTitle.trim() === sec.title) return;
-  const res = await SAMIL_API.updatePracticeSection({ id, title: newTitle.trim() });
-  if (res.success) await loadPractice();
-  else alert(res.error||'오류');
+  const t = prompt('단계명 수정:', sec.title);
+  if (!t||t.trim()===sec.title) return;
+  await SAMIL_API.updatePracticeSection({ id, title: t.trim() });
+  await loadPractice();
 }
 
 async function delPrSection(id) {
@@ -2306,32 +2345,10 @@ async function delPrSection(id) {
 
 async function movePrSection(idx, dir) {
   const arr = [..._prSections];
-  const target = idx + dir;
-  if (target < 0 || target >= arr.length) return;
-  [arr[idx], arr[target]] = [arr[target], arr[idx]];
-  const orders = arr.map((s, i) => ({ id: s.id, order: i+1 }));
-  await SAMIL_API.reorderPracticeSection(orders);
-  await loadPractice();
-}
-
-async function addPrFile(secId) {
-  const name = document.getElementById(`pf-name-${secId}`)?.value.trim();
-  const url  = document.getElementById(`pf-url-${secId}`)?.value.trim();
-  if (!name || !url) { alert('파일명과 URL을 모두 입력하세요'); return; }
-  const res = await SAMIL_API.addPracticeFile({ secId, name, url });
-  if (!res.success) { alert(res.error||'오류'); return; }
-  document.getElementById(`pf-name-${secId}`).value = '';
-  document.getElementById(`pf-url-${secId}`).value  = '';
-  await loadPractice();
-}
-
-async function editPrFile(secId, fileId) {
-  const files = _prFiles[secId] || [];
-  const f = files.find(f => f.id === fileId);
-  if (!f) return;
-  const newName = prompt('파일명 수정:', f.name);
-  if (!newName || newName.trim() === f.name) return;
-  await SAMIL_API.updatePracticeFile({ id: fileId, name: newName.trim() });
+  const t = idx+dir;
+  if (t<0||t>=arr.length) return;
+  [arr[idx],arr[t]]=[arr[t],arr[idx]];
+  await SAMIL_API.reorderPracticeSection(arr.map((s,i)=>({id:s.id,order:i+1})));
   await loadPractice();
 }
 
@@ -2343,11 +2360,10 @@ async function delPrFile(fileId) {
 
 async function movePrFile(secId, idx, dir) {
   const files = [...(_prFiles[secId]||[])].sort((a,b)=>a.order-b.order);
-  const target = idx + dir;
-  if (target < 0 || target >= files.length) return;
-  [files[idx], files[target]] = [files[target], files[idx]];
-  const orders = files.map((f, i) => ({ id: f.id, order: i+1 }));
-  await SAMIL_API.reorderPracticeFile(orders);
+  const t = idx+dir;
+  if (t<0||t>=files.length) return;
+  [files[idx],files[t]]=[files[t],files[idx]];
+  await SAMIL_API.reorderPracticeFile(files.map((f,i)=>({id:f.id,order:i+1})));
   await loadPractice();
 }
 
