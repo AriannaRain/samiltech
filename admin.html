@@ -168,7 +168,8 @@ tr:last-child td{border-bottom:none}
     <select id="yearSelect" onchange="setYear(this.value)"></select>
     <div class="year-add-row">
       <input type="number" id="yearAddInput" placeholder="2027" min="2020" max="2099">
-      <button onclick="addYear()">연도추가</button>
+      <button onclick="addYear()">추가</button>
+      <button onclick="deleteCurrentYear()" style="background:#E53E3E;color:#fff;border:none;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:12px">삭제</button>
     </div>
   </div>
   <nav class="sidebar-nav">
@@ -803,6 +804,22 @@ async function addYear() {
   await initYearSelect();
   document.getElementById('yearAddInput').value = '';
   showSyncResult('연도 추가 완료 — ScriptProperties에 저장되었습니다.');
+}
+
+async function deleteCurrentYear() {
+  const sel = document.getElementById('yearSelect');
+  const y   = parseInt(sel.value);
+  if (!y) return;
+  if (!confirm(`${y}년을 삭제하시겠습니까?\n해당 연도의 학과/배너 데이터는 ScriptProperties에서 삭제됩니다.`)) return;
+  const res = await SAMIL_API.deleteYear(y);
+  if (!res.success) { alert(res.error || '오류'); return; }
+  showSyncResult(`${y}년 삭제 완료`);
+  // 남은 연도 중 첫번째로 전환
+  await initYearSelect();
+  const newSel = document.getElementById('yearSelect');
+  if (newSel.options.length > 0) {
+    await setYear(newSel.options[0].value);
+  }
 }
 
 async function setYear(y) {
