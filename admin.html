@@ -1326,7 +1326,7 @@ async function addJob() {
 
   // Sheets 저장 후 진짜 ID로 교체
   try {
-    await SAMIL_API.addJob({ type, co, job, loc, cnt, dl, rec: String(rec), recCnt: String(recCnt), tags, files });
+    await SAMIL_API.addJob({ type, co, job, loc, cnt, dl, rec, recCnt, tags, files });
     const fresh = await SAMIL_API.getJobs();
     if (fresh.success) { DB.jobs = fresh.data; save(); renderJobs(); updateDash(); }
   } catch(e) { console.warn('addJob 오류:', e); }
@@ -1419,7 +1419,7 @@ async function saveJobEdit() {
   DB.jobs[idx] = { ...DB.jobs[idx], ...updated };
   save(); renderJobs(); updateDash(); closeJobEdit();
   try {
-    await SAMIL_API.updateJob({ id, ...updated, rec: String(updated.rec), recCnt: String(updated.recCnt), tags: updated.tags.join(',') });
+    await SAMIL_API.updateJob({ id, ...updated, tags: updated.tags.join(',') });
     const fresh = await SAMIL_API.getJobs();
     if (fresh.success) { DB.jobs = fresh.data; save(); renderJobs(); updateDash(); }
   } catch(e) {}
