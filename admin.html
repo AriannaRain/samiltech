@@ -753,8 +753,20 @@ function today() {
 // ══════════════════════════════════════════════
 async function init() {
   await initYearSelect();
-  renderAll();
-  loadFromSheets();
+  showLoading(true);
+  await loadFromSheets();
+  showLoading(false);
+}
+
+function showLoading(on) {
+  let el = document.getElementById('globalLoading');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'globalLoading';
+    el.style.cssText = 'position:fixed;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--primary-light),var(--accent));z-index:9999;transition:opacity .3s';
+    document.body.appendChild(el);
+  }
+  el.style.opacity = on ? '1' : '0';
 }
 
 // ══════════════════════════════════════════════
@@ -796,9 +808,24 @@ async function addYear() {
 async function setYear(y) {
   currentYear = parseInt(y);
   DB.year = currentYear;
+
+  // ① 연도별 데이터 즉시 초기화 (다른 연도 데이터 노출 방지)
+  DB.depts   = [];
+  DB.banners = [];
+  DB.jobs    = [];
+  if (DB.yearData && DB.yearData[currentYear]) {
+    DB.yearData[currentYear].teachers = [];
+    DB.yearData[currentYear].classes  = [];
+  }
   save();
+  renderAll(); // 빈 상태로 먼저 렌더
+
+  // ② 캐시 초기화
   try { localStorage.removeItem(`sc_depts_${currentYear}`); } catch(_) {}
   try { localStorage.removeItem(`sc_banners_${currentYear}`); } catch(_) {}
+
+  // ③ 해당 연도 데이터 로드
+  showLoading(true);
   try {
     const all = await SAMIL_API.getAll(currentYear);
     if (all && all.success) {
@@ -823,6 +850,7 @@ async function setYear(y) {
     if (cRes.success) getYearData(currentYear).classes  = cRes.data;
     save();
   } catch(e) { console.warn('Year data load:', e); }
+  showLoading(false);
   renderAll();
 }
 
