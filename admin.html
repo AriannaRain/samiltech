@@ -1756,7 +1756,7 @@ function openAdminStuDetail(sid) {
 
   document.getElementById('sdm-name').textContent = s.name;
   document.getElementById('sdm-meta').textContent =
-    `${s.dept} ${s.grade}학년 ${s.cls}반 | 학번: ${s.id} | 성별: ${s.gender||'—'}`;
+    `${s.dept} ${s.grade}학년 ${s.cls}반 | 학번: ${s.id} | 성별: ${s.gender||'—'}${s.middle ? ` | 출신중학교: ${s.middle}` : ''}`;
   document.getElementById('sdm-pw-btn').onclick = () => { closeAdminStuDetail(); resetStudentPwById(s.id); };
 
   const cellStyle = 'padding:9px 12px;border-bottom:1px solid var(--border);text-align:center';
