@@ -775,15 +775,12 @@ function today() {
 async function init() {
   showLoading(true);
   try {
-    const all = await SAMIL_API.getAll(currentYear);
+    const all = SAMIL_API.getAll ? await SAMIL_API.getAll(currentYear) : null;
     if (all && all.success) {
-      // 연도 셀렉트 초기화
       const years = (all.years || [currentYear]).sort((a, b) => b - a);
       if (!years.includes(currentYear)) years.unshift(currentYear);
       const sel = document.getElementById('yearSelect');
       sel.innerHTML = years.map(y => `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}년</option>`).join('');
-
-      // 전체 데이터 일괄 반영
       DB.depts        = (all.depts   || []).map(d => ({ name: d.name, code: d.code || '', date: d.startYear || today() }));
       DB.banners      = all.banners  || [];
       DB.jobs         = all.jobs     || [];
@@ -795,7 +792,6 @@ async function init() {
       if (typeof renderReviews === 'function') renderReviews();
       showSyncResult(`✅ ${currentYear}년 데이터 로드 완료`);
     } else {
-      // getAll 실패 시 폴백
       await loadFromSheets();
     }
   } catch(e) {
@@ -892,7 +888,7 @@ async function setYear(y) {
   // ③ 해당 연도 데이터 로드
   showLoading(true);
   try {
-    const all = await SAMIL_API.getAll(currentYear);
+    const all = SAMIL_API.getAll ? await SAMIL_API.getAll(currentYear) : null;
     if (all && all.success) {
       DB.depts   = (all.depts   || []).map(d => ({ name: d.name, code: d.code||'', date: d.startYear||today() }));
       DB.banners = all.banners  || [];
@@ -928,8 +924,8 @@ async function loadFromSheets() {
   try { localStorage.removeItem(`sc_depts_${currentYear}`); } catch(_) {}
   try { localStorage.removeItem(`sc_banners_${currentYear}`); } catch(_) {}
   try {
-    // getAll 배치 시도
-    const all = await SAMIL_API.getAll(currentYear);
+    // getAll 배치 시도 (함수 존재 시)
+    const all = SAMIL_API.getAll ? await SAMIL_API.getAll(currentYear) : null;
     if (all && all.success) {
       DB.depts        = (all.depts   || []).map(d => ({ name: d.name, code: d.code||'', date: d.startYear||today() }));
       DB.banners      = all.banners  || [];
