@@ -515,12 +515,16 @@ tr:hover td{background:#fafbfd}
 </div>
 
 <!-- 취업/진학 입력 모달 -->
-<div class="modal-overlay" id="teacherEmployModal">
+<div class="modal-overlay" id="teacherEmployModal" style="z-index:600">
   <div class="modal">
-    <h3 id="tem-title">취업처 입력</h3>
+    <h3>취업/진학 입력</h3>
     <div class="form-group">
-      <label id="tem-label">입사처</label>
-      <input id="tem-place" placeholder="예: 삼성전자" onkeydown="if(event.key==='Enter')saveTeacherEmploy()">
+      <label>입사처 (취업)</label>
+      <input id="tem-company" placeholder="예: 삼성전자" onkeydown="if(event.key==='Enter')saveTeacherEmploy()">
+    </div>
+    <div class="form-group">
+      <label>입학처 (진학)</label>
+      <input id="tem-school" placeholder="예: 수원대학교" onkeydown="if(event.key==='Enter')saveTeacherEmploy()">
     </div>
     <div id="tem-alert" style="margin-top:8px"></div>
     <div class="modal-btns">
@@ -781,11 +785,11 @@ function renderStudentList(){
             ?`<span class="badge badge-blue" style="font-size:11px">${roles}</span>`
             :'—'}</td>
           <td>${s.employed
-            ?`<span class="badge badge-green" style="cursor:pointer;white-space:nowrap" title="${s.company||''}" onclick="openTeacherEmployModal('${s.id}','employ')">✅ ${s.company||'취업'}</span>`
-            :`<button class="btn btn-sm btn-ghost" onclick="openTeacherEmployModal('${s.id}','employ')">—</button>`}</td>
+            ?`<span class="badge badge-green" style="cursor:pointer;white-space:nowrap" title="${s.company||''}" onclick="event.stopPropagation();openTeacherEmployModal('${s.id}')">✅ ${s.company||'취업'}</span>`
+            :`<button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();openTeacherEmployModal('${s.id}')">입력</button>`}</td>
           <td>${s.advanced
-            ?`<span class="badge badge-blue" style="cursor:pointer;white-space:nowrap" title="${s.school||''}" onclick="openTeacherEmployModal('${s.id}','advance')">✅ ${s.school||'진학'}</span>`
-            :`<button class="btn btn-sm btn-ghost" onclick="openTeacherEmployModal('${s.id}','advance')">—</button>`}</td>
+            ?`<span class="badge badge-blue" style="cursor:pointer;white-space:nowrap" title="${s.school||''}" onclick="event.stopPropagation();openTeacherEmployModal('${s.id}')">✅ ${s.school||'진학'}</span>`
+            :`<button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();openTeacherEmployModal('${s.id}')">입력</button>`}</td>
           <td><span class="badge ${s.uploaded?'badge-green':'badge-gray'}">${s.uploaded?'등록':'미등록'}</span></td>
         </tr>`;
       }).join('')
@@ -921,19 +925,14 @@ function selectStudent(id){
           <strong>취업</strong>
           <span style="color:var(--text-sub);font-size:12px;margin-left:8px">${s.company||'미입력'}</span>
         </div>
-        ${s.employed
-          ? `<button class="btn btn-sm btn-ghost" style="color:var(--red)" onclick="cancelTeacherEmploy('${s.id}','employ')">취소</button>`
-          : `<button class="btn btn-sm btn-accent" onclick="openTeacherEmployModal('${s.id}','employ')">입력</button>`}
       </div>
       <div style="display:flex;align-items:center;gap:12px;padding:14px;background:#F4F6FA;border-radius:10px">
         <div style="flex:1">
           <strong>진학</strong>
           <span style="color:var(--text-sub);font-size:12px;margin-left:8px">${s.school||'미입력'}</span>
         </div>
-        ${s.advanced
-          ? `<button class="btn btn-sm btn-ghost" style="color:var(--red)" onclick="cancelTeacherEmploy('${s.id}','advance')">취소</button>`
-          : `<button class="btn btn-sm btn-accent" onclick="openTeacherEmployModal('${s.id}','advance')">입력</button>`}
       </div>
+      <button class="btn btn-accent" style="margin-top:4px" onclick="closeStuModal();openTeacherEmployModal('${s.id}')">✏️ 취업/진학 입력</button>
     </div>`;
 
   document.getElementById('stuModal').classList.add('open');
@@ -947,16 +946,14 @@ function resetPw(id){
 // ── 취업/진학 (담임) ──
 let _teacherEmployTarget = { id: null, type: null };
 
-function openTeacherEmployModal(studentId, type) {
-  _teacherEmployTarget = { id: studentId, type };
-  const isEmp = type === 'employ';
-  document.getElementById('tem-title').textContent = isEmp ? '취업처 입력' : '진학처 입력';
-  document.getElementById('tem-label').textContent = isEmp ? '입사처' : '입학처';
-  document.getElementById('tem-place').placeholder = isEmp ? '예: 삼성전자' : '예: 수원대학교';
-  document.getElementById('tem-place').value = '';
+function openTeacherEmployModal(studentId) {
+  _teacherEmployTarget = { id: studentId };
+  const s = (DB.students||[]).find(x => String(x.id) === String(studentId));
+  document.getElementById('tem-company').value = (s && s.company) || '';
+  document.getElementById('tem-school').value  = (s && s.school)  || '';
   document.getElementById('tem-alert').innerHTML = '';
   document.getElementById('teacherEmployModal').classList.add('open');
-  setTimeout(() => document.getElementById('tem-place').focus(), 100);
+  setTimeout(() => document.getElementById('tem-company').focus(), 100);
 }
 
 function closeTeacherEmployModal() {
@@ -964,18 +961,19 @@ function closeTeacherEmployModal() {
 }
 
 async function saveTeacherEmploy() {
-  const { id, type } = _teacherEmployTarget;
-  const place = document.getElementById('tem-place').value.trim();
-  if (!place) { document.getElementById('tem-alert').innerHTML = '<div class="alert alert-error">입력하세요</div>'; return; }
-  const data = type === 'employ'
-    ? { studentId: id, employed: '예', company: place }
-    : { studentId: id, advanced: '예', school:   place };
+  const { id } = _teacherEmployTarget;
+  const company = document.getElementById('tem-company').value.trim();
+  const school  = document.getElementById('tem-school').value.trim();
+  const data = {
+    studentId: id,
+    employed: company ? '예' : '아니오', company,
+    advanced: school  ? '예' : '아니오', school,
+  };
   try {
     const res = await SAMIL_API.updateStudentEmploy(data);
     if (!res.success) throw new Error(res.error || '저장 실패');
-    // 로컬 DB 업데이트
     const s = (DB.students||[]).find(x => String(x.id) === String(id));
-    if (s) { if (type==='employ') { s.employed=true; s.company=place; } else { s.advanced=true; s.school=place; } }
+    if (s) { s.employed = !!company; s.company = company; s.advanced = !!school; s.school = school; }
     closeTeacherEmployModal();
     closeStuModal();
     renderStudentList();
@@ -1295,7 +1293,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
 async function loadTeacherData(){
   try{
     const [studRes, jobsRes] = await Promise.all([
-      SAMIL_API.getStudents({ teacherId: ME.id, dept: ME.dept, grade: ME.grade, cls: ME.cls }),
+      SAMIL_API.getStudents({ teacherId: ME.id }),
       SAMIL_API.getJobs(true),
     ]);
     if(studRes.success){
