@@ -1204,6 +1204,7 @@ function toBase64(file) {
 
 // 드래그앤드롭 파일 상태 (prefix 별로 관리)
 const _pendingFiles = { j: [], ej: [], er: [], re: [] };
+let _ejExistingFiles = [];
 
 function onDragOver(e, prefix) {
   e.preventDefault();
@@ -1245,6 +1246,25 @@ function renderPendingFiles(prefix) {
       <span class="file-size">${formatSize(f.size)}</span>
       <button onclick="removePendingFile('${prefix}',${i})" title="제거">✕</button>
     </div>`).join('');
+}
+
+function renderEjExistingFiles() {
+  const el = document.getElementById('ej-file-current');
+  if (!el) return;
+  el.innerHTML = _ejExistingFiles.length
+    ? _ejExistingFiles.map((f, i) => `
+        <div class="file-item">
+          <span style="font-size:16px">${fileIcon(f.name)}</span>
+          <a href="${f.url}" target="_blank">${f.name}</a>
+          <span style="font-size:11px;color:var(--text-sub)">기존</span>
+          <button onclick="removeEjExistingFile(${i})" title="삭제">✕</button>
+        </div>`).join('')
+    : '<p style="font-size:12px;color:var(--text-sub)">없음</p>';
+}
+
+function removeEjExistingFile(idx) {
+  _ejExistingFiles.splice(idx, 1);
+  renderEjExistingFiles();
 }
 
 function fileIcon(name) {
@@ -1361,14 +1381,11 @@ function editJob(id) {
   document.getElementById('ej-dl').value      = j.dl    || '';
   document.getElementById('ej-cnt').value     = j.cnt   || 1;
   document.getElementById('ej-tags').value    = (j.tags||[]).join(',');
-  document.getElementById('ej-file').value    = '';
+  document.getElementById('ej-file').value = '';
   _pendingFiles.ej = [];
+  _ejExistingFiles = [...(j.files || [])];
   renderPendingFiles('ej');
-  const curFileEl = document.getElementById('ej-file-current');
-  const curFiles  = j.files || [];
-  curFileEl.innerHTML = curFiles.length
-    ? curFiles.map(f => `<div class="file-item"><span style="font-size:16px">${fileIcon(f.name)}</span><a href="${f.url}" target="_blank">${f.name}</a><span style="font-size:11px;color:var(--text-sub)">기존</span></div>`).join('')
-    : '<p style="font-size:12px;color:var(--text-sub)">없음</p>';
+  renderEjExistingFiles();
   // 학교장 추천 상태 복원
   const recUnlim = j.recCnt === -1;
   _setRecBtn('ej', !!j.rec, recUnlim, recUnlim ? 1 : (j.recCnt || 1));
@@ -1385,7 +1402,7 @@ async function saveJobEdit() {
 
   // 새 파일 업로드 후 기존 파일에 추가
   const newUploads = _pendingFiles.ej.length ? await uploadPendingFiles('ej') : [];
-  const files = [...(DB.jobs[idx].files || []), ...newUploads];
+  const files = [..._ejExistingFiles, ...newUploads];
 
   const updated = {
     type  : document.getElementById('ej-type').value,
@@ -1436,6 +1453,7 @@ async function delJob(id) {
 function closeJobEdit() {
   document.getElementById('jobEditModal').classList.remove('open');
   _pendingFiles.ej = [];
+  _ejExistingFiles = [];
   renderPendingFiles('ej');
 }
 
