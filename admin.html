@@ -1307,7 +1307,7 @@ async function addJob() {
   const cnt   = document.getElementById('j-cnt').value || '1';
   const rec      = document.getElementById('j-rec-btn').dataset.active === '1';
   const recUnlim = rec && document.getElementById('j-recUnlim').checked;
-  const recCnt   = rec ? (recUnlim ? -1 : (Number(document.getElementById('j-recCnt').value) || 1)) : 0;
+  const recCnt   = rec ? (recUnlim ? -1 : Math.max(1, Number(document.getElementById('j-recCnt').value) || 1)) : 0;
   const tags  = document.getElementById('j-tags').value.trim();
   const type  = document.getElementById('j-type').value;
   if (!co || !job) { alert('회사명과 모집분야를 입력하세요'); return; }
@@ -1398,7 +1398,7 @@ async function saveJobEdit() {
   if (idx === -1) { alert('공고를 찾을 수 없습니다'); return; }
   const rec      = document.getElementById('ej-rec-btn').dataset.active === '1';
   const recUnlim = rec && document.getElementById('ej-recUnlim').checked;
-  const recCnt   = rec ? (recUnlim ? -1 : (Number(document.getElementById('ej-recCnt').value) || 1)) : 0;
+  const recCnt   = rec ? (recUnlim ? -1 : Math.max(1, Number(document.getElementById('ej-recCnt').value) || 1)) : 0;
 
   // 새 파일 업로드 후 기존 파일에 추가
   const newUploads = _pendingFiles.ej.length ? await uploadPendingFiles('ej') : [];
@@ -1421,7 +1421,11 @@ async function saveJobEdit() {
   try {
     await SAMIL_API.updateJob({ id, ...updated, tags: updated.tags.join(',') });
     const fresh = await SAMIL_API.getJobs();
-    if (fresh.success) { DB.jobs = fresh.data; save(); renderJobs(); updateDash(); }
+    if (fresh.success) {
+      // GAS 쓰기 지연 대비: 방금 수정한 job은 로컬값 유지
+      DB.jobs = fresh.data.map(j => j.id === id ? { ...j, ...updated } : j);
+      save(); renderJobs(); updateDash();
+    }
   } catch(e) {}
 }
 
@@ -1474,7 +1478,7 @@ function _setRecBtn(prefix, active, unlim, cnt) {
     fields.style.display = 'none';
   }
   if (unlimEl) unlimEl.checked = !!unlim;
-  if (cntEl)   { cntEl.value = cnt || 1; cntEl.disabled = !!unlim; cntEl.style.opacity = unlim ? '.4' : '1'; }
+  if (cntEl)   { cntEl.value = Math.max(1, cnt || 1); cntEl.disabled = !!unlim; cntEl.style.opacity = unlim ? '.4' : '1'; }
 }
 
 function toggleRec(prefix) {
@@ -1488,6 +1492,7 @@ function toggleRecUnlim(prefix) {
   const cntEl = document.getElementById(prefix + '-recCnt');
   cntEl.disabled     = unlim;
   cntEl.style.opacity= unlim ? '.4' : '1';
+  if (!unlim) cntEl.value = Math.max(1, Number(cntEl.value) || 1);
 }
 
 // ══════════════════════════════════════════════
