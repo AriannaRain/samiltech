@@ -1685,12 +1685,18 @@ function renderStudentPanel(students) {
     return;
   }
   document.getElementById('studentPanelContent').innerHTML = `
-    <div class="tbl-wrap"><table>
+    <div class="tbl-wrap"><table style="table-layout:fixed;width:100%">
+      <colgroup>
+        <col style="width:72px"><col style="width:80px"><col style="width:50px">
+        <col style="width:68px"><col style="width:68px">
+        <col style="width:62px"><col style="width:82px"><col style="width:82px"><col style="width:62px">
+        <col style="width:90px"><col style="width:90px"><col style="width:58px">
+      </colgroup>
       <thead><tr>
-        <th>학번</th><th>이름</th><th>성별</th>
-        <th>미인정<br>결석</th><th>지각<br>(합계)</th>
-        <th>자격증</th><th>전과목<br>평균등급</th><th>전문교과<br>평균등급</th><th>동아리</th>
-        <th>취업</th><th>진학</th><th>관리</th>
+        <th style="text-align:center">학번</th><th style="text-align:center">이름</th><th style="text-align:center">성별</th>
+        <th style="text-align:center">미인정<br>결석</th><th style="text-align:center">지각<br>(합계)</th>
+        <th style="text-align:center">자격증</th><th style="text-align:center">전과목<br>평균등급</th><th style="text-align:center">전문교과<br>평균등급</th><th style="text-align:center">동아리</th>
+        <th style="text-align:center">취업</th><th style="text-align:center">진학</th><th style="text-align:center">관리</th>
       </tr></thead>
       <tbody>${students.map(s => {
         const ua  = (s.attend||[]).reduce((a,r)=>a+(r.abs ?r.abs.unauth :0),0);
@@ -1698,22 +1704,22 @@ function renderStudentPanel(students) {
         const ag  = s.summary ? s.summary.allGrade : '—';
         const pg  = s.summary ? s.summary.proGrade : '—';
         return `<tr>
-          <td style="font-size:12px">${s.id}</td>
-          <td><strong style="cursor:pointer;color:var(--primary-light);text-decoration:underline" onclick="openAdminStuDetail('${s.id}')">${s.name}</strong></td>
-          <td>${s.gender||'—'}</td>
-          <td>${ua>0?`<span class="badge" style="background:#FFF5F5;color:var(--red)">${ua}일</span>`:'<span class="badge" style="background:#F0FFF4;color:var(--green)">없음</span>'}</td>
-          <td>${lat>0?`<span class="badge" style="background:#FFF3E0;color:var(--accent)">${lat}회</span>`:'0'}</td>
-          <td>${s.certCount?`<span class="badge" style="background:#FFF3E0;color:var(--accent)">${s.certCount}개</span>`:'—'}</td>
-          <td>${ag!=='—'?`<strong>${ag}</strong>`:'—'}</td>
-          <td>${pg!=='—'?`<strong>${pg}</strong>`:'—'}</td>
-          <td>${(s.clubs||[]).length?`<span class="badge badge-closed">${(s.clubs||[]).length}개</span>`:'—'}</td>
-          <td>${s.employed
-            ? `<button class="btn btn-sm" style="background:#F0FFF4;color:var(--green);border:1px solid #C6F6D5;white-space:nowrap" onclick="openStudentEmployModal('${s.id}')">✅ ${s.company||'취업'}</button>`
-            : `<button class="btn btn-sm btn-ghost" onclick="openStudentEmployModal('${s.id}')">입력</button>`}</td>
-          <td>${s.advanced
-            ? `<button class="btn btn-sm" style="background:#EBF4FF;color:var(--primary);border:1px solid #BEE3F8;white-space:nowrap" onclick="openStudentEmployModal('${s.id}')">✅ ${s.school||'진학'}</button>`
-            : `<button class="btn btn-sm btn-ghost" onclick="openStudentEmployModal('${s.id}')">입력</button>`}</td>
-          <td><button class="btn btn-sm btn-ghost" onclick="resetStudentPwById('${s.id}')">PW</button></td>
+          <td style="font-size:12px;text-align:center">${s.id}</td>
+          <td style="text-align:center"><strong style="cursor:pointer;color:var(--primary-light);text-decoration:underline" onclick="openAdminStuDetail('${s.id}')">${s.name}</strong></td>
+          <td style="text-align:center">${s.gender||'—'}</td>
+          <td style="text-align:center">${ua>0?`<span class="badge" style="background:#FFF5F5;color:var(--red)">${ua}일</span>`:'<span class="badge" style="background:#F0FFF4;color:var(--green)">없음</span>'}</td>
+          <td style="text-align:center">${lat>0?`<span class="badge" style="background:#FFF3E0;color:var(--accent)">${lat}회</span>`:'0'}</td>
+          <td style="text-align:center">${s.certCount?`<span class="badge" style="background:#FFF3E0;color:var(--accent)">${s.certCount}개</span>`:'—'}</td>
+          <td style="text-align:center">${ag!=='—'?`<strong>${ag}</strong>`:'—'}</td>
+          <td style="text-align:center">${pg!=='—'?`<strong>${pg}</strong>`:'—'}</td>
+          <td style="text-align:center">${(s.clubs||[]).length?`<span class="badge badge-closed">${(s.clubs||[]).length}개</span>`:'—'}</td>
+          <td style="text-align:center">${s.employed
+            ? `<button class="btn btn-sm" style="background:#F0FFF4;color:var(--green);border:1px solid #C6F6D5;white-space:nowrap;width:100%;overflow:hidden;text-overflow:ellipsis" onclick="openStudentEmployModal('${s.id}')">✅ ${s.company||'취업'}</button>`
+            : `<button class="btn btn-sm btn-ghost" style="width:100%" onclick="openStudentEmployModal('${s.id}')">입력</button>`}</td>
+          <td style="text-align:center">${s.advanced
+            ? `<button class="btn btn-sm" style="background:#EBF4FF;color:var(--primary);border:1px solid #BEE3F8;white-space:nowrap;width:100%;overflow:hidden;text-overflow:ellipsis" onclick="openStudentEmployModal('${s.id}')">✅ ${s.school||'진학'}</button>`
+            : `<button class="btn btn-sm btn-ghost" style="width:100%" onclick="openStudentEmployModal('${s.id}')">입력</button>`}</td>
+          <td style="text-align:center"><button class="btn btn-sm btn-ghost" onclick="resetStudentPwById('${s.id}')">PW</button></td>
         </tr>`;
       }).join('')}
       </tbody>
