@@ -6,24 +6,6 @@ const SAMIL_API = (() => {
   const GAS_URL     = 'https://script.google.com/macros/s/AKfycby6UpyOV0rxKOUbQkerpniceHPAgZOkLfNKJC5JFyEJqxmJbe_4BcK-HOPCHOmahnnA_g/exec';
   const ADMIN_TOKEN = 'samil_admin_2024';
 
-  // ── TTL 캐시 ──────────────────────────────
-  const TTL = { jobs: 5*60*1000, banners: 60*60*1000, depts: 60*60*1000, years: 60*60*1000 };
-  function cacheGet(key) {
-    try {
-      const raw = localStorage.getItem('sc_'+key);
-      if (!raw) return null;
-      const { data, ts } = JSON.parse(raw);
-      if (Date.now() - ts > (TTL[key] || 5*60*1000)) return null;
-      return data;
-    } catch(_) { return null; }
-  }
-  function cacheSet(key, data) {
-    try { localStorage.setItem('sc_'+key, JSON.stringify({ data, ts: Date.now() })); } catch(_) {}
-  }
-  function cacheClear(key) {
-    try { localStorage.removeItem('sc_'+key); } catch(_) {}
-  }
-
   async function call(params) {
     try {
       const res = await fetch(GAS_URL, {
@@ -51,27 +33,32 @@ const SAMIL_API = (() => {
   }
 
   // ════════════════════════════════════════════
-  // 배치 로드 (Cold Start 최소화)
+  // 채용공고
+  // ════════════════════════════════════════════
+  async function getJobs(activeOnly = false) {
+    return get({ action: 'getJobs', activeOnly });
+  }
+
+  // ════════════════════════════════════════════
+  // 배치 (Cold Start 최소화)
   // ════════════════════════════════════════════
   async function getAll(year) {
     return get({ action: 'getAll', year: year || new Date().getFullYear() });
   }
 
   // ════════════════════════════════════════════
-  // 채용공고 (캐시 적용)
+  // 관리연도
   // ════════════════════════════════════════════
-  async function getJobs(activeOnly = false) {
-    if (!activeOnly) {
-      const cached = cacheGet('jobs');
-      if (cached) {
-        // 백그라운드 갱신
-        get({ action: 'getJobs', activeOnly }).then(r => { if (r.success) cacheSet('jobs', r.data); });
-        return { success: true, data: cached };
-      }
-    }
-    const r = await get({ action: 'getJobs', activeOnly });
-    if (r.success) cacheSet('jobs', r.data);
-    return r;
+  async function getYears() {
+    return get({ action: 'getYears' });
+  }
+
+  async function addYear(year) {
+    return call({ action: 'addYear', token: ADMIN_TOKEN, year });
+  }
+
+  async function deleteYear(year) {
+    return call({ action: 'deleteYear', token: ADMIN_TOKEN, year });
   }
 
   async function addJob(data) {
@@ -160,6 +147,10 @@ const SAMIL_API = (() => {
     return call({ action: 'deleteTeacher', token: ADMIN_TOKEN, ...data });
   }
 
+  async function updateTeacher(data) {
+    return call({ action: 'updateTeacher', token: ADMIN_TOKEN, ...data });
+  }
+
   async function getJobStats()            { return get({ action: 'getJobStats' }); }
   async function incrementView(jobId)     { return call({ action: 'incrementView', jobId }); }
 
@@ -191,115 +182,45 @@ const SAMIL_API = (() => {
   }
 
   // ════════════════════════════════════════════
-  // 학과 (캐시 적용)
+  // 학과
   // ════════════════════════════════════════════
-  async function getDepts(year) {
-    const yr  = year || new Date().getFullYear();
-    const key = `depts_${yr}`;
-    const cached = cacheGet(key);
-    if (cached) {
-      get({ action: 'getDepts', year: yr }).then(r => { if (r.success) cacheSet(key, r.data); });
-      return { success: true, data: cached };
-    }
-    const r = await get({ action: 'getDepts', year: yr });
-    if (r.success) cacheSet(key, r.data);
-    return r;
+  async function getDepts() {
+    return get({ action: 'getDepts' });
   }
 
   async function addDept(data) {
-    cacheClear(`depts_${data.year || new Date().getFullYear()}`);
     return call({ action: 'addDept', token: ADMIN_TOKEN, ...data });
   }
 
-  async function deleteDept(name, year) {
-    cacheClear(`depts_${year || new Date().getFullYear()}`);
-    return call({ action: 'deleteDept', token: ADMIN_TOKEN, name, year: year || new Date().getFullYear() });
+  async function deleteDept(name) {
+    return call({ action: 'deleteDept', token: ADMIN_TOKEN, name });
   }
 
   async function updateDept(oldName, newName, year) {
-    cacheClear(`depts_${year || new Date().getFullYear()}`);
-    return call({ action: 'updateDept', token: ADMIN_TOKEN, oldName, newName, year: year || new Date().getFullYear() });
-  }
-
-  // ════════════════════════════════════════════
-  // 배너 (캐시 적용)
-  // ════════════════════════════════════════════
-  async function getBanners(year) {
-    const yr  = year || new Date().getFullYear();
-    const key = `banners_${yr}`;
-    const cached = cacheGet(key);
-    if (cached) {
-      get({ action: 'getBanners', year: yr }).then(r => { if (r.success) cacheSet(key, r.data); });
-      return { success: true, data: cached };
-    }
-    const r = await get({ action: 'getBanners', year: yr });
-    if (r.success) cacheSet(key, r.data);
-    return r;
-  }
-
-  async function addBanner(data) {
-    cacheClear(`banners_${data.year || new Date().getFullYear()}`);
-    return call({ action: 'addBanner', token: ADMIN_TOKEN, ...data });
-  }
-
-  async function deleteBanner(id, year) {
-    cacheClear(`banners_${year || new Date().getFullYear()}`);
-    return call({ action: 'deleteBanner', token: ADMIN_TOKEN, id, year: year || new Date().getFullYear() });
-  }
-
-  async function updateBanner(data) {
-    cacheClear(`banners_${data.year || new Date().getFullYear()}`);
-    return call({ action: 'updateBanner', token: ADMIN_TOKEN, ...data });
+    return call({ action: 'updateDept', token: ADMIN_TOKEN, oldName, newName, year });
   }
 
   async function getStudentCountByClass(year) {
-    return get({ action: 'getStudentCountByClass', year: year || new Date().getFullYear() });
-  }
-
-  async function migrateDepts(year) {
-    return call({ action: 'migrateDepts', token: ADMIN_TOKEN, year: year || new Date().getFullYear() });
+    return get({ action: 'getStudentCountByClass', year });
   }
 
   // ════════════════════════════════════════════
-  // 관리연도 (ScriptProperties)
+  // 배너
   // ════════════════════════════════════════════
-  async function getYears() {
-    const cached = cacheGet('years');
-    if (cached) {
-      get({ action: 'getYears' }).then(r => { if (r.success) cacheSet('years', r.data); });
-      return { success: true, data: cached };
-    }
-    const r = await get({ action: 'getYears' });
-    if (r.success) cacheSet('years', r.data);
-    return r;
+  async function getBanners() {
+    return get({ action: 'getBanners' });
   }
 
-  async function addYear(year) {
-    cacheClear('years');
-    return call({ action: 'addYear', token: ADMIN_TOKEN, year });
+  async function addBanner(data) {
+    return call({ action: 'addBanner', token: ADMIN_TOKEN, ...data });
   }
 
-  async function deleteYear(year) {
-    cacheClear('years');
-    return call({ action: 'deleteYear', token: ADMIN_TOKEN, year });
+  async function deleteBanner(id) {
+    return call({ action: 'deleteBanner', token: ADMIN_TOKEN, id });
   }
 
-  // ════════════════════════════════════════════
-  // 관리자 비밀번호 (ScriptProperties)
-  // ════════════════════════════════════════════
-  async function verifyAdminPw(pw) {
-    return call({ action: 'verifyAdminPw', pw });
-  }
-
-  async function saveAdminPw(data) {
-    return call({ action: 'saveAdminPw', token: ADMIN_TOKEN, ...data });
-  }
-
-  // ════════════════════════════════════════════
-  // 담임교사 수정
-  // ════════════════════════════════════════════
-  async function updateTeacher(data) {
-    return call({ action: 'updateTeacher', token: ADMIN_TOKEN, ...data });
+  async function updateBanner(data) {
+    return call({ action: 'updateBanner', token: ADMIN_TOKEN, ...data });
   }
 
   // ════════════════════════════════════════════
@@ -360,20 +281,6 @@ const SAMIL_API = (() => {
     return call({ action: 'initSheets', token: ADMIN_TOKEN });
   }
 
-  // ════════════════════════════════════════════
-  // 현장실습 자료실
-  // ════════════════════════════════════════════
-  async function getPracticeSections() { return get({ action: 'getPracticeSections' }); }
-  async function addPracticeSection(data)    { return call({ action: 'addPracticeSection',    token: ADMIN_TOKEN, ...data }); }
-  async function updatePracticeSection(data) { return call({ action: 'updatePracticeSection', token: ADMIN_TOKEN, ...data }); }
-  async function deletePracticeSection(id)   { return call({ action: 'deletePracticeSection', token: ADMIN_TOKEN, id }); }
-  async function reorderPracticeSection(orders) { return call({ action: 'reorderPracticeSection', token: ADMIN_TOKEN, orders: JSON.stringify(orders) }); }
-  async function getPracticeFiles(secId)     { return get({ action: 'getPracticeFiles', secId: secId||'' }); }
-  async function addPracticeFile(data)       { return call({ action: 'addPracticeFile',    token: ADMIN_TOKEN, ...data }); }
-  async function updatePracticeFile(data)    { return call({ action: 'updatePracticeFile', token: ADMIN_TOKEN, ...data }); }
-  async function deletePracticeFile(id)      { return call({ action: 'deletePracticeFile', token: ADMIN_TOKEN, id }); }
-  async function reorderPracticeFile(orders) { return call({ action: 'reorderPracticeFile', token: ADMIN_TOKEN, orders: JSON.stringify(orders) }); }
-
   return {
     getAll,
     getJobs, addJob, updateJob, deleteJob, toggleJob,
@@ -383,17 +290,14 @@ const SAMIL_API = (() => {
     getTeachers, getClasses, saveClasses,
     updateStudentEmploy,
     getDepts, addDept, deleteDept, updateDept,
+    getStudentCountByClass,
+    getYears, addYear, deleteYear,
     getBanners, addBanner, deleteBanner, updateBanner,
     getStats, saveAnnualStat, deleteAnnualStat, saveEmploy,
     getArchive, getReviews, addReview, deleteReview,
     applyJob, applyJobs, getApplicants, deleteApply,
     toggleInterest, getInterested, getMyInterests,
-    uploadFile, initSheets,
-    getYears, addYear, deleteYear,
-    verifyAdminPw, saveAdminPw,
-    getStudentCountByClass, migrateDepts,
-    getPracticeSections, addPracticeSection, updatePracticeSection, deletePracticeSection, reorderPracticeSection,
-    getPracticeFiles, addPracticeFile, updatePracticeFile, deletePracticeFile, reorderPracticeFile,
-    cacheGet, cacheSet, cacheClear,
+    uploadFile,
+    initSheets,
   };
 })();
