@@ -583,27 +583,44 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
-<!-- ══════ 모달: 학생 취업/진학 입력 (NEW) ══════ -->
+<!-- ══════ 모달: 학생 취업 입력 ══════ -->
 <div class="edit-modal-overlay" id="studentEmployModal" onclick="if(event.target===this)closeStudentEmployModal()">
   <div class="edit-modal" style="max-width:400px">
     <div class="edit-modal-header">
-      <h3>취업/진학 입력</h3>
+      <h3>취업 입력</h3>
       <button class="edit-modal-close" onclick="closeStudentEmployModal()">✕</button>
     </div>
     <div class="edit-modal-body">
       <input type="hidden" id="sem-studentId">
       <div class="form-group">
-        <label>입사처 (취업)</label>
+        <label>입사처</label>
         <input id="sem-company" placeholder="예: 삼성전자">
-      </div>
-      <div class="form-group">
-        <label>입학처 (진학)</label>
-        <input id="sem-school" placeholder="예: 수원대학교">
       </div>
     </div>
     <div class="edit-modal-footer">
       <button class="btn btn-ghost" onclick="closeStudentEmployModal()">취소</button>
-      <button class="btn btn-accent" onclick="saveStudentEmployStatus()">저장</button>
+      <button class="btn btn-accent" onclick="saveStudentEmployStatus('employ')">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ 모달: 학생 진학 입력 ══════ -->
+<div class="edit-modal-overlay" id="studentAdvanceModal" onclick="if(event.target===this)closeStudentAdvanceModal()">
+  <div class="edit-modal" style="max-width:400px">
+    <div class="edit-modal-header">
+      <h3>진학 입력</h3>
+      <button class="edit-modal-close" onclick="closeStudentAdvanceModal()">✕</button>
+    </div>
+    <div class="edit-modal-body">
+      <input type="hidden" id="sad-studentId">
+      <div class="form-group">
+        <label>입학처</label>
+        <input id="sad-school" placeholder="예: 수원대학교">
+      </div>
+    </div>
+    <div class="edit-modal-footer">
+      <button class="btn btn-ghost" onclick="closeStudentAdvanceModal()">취소</button>
+      <button class="btn btn-accent" onclick="saveStudentEmployStatus('advance')">저장</button>
     </div>
   </div>
 </div>
@@ -1714,11 +1731,11 @@ function renderStudentPanel(students) {
           <td style="text-align:center">${pg!=='—'?`<strong>${pg}</strong>`:'—'}</td>
           <td style="text-align:center">${(s.clubs||[]).length?`<span class="badge badge-closed">${(s.clubs||[]).length}개</span>`:'—'}</td>
           <td style="text-align:center">${s.employed
-            ? `<button class="btn btn-sm" style="background:#F0FFF4;color:var(--green);border:1px solid #C6F6D5;white-space:nowrap;width:100%;overflow:hidden;text-overflow:ellipsis" onclick="openStudentEmployModal('${s.id}')">✅ ${s.company||'취업'}</button>`
-            : `<button class="btn btn-sm btn-ghost" style="width:100%" onclick="openStudentEmployModal('${s.id}')">입력</button>`}</td>
+            ? `<button class="btn btn-sm" style="background:#F0FFF4;color:var(--green);border:1px solid #C6F6D5;white-space:nowrap;width:100%;overflow:hidden;text-overflow:ellipsis" onclick="openStudentEmployModal('${s.id}','employ')">✅ ${s.company||'취업'}</button>`
+            : `<button class="btn btn-sm btn-ghost" style="width:100%" onclick="openStudentEmployModal('${s.id}','employ')">입력</button>`}</td>
           <td style="text-align:center">${s.advanced
-            ? `<button class="btn btn-sm" style="background:#EBF4FF;color:var(--primary);border:1px solid #BEE3F8;white-space:nowrap;width:100%;overflow:hidden;text-overflow:ellipsis" onclick="openStudentEmployModal('${s.id}')">✅ ${s.school||'진학'}</button>`
-            : `<button class="btn btn-sm btn-ghost" style="width:100%" onclick="openStudentEmployModal('${s.id}')">입력</button>`}</td>
+            ? `<button class="btn btn-sm" style="background:#EBF4FF;color:var(--primary);border:1px solid #BEE3F8;white-space:nowrap;width:100%;overflow:hidden;text-overflow:ellipsis" onclick="openStudentEmployModal('${s.id}','advance')">✅ ${s.school||'진학'}</button>`
+            : `<button class="btn btn-sm btn-ghost" style="width:100%" onclick="openStudentEmployModal('${s.id}','advance')">입력</button>`}</td>
           <td style="text-align:center"><button class="btn btn-sm btn-ghost" onclick="resetStudentPwById('${s.id}')">PW</button></td>
         </tr>`;
       }).join('')}
@@ -1828,7 +1845,8 @@ function openAdminStuDetail(sid) {
           <span style="color:var(--text-sub);font-size:12px;margin-left:8px">${s.school||'미입력'}</span>
         </div>
       </div>
-      <button class="btn btn-accent" style="margin-top:4px" onclick="closeAdminStuDetail();openStudentEmployModal('${s.id}')">✏️ 취업/진학 입력</button>
+      <button class="btn btn-accent" style="margin-top:4px" onclick="closeAdminStuDetail();openStudentEmployModal('${s.id}','employ')">✏️ 취업 입력</button>
+      <button class="btn btn-accent" style="margin-top:4px;background:var(--primary)" onclick="closeAdminStuDetail();openStudentEmployModal('${s.id}','advance')">✏️ 진학 입력</button>
     </div>`;
 
   sdmTab('attend', document.querySelector('#adminStuModal .sdm-tab'));
@@ -1839,30 +1857,35 @@ function closeAdminStuDetail() {
   document.getElementById('adminStuModal').classList.remove('open');
 }
 
-function openStudentEmployModal(studentId) {
-  document.getElementById('sem-studentId').value = studentId;
+function openStudentEmployModal(studentId, type) {
   const s = (_currentStudents||[]).find(x => String(x.id) === String(studentId));
-  document.getElementById('sem-company').value = (s && s.company) || '';
-  document.getElementById('sem-school').value  = (s && s.school)  || '';
-  document.getElementById('studentEmployModal').classList.add('open');
-  setTimeout(() => document.getElementById('sem-company').focus(), 100);
+  if (type === 'employ') {
+    document.getElementById('sem-studentId').value = studentId;
+    document.getElementById('sem-company').value = (s && s.company) || '';
+    document.getElementById('studentEmployModal').classList.add('open');
+    setTimeout(() => document.getElementById('sem-company').focus(), 100);
+  } else {
+    document.getElementById('sad-studentId').value = studentId;
+    document.getElementById('sad-school').value = (s && s.school) || '';
+    document.getElementById('studentAdvanceModal').classList.add('open');
+    setTimeout(() => document.getElementById('sad-school').focus(), 100);
+  }
 }
 
 function closeStudentEmployModal() { document.getElementById('studentEmployModal').classList.remove('open'); }
+function closeStudentAdvanceModal() { document.getElementById('studentAdvanceModal').classList.remove('open'); }
 
-async function saveStudentEmployStatus() {
-  const studentId = document.getElementById('sem-studentId').value;
-  const company   = document.getElementById('sem-company').value.trim();
-  const school    = document.getElementById('sem-school').value.trim();
-  const data = {
-    studentId,
-    employed: company ? '예' : '아니오', company,
-    advanced: school  ? '예' : '아니오', school,
-  };
+async function saveStudentEmployStatus(type) {
+  const isEmploy = type === 'employ';
+  const studentId = document.getElementById(isEmploy ? 'sem-studentId' : 'sad-studentId').value;
+  const value     = document.getElementById(isEmploy ? 'sem-company'   : 'sad-school').value.trim();
+  const data = isEmploy
+    ? { studentId, employed: value ? '예' : '아니오', company: value }
+    : { studentId, advanced: value ? '예' : '아니오', school:  value };
   try {
     const res = await SAMIL_API.updateStudentEmploy(data);
     if (!res.success) throw new Error(res.error || '저장 실패');
-    closeStudentEmployModal();
+    isEmploy ? closeStudentEmployModal() : closeStudentAdvanceModal();
     if (_selectedClass) selectClass(_selectedClass.dept, _selectedClass.grade, _selectedClass.num, null);
   } catch(e) { alert('저장 실패: ' + e.message); }
 }
@@ -2465,10 +2488,10 @@ async function movePrFile(secId, idx, dir) {
 
 // Enter로 모달 저장
 document.getElementById('sem-company').addEventListener('keydown', e => {
-  if (e.key === 'Enter') saveStudentEmployStatus();
+  if (e.key === 'Enter') saveStudentEmployStatus('employ');
 });
-document.getElementById('sem-school').addEventListener('keydown', e => {
-  if (e.key === 'Enter') saveStudentEmployStatus();
+document.getElementById('sad-school').addEventListener('keydown', e => {
+  if (e.key === 'Enter') saveStudentEmployStatus('advance');
 });
 </script>
 </body>
