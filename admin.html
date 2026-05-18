@@ -283,7 +283,7 @@ tr:last-child td{border-bottom:none}
         <div class="form-group"><label>회사유형</label><select id="j-type"><option value="대기업">대기업</option><option value="중견기업">중견기업</option><option value="중소기업" selected>중소기업</option><option value="공공기관">공공기관</option><option value="기타">기타</option></select></div>
         <div class="form-group"><label>회사명</label><input id="j-co" placeholder="삼성전자"></div>
       </div>
-      <div class="form-group"><label>공고제목</label><input id="j-job" placeholder="2026년 하반기 생산직 채용"></div>
+      <div class="form-group"><label>모집분야</label><input id="j-job" placeholder="2026년 하반기 생산직 채용"></div>
       <div class="form-row cols3">
         <div class="form-group"><label>근무지</label><input id="j-loc" placeholder="수원시 영통구"></div>
         <div class="form-group"><label>마감일</label><input id="j-dl" type="date"></div>
@@ -320,7 +320,7 @@ tr:last-child td{border-bottom:none}
     <div class="card">
       <div class="card-title">공고 목록</div>
       <div class="tbl-wrap"><table>
-        <thead><tr><th>회사명</th><th>공고제목</th><th>근무지</th><th>마감일</th><th>추천</th><th>상태</th><th>관리</th></tr></thead>
+        <thead><tr><th>회사명</th><th>모집분야</th><th>근무지</th><th>마감일</th><th>추천</th><th>상태</th><th>관리</th></tr></thead>
         <tbody id="jobTb"></tbody>
       </table></div>
     </div>
@@ -509,7 +509,7 @@ tr:last-child td{border-bottom:none}
         <div class="form-group"><label>회사유형</label><select id="ej-type"><option>대기업</option><option>중견기업</option><option>중소기업</option><option>공공기관</option><option>기타</option></select></div>
         <div class="form-group"><label>회사명</label><input id="ej-co"></div>
       </div>
-      <div class="form-group"><label>공고제목</label><input id="ej-job"></div>
+      <div class="form-group"><label>모집분야</label><input id="ej-job"></div>
       <div class="form-row cols3">
         <div class="form-group"><label>근무지</label><input id="ej-loc"></div>
         <div class="form-group"><label>마감일</label><input id="ej-dl" type="date"></div>
@@ -1310,7 +1310,7 @@ async function addJob() {
   const recCnt   = rec ? (recUnlim ? -1 : (Number(document.getElementById('j-recCnt').value) || 1)) : 0;
   const tags  = document.getElementById('j-tags').value.trim();
   const type  = document.getElementById('j-type').value;
-  if (!co || !job) { alert('회사명과 공고제목을 입력하세요'); return; }
+  if (!co || !job) { alert('회사명과 모집분야를 입력하세요'); return; }
 
   // 파일 업로드
   const files = _pendingFiles.j.length ? await uploadPendingFiles('j') : [];
@@ -1415,7 +1415,7 @@ async function saveJobEdit() {
     tags  : document.getElementById('ej-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
     files,
   };
-  if (!updated.co || !updated.job) { alert('회사명과 공고제목을 입력하세요'); return; }
+  if (!updated.co || !updated.job) { alert('회사명과 모집분야를 입력하세요'); return; }
   DB.jobs[idx] = { ...DB.jobs[idx], ...updated };
   save(); renderJobs(); updateDash(); closeJobEdit();
   try {
