@@ -332,6 +332,44 @@ const SAMIL_API = (() => {
   }
 
   // ════════════════════════════════════════════
+  // 현장실습 섹션
+  // ════════════════════════════════════════════
+  async function getPracticeSections() {
+    return get({ action: 'getPracticeSections' });
+  }
+  async function addPracticeSection(data) {
+    return call({ action: 'addPracticeSection', token: ADMIN_TOKEN, ...data });
+  }
+  async function updatePracticeSection(data) {
+    return call({ action: 'updatePracticeSection', token: ADMIN_TOKEN, ...data });
+  }
+  async function deletePracticeSection(id) {
+    return call({ action: 'deletePracticeSection', token: ADMIN_TOKEN, id });
+  }
+  async function reorderPracticeSection(orders) {
+    return call({ action: 'reorderPracticeSection', token: ADMIN_TOKEN, orders: JSON.stringify(orders) });
+  }
+
+  // ════════════════════════════════════════════
+  // 현장실습 파일
+  // ════════════════════════════════════════════
+  async function getPracticeFiles(secId) {
+    return get({ action: 'getPracticeFiles', secId: secId || '' });
+  }
+  async function addPracticeFile(data) {
+    return call({ action: 'addPracticeFile', token: ADMIN_TOKEN, ...data });
+  }
+  async function updatePracticeFile(data) {
+    return call({ action: 'updatePracticeFile', token: ADMIN_TOKEN, ...data });
+  }
+  async function deletePracticeFile(id) {
+    return call({ action: 'deletePracticeFile', token: ADMIN_TOKEN, id });
+  }
+  async function reorderPracticeFile(orders) {
+    return call({ action: 'reorderPracticeFile', token: ADMIN_TOKEN, orders: JSON.stringify(orders) });
+  }
+
+  // ════════════════════════════════════════════
   // 시트 초기화
   // ════════════════════════════════════════════
   async function initSheets() {
@@ -357,6 +395,8 @@ const SAMIL_API = (() => {
     applyJob, applyJobs, getApplicants, deleteApply,
     toggleInterest, getInterested, getMyInterests,
     uploadFile,
+    getPracticeSections, addPracticeSection, updatePracticeSection, deletePracticeSection, reorderPracticeSection,
+    getPracticeFiles, addPracticeFile, updatePracticeFile, deletePracticeFile, reorderPracticeFile,
     initSheets,
   };
 })();
