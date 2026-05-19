@@ -1964,7 +1964,7 @@ function openEmployDataModal(idx) {
 
 function closeEmployDataModal() { document.getElementById('employDataModal').classList.remove('open'); }
 
-function saveEmployDataEntry() {
+async function saveEmployDataEntry() {
   const idx  = parseInt(document.getElementById('edm-idx').value);
   const year = parseInt(document.getElementById('edm-year').value);
   const dept = document.getElementById('edm-dept').value;
