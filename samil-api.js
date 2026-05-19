@@ -260,6 +260,10 @@ const SAMIL_API = (() => {
   // ════════════════════════════════════════════
   // 취업통계
   // ════════════════════════════════════════════
+  async function verifyAdminPw(pw) {
+    return call({ action: 'verifyAdminPw', pw });
+  }
+
   async function getStats() {
     return get({ action: 'getStats' });
   }
@@ -345,6 +349,7 @@ const SAMIL_API = (() => {
     getDepts, addDept, deleteDept, updateDept,
     getStudentCountByClass,
     getYears, addYear, deleteYear,
+    verifyAdminPw,
     getBanners, addBanner, deleteBanner, updateBanner,
     getStats, saveAnnualStat, deleteAnnualStat, saveEmploy,
     getEmployStats, saveEmployStats,

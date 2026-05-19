@@ -248,7 +248,8 @@ async function loginTeacher() {
 
 async function loginAdmin() {
   const pw = document.getElementById('l-apw').value;
-  const res = await SAMIL_API.verifyAdminPw({ action: 'verifyAdminPw', pw });
+  if (!pw) { showErr('비밀번호를 입력하세요'); return; }
+  const res = await SAMIL_API.verifyAdminPw(pw);
   if (!res.success) { showErr('비밀번호가 맞지 않습니다'); return; }
   ME = { role: 'admin', name: '관리자' };
   sessionStorage.setItem('statsMe', JSON.stringify(ME));
@@ -284,28 +285,40 @@ async function loadData() {
     DB_reviews = all.reviews || [];
     DB_years   = (all.years  || []).sort((a,b) => b - a);
   }
-  if (!DB_employ.length) {
+  // localStorage 폴백
+  if (!DB_employ.length || !DB_reviews.length) {
     const adm = JSON.parse(localStorage.getItem('samilAdmin') || '{}');
-    DB_employ  = adm.employ  || adm.employs || [];
-    DB_reviews = adm.reviews || DB_reviews;
+    if (!DB_employ.length)  DB_employ  = adm.employ  || adm.employs || [];
+    if (!DB_reviews.length) DB_reviews = adm.reviews || [];
   }
+
   buildYearSel();
+
+  // 연도별 employ 전체 로드 (히스토리 차트용)
+  const years = DB_years.length
+    ? DB_years
+    : [...new Set(DB_employ.map(e => Number(e.year)))].sort((a,b) => b-a);
+
+  // 현재 연도 제외 나머지 연도 추가 로드
+  const currentYear = new Date().getFullYear();
+  const otherYears = years.filter(y => Number(y) !== currentYear);
+  if (otherYears.length) {
+    const extras = await Promise.all(
+      otherYears.map(y => SAMIL_API.getEmployStats(y).catch(() => null))
+    );
+    extras.forEach(r => {
+      if (r && r.success && r.data && r.data.length) {
+        // 중복 제거 후 병합
+        r.data.forEach(e => {
+          const exists = DB_employ.find(x => Number(x.year) === Number(e.year) && x.dept === e.dept);
+          if (!exists) DB_employ.push(e);
+        });
+      }
+    });
+  }
+
   document.getElementById('loadingMsg').style.display = 'none';
   renderAll();
-
-  // 담임이면 학과 드롭다운 로드
-  if (!document.getElementById('l-dept').options.length || document.getElementById('l-dept').options.length === 1) {
-    const dr = await SAMIL_API.getDepts().catch(() => null);
-    if (dr && dr.success) {
-      const sel = document.getElementById('l-dept');
-      sel.innerHTML = '<option value="">선택</option>';
-      dr.data.forEach(d => {
-        const o = document.createElement('option');
-        o.value = o.textContent = d.name;
-        sel.appendChild(o);
-      });
-    }
-  }
 }
 
 function buildYearSel() {
@@ -481,6 +494,17 @@ function closeModal() { document.getElementById('arcModal').classList.remove('op
 // 초기화
 // ══════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', async () => {
+  // 학과 드롭다운 로드 (로그인 화면용)
+  const dr = await SAMIL_API.getDepts().catch(() => null);
+  if (dr && dr.success) {
+    const sel = document.getElementById('l-dept');
+    sel.innerHTML = '<option value="">선택</option>';
+    dr.data.forEach(d => {
+      const o = document.createElement('option');
+      o.value = o.textContent = d.name; sel.appendChild(o);
+    });
+  }
+
   // 세션 복원
   const saved = sessionStorage.getItem('statsMe');
   if (saved) {
@@ -494,29 +518,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       loadData();
     } catch(_) { sessionStorage.removeItem('statsMe'); }
   }
-
-  // 학과 드롭다운 로드 (로그인 화면용)
-  const dr = await SAMIL_API.getDepts().catch(() => null);
-  if (dr && dr.success) {
-    const sel = document.getElementById('l-dept');
-    sel.innerHTML = '<option value="">선택</option>';
-    dr.data.forEach(d => {
-      const o = document.createElement('option');
-      o.value = o.textContent = d.name; sel.appendChild(o);
-    });
-  }
 });
-
-// verifyAdminPw용 GET 방식 래퍼
-SAMIL_API.verifyAdminPw = function(params) {
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycby6UpyOV0rxKOUbQkerpniceHPAgZOkLfNKJC5JFyEJqxmJbe_4BcK-HOPCHOmahnnA_g/exec';
-  return fetch(GAS_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ action: 'verifyAdminPw', pw: params.pw }),
-    redirect: 'follow',
-  }).then(r => r.json()).catch(() => ({ success: false }));
-};
 </script>
 </body>
 </html>
