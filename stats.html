@@ -267,11 +267,8 @@ function logout() {
 }
 
 function afterLogin() {
-  document.getElementById('loginOverlay').style.display = 'none';
-  document.getElementById('pageHero').style.display = '';
-  document.getElementById('yearBar').style.display = '';
-  document.getElementById('mainContent').style.display = '';
-  document.getElementById('nav-user').textContent = ME.name + (ME.role === 'teacher' ? ` (${ME.dept} ${ME.grade}학년 ${ME.cls}반)` : '');
+  sessionStorage.setItem('statsMe', JSON.stringify(ME));
+  _showContent();
   loadData();
 }
 
@@ -494,6 +491,36 @@ function closeModal() { document.getElementById('arcModal').classList.remove('op
 // 초기화
 // ══════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', async () => {
+  // ── 기존 세션 자동 로그인 ──
+  const adminAuth   = sessionStorage.getItem('samilAdminAuth');
+  const teacherAuth = sessionStorage.getItem('samilTeacherAuth');
+  const teacherME   = sessionStorage.getItem('samilTeacherME');
+
+  if (adminAuth === '1') {
+    ME = { role: 'admin', name: '관리자' };
+    sessionStorage.setItem('statsMe', JSON.stringify(ME));
+    _showContent();
+    loadData();
+  } else if (teacherAuth && teacherME) {
+    try {
+      const t = JSON.parse(teacherME);
+      ME = { ...t, role: 'teacher' };
+      sessionStorage.setItem('statsMe', JSON.stringify(ME));
+      _showContent();
+      loadData();
+    } catch(_) {}
+  } else {
+    // stats 자체 세션 복원
+    const saved = sessionStorage.getItem('statsMe');
+    if (saved) {
+      try {
+        ME = JSON.parse(saved);
+        _showContent();
+        loadData();
+      } catch(_) { sessionStorage.removeItem('statsMe'); }
+    }
+  }
+
   // 학과 드롭다운 로드 (로그인 화면용)
   const dr = await SAMIL_API.getDepts().catch(() => null);
   if (dr && dr.success) {
@@ -504,21 +531,18 @@ window.addEventListener('DOMContentLoaded', async () => {
       o.value = o.textContent = d.name; sel.appendChild(o);
     });
   }
-
-  // 세션 복원
-  const saved = sessionStorage.getItem('statsMe');
-  if (saved) {
-    try {
-      ME = JSON.parse(saved);
-      document.getElementById('loginOverlay').style.display = 'none';
-      document.getElementById('pageHero').style.display = '';
-      document.getElementById('yearBar').style.display = '';
-      document.getElementById('mainContent').style.display = '';
-      document.getElementById('nav-user').textContent = ME.name + (ME.role === 'teacher' ? ` (${ME.dept} ${ME.grade}학년 ${ME.cls}반)` : '');
-      loadData();
-    } catch(_) { sessionStorage.removeItem('statsMe'); }
-  }
 });
+
+function _showContent() {
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('pageHero').style.display = '';
+  document.getElementById('yearBar').style.display = '';
+  document.getElementById('mainContent').style.display = '';
+  const label = ME.role === 'teacher'
+    ? `${ME.name} (${ME.dept} ${ME.grade}학년 ${ME.cls}반)`
+    : ME.name;
+  document.getElementById('nav-user').textContent = label;
+}
 </script>
 </body>
 </html>
