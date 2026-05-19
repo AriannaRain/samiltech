@@ -2023,7 +2023,7 @@ async function loadStudentToReview() {
   const res = await SAMIL_API.getStudents({ adminMode: true });
   if (!res.success) { alert('학생정보 조회 실패'); return; }
   const s = res.data.find(s => String(s.id) === String(sid));
-  if (!s) { alert('해당 학번 학생을 찾을 수 없습니다'); return; }
+  if (!s) { alert('등록된 학생자료가 없습니다.'); return; }
   document.getElementById('er-sname').value   = s.name   || '';
   document.getElementById('er-middle').value  = s.middle || '';
   document.getElementById('er-certs').value   = Array.isArray(s.certs)   ? s.certs.map(c=>c.name||c).join(', ')  : (s.certs||'');
