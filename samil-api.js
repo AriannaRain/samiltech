@@ -264,6 +264,19 @@ const SAMIL_API = (() => {
     return get({ action: 'getStats' });
   }
 
+  async function getEmployStats(year) {
+    const k = 'employ_'+(year||new Date().getFullYear());
+    const c = _cGet(k); if (c) return c;
+    const r = await get({ action: 'getEmployStats', year: year || new Date().getFullYear() });
+    if (r.success) _cSet(k, r, _TTL.depts);
+    return r;
+  }
+
+  async function saveEmployStats(year, data) {
+    _cDel('employ_'+year, _yearKey());
+    return call({ action: 'saveEmployStats', token: ADMIN_TOKEN, year, data: JSON.stringify(data) });
+  }
+
   async function saveAnnualStat(data) {
     return call({ action: 'saveAnnualStat', token: ADMIN_TOKEN, ...data });
   }
@@ -334,6 +347,7 @@ const SAMIL_API = (() => {
     getYears, addYear, deleteYear,
     getBanners, addBanner, deleteBanner, updateBanner,
     getStats, saveAnnualStat, deleteAnnualStat, saveEmploy,
+    getEmployStats, saveEmployStats,
     getArchive, getReviews, addReview, deleteReview,
     applyJob, applyJobs, getApplicants, deleteApply,
     toggleInterest, getInterested, getMyInterests,

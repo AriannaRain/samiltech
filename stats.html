@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>취업현황 — 삼일공업고등학교</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#1A3A6B;--primary-light:#2E5FAD;--accent:#E8740A;
+  --bg:#F4F6FA;--card:#fff;--text:#1C2B3A;--text-sub:#5A6A7E;--border:#DDE3EE;
+  --nav-h:60px;--radius:12px;--shadow:0 2px 12px rgba(26,58,107,.10);
+  --green:#16A34A;--red:#DC2626
+}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);padding-top:var(--nav-h)}
+nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:var(--primary);z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:0 24px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.nav-brand{display:flex;align-items:center;gap:10px}
+.nav-logo{width:36px;height:36px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:13px}
+.nav-title{color:#fff;font-weight:700;font-size:16px}
+.nav-title span{color:rgba(255,255,255,.65);font-size:10px;display:block;font-weight:400}
+.nav-right{display:flex;align-items:center;gap:10px}
+.nav-menu a{color:rgba(255,255,255,.8);text-decoration:none;padding:7px 14px;border-radius:8px;font-size:14px;font-weight:500}
+.nav-menu a:hover{background:rgba(255,255,255,.15);color:#fff}
+.btn-logout{background:rgba(255,255,255,.15);border:none;color:#fff;padding:7px 14px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit}
+.btn-logout:hover{background:rgba(255,255,255,.25)}
+/* 로그인 오버레이 */
+.overlay{position:fixed;inset:0;background:var(--primary);z-index:2000;display:flex;align-items:center;justify-content:center}
+.login-card{background:#fff;border-radius:16px;padding:36px;width:360px;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.login-card h2{font-size:20px;font-weight:700;color:var(--primary);margin-bottom:6px}
+.login-card p{font-size:13px;color:var(--text-sub);margin-bottom:24px}
+.login-tab{display:flex;gap:4px;margin-bottom:20px;background:var(--bg);padding:4px;border-radius:10px}
+.login-tab button{flex:1;padding:8px;border:none;background:none;border-radius:8px;font-size:13px;cursor:pointer;color:var(--text-sub);font-family:inherit}
+.login-tab button.active{background:#fff;color:var(--primary);font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:12px;font-weight:600;color:var(--text-sub);margin-bottom:6px}
+.form-group input,.form-group select{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none}
+.form-group input:focus,.form-group select:focus{border-color:var(--primary-light)}
+.btn-login{width:100%;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px}
+.btn-login:hover{background:var(--primary-light)}
+.login-err{color:var(--red);font-size:13px;margin-top:10px;display:none}
+/* 메인 */
+.page-hero{background:var(--primary);padding:32px 24px 28px;color:#fff;text-align:center}
+.page-hero h1{font-size:24px;font-weight:700;margin-bottom:4px}
+.page-hero p{font-size:13px;opacity:.7}
+.year-bar{background:var(--card);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:var(--nav-h);z-index:100}
+.year-bar label{font-size:13px;font-weight:600;color:var(--text-sub)}
+.year-bar select{padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;cursor:pointer}
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;max-width:700px;margin:0 auto 4px}
+@media(max-width:600px){.summary-grid{grid-template-columns:repeat(2,1fr)}}
+.sum-card{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:14px;text-align:center}
+.sum-num{font-size:26px;font-weight:700;line-height:1}
+.sum-label{font-size:11px;opacity:.7;margin-top:4px}
+/* 컨텐츠 */
+.container{max-width:1000px;margin:0 auto;padding:24px 16px}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-header h2{font-size:16px;font-weight:700;color:var(--text)}
+.card-header .sub{font-size:12px;color:var(--text-sub)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--bg);padding:10px 14px;text-align:center;font-weight:600;font-size:12px;color:var(--text-sub);border-bottom:2px solid var(--border)}
+td{padding:10px 14px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f9fafb}
+.rate-cell{font-weight:700;color:var(--primary-light)}
+.total-row td{background:var(--bg);font-weight:700;color:var(--text)}
+.bar-wrap{display:flex;align-items:center;gap:8px}
+.bar-bg{flex:1;height:8px;background:#EEF0F6;border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;background:var(--primary-light);transition:.4s}
+.bar-fill.adv{background:var(--accent)}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.badge-emp{background:#DBEAFE;color:#1D4ED8}
+.badge-adv{background:#FEF3C7;color:#92400E}
+.badge-pub{background:#F0FDF4;color:#166534}
+/* 아카이브 */
+.archive-filters{display:flex;gap:6px;flex-wrap:wrap;padding:14px 20px;border-bottom:1px solid var(--border)}
+.af-btn{padding:5px 14px;border-radius:20px;border:1.5px solid var(--border);background:#fff;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-sub);font-family:inherit;transition:.15s}
+.af-btn.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.archive-list{padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.arc-card{border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:.15s}
+.arc-card:hover{border-color:var(--primary-light);box-shadow:0 2px 8px rgba(26,58,107,.1)}
+.arc-co{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px}
+.arc-meta{font-size:12px;color:var(--text-sub);display:flex;gap:8px;flex-wrap:wrap}
+.arc-tag{background:var(--bg);padding:2px 8px;border-radius:10px;font-size:11px}
+.empty{text-align:center;color:var(--text-sub);font-size:13px;padding:40px}
+/* 모달 */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:16px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto}
+.modal-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff}
+.modal-header h3{font-size:17px;font-weight:700}
+.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-sub)}
+.modal-body{padding:18px 20px 24px}
+.info-row{display:flex;gap:8px;margin-bottom:8px;font-size:13px}
+.info-row strong{min-width:70px;color:var(--text-sub)}
+.essay-list a{display:block;color:var(--primary-light);font-size:13px;margin-bottom:4px;text-decoration:none}
+.essay-list a:hover{text-decoration:underline}
+.loading{text-align:center;padding:60px;color:var(--text-sub);font-size:14px}
+</style>
+</head>
+<body>
+
+<!-- 로그인 오버레이 -->
+<div class="overlay" id="loginOverlay">
+  <div class="login-card">
+    <h2>📊 취업현황</h2>
+    <p>담임교사 또는 관리자 계정으로 로그인하세요</p>
+    <div class="login-tab">
+      <button class="active" onclick="switchTab('tc',this)">담임교사</button>
+      <button onclick="switchTab('ad',this)">관리자</button>
+    </div>
+    <!-- 담임 로그인 -->
+    <div id="lt-tc">
+      <div class="form-group"><label>학과</label><select id="l-dept"><option value="">선택</option></select></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label>학년</label>
+          <select id="l-grade"><option value="">선택</option><option>1</option><option>2</option><option>3</option></select>
+        </div>
+        <div class="form-group"><label>반</label>
+          <select id="l-cls"><option value="">선택</option><option>1</option><option>2</option><option>3</option><option>4</option></select>
+        </div>
+      </div>
+      <div class="form-group"><label>이름</label><input id="l-name" placeholder="홍길동"></div>
+      <div class="form-group"><label>비밀번호</label><input id="l-pw" type="password"></div>
+      <button class="btn-login" onclick="loginTeacher()">로그인</button>
+    </div>
+    <!-- 관리자 로그인 -->
+    <div id="lt-ad" style="display:none">
+      <div class="form-group"><label>관리자 비밀번호</label><input id="l-apw" type="password" onkeydown="if(event.key==='Enter')loginAdmin()"></div>
+      <button class="btn-login" onclick="loginAdmin()">로그인</button>
+    </div>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">삼일</div>
+    <div class="nav-title">삼일공업고등학교<span>취업현황 통계</span></div>
+  </div>
+  <div class="nav-right">
+    <div class="nav-menu"><a href="index.html">홈</a></div>
+    <span id="nav-user" style="color:rgba(255,255,255,.8);font-size:13px"></span>
+    <button class="btn-logout" onclick="logout()">로그아웃</button>
+  </div>
+</nav>
+
+<!-- 페이지 히어로 + 연도 요약 -->
+<div class="page-hero" id="pageHero" style="display:none">
+  <h1>학과별 취업현황</h1>
+  <p id="hero-year-label">— 년도 현황</p>
+  <br>
+  <div class="summary-grid">
+    <div class="sum-card"><div class="sum-num" id="s-grad">—</div><div class="sum-label">졸업인원</div></div>
+    <div class="sum-card"><div class="sum-num" id="s-emp">—</div><div class="sum-label">취업자</div></div>
+    <div class="sum-card"><div class="sum-num" id="s-adv">—</div><div class="sum-label">진학자</div></div>
+    <div class="sum-card"><div class="sum-num" id="s-rate">—</div><div class="sum-label">취업률</div></div>
+  </div>
+</div>
+
+<!-- 연도 선택바 -->
+<div class="year-bar" id="yearBar" style="display:none">
+  <label>조회 연도</label>
+  <select id="yearSel" onchange="renderAll()"></select>
+</div>
+
+<!-- 메인 컨텐츠 -->
+<div class="container" id="mainContent" style="display:none">
+  <div id="loadingMsg" class="loading">데이터를 불러오는 중...</div>
+
+  <!-- 학과별 취업현황 테이블 -->
+  <div class="card" id="deptCard" style="display:none">
+    <div class="card-header">
+      <h2>학과별 취업현황</h2>
+      <span class="sub" id="deptCardSub"></span>
+    </div>
+    <table>
+      <thead><tr>
+        <th style="text-align:left">학과</th>
+        <th>졸업</th><th>취업</th><th>진학</th>
+        <th>취업률</th><th>진학률</th>
+        <th style="min-width:140px">취업률 그래프</th>
+      </tr></thead>
+      <tbody id="deptTb"></tbody>
+    </table>
+  </div>
+
+  <!-- 연도별 비교 -->
+  <div class="card" id="histCard" style="display:none">
+    <div class="card-header"><h2>연도별 취업률 추이</h2></div>
+    <div style="padding:16px 20px 20px" id="histChart"></div>
+  </div>
+
+  <!-- 선배취업아카이브 -->
+  <div class="card" id="arcCard" style="display:none">
+    <div class="card-header">
+      <h2>합격자소서 · 선배 아카이브</h2>
+      <span class="sub" id="arcSub"></span>
+    </div>
+    <div class="archive-filters" id="arcFilters"></div>
+    <div class="archive-list" id="arcList"></div>
+  </div>
+</div>
+
+<!-- 아카이브 상세 모달 -->
+<div class="modal-overlay" id="arcModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="m-co"></h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="m-body"></div>
+  </div>
+</div>
+
+<script src="samil-api.js"></script>
+<script>
+let ME = null;
+let DB_employ = [];   // [{year,dept,grad,emp,adv}]
+let DB_reviews = [];  // 선배아카이브
+let DB_years   = [];
+let currentArcFilter = '전체';
+
+// ══════════════════════════════════════════════
+// 로그인
+// ══════════════════════════════════════════════
+function switchTab(id, btn) {
+  document.querySelectorAll('.login-tab button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('lt-tc').style.display = id === 'tc' ? '' : 'none';
+  document.getElementById('lt-ad').style.display = id === 'ad' ? '' : 'none';
+  document.getElementById('loginErr').style.display = 'none';
+}
+
+async function loginTeacher() {
+  const dept  = document.getElementById('l-dept').value;
+  const grade = document.getElementById('l-grade').value;
+  const cls   = document.getElementById('l-cls').value;
+  const name  = document.getElementById('l-name').value.trim();
+  const pw    = document.getElementById('l-pw').value;
+  if (!dept || !grade || !cls || !name || !pw) { showErr('모든 항목을 입력하세요'); return; }
+  const res = await SAMIL_API.loginTeacher(dept, grade, cls, name, pw);
+  if (!res.success) { showErr(res.error || '로그인 실패'); return; }
+  ME = { ...res.teacher, role: 'teacher' };
+  sessionStorage.setItem('statsMe', JSON.stringify(ME));
+  afterLogin();
+}
+
+async function loginAdmin() {
+  const pw = document.getElementById('l-apw').value;
+  const res = await SAMIL_API.verifyAdminPw({ action: 'verifyAdminPw', pw });
+  if (!res.success) { showErr('비밀번호가 맞지 않습니다'); return; }
+  ME = { role: 'admin', name: '관리자' };
+  sessionStorage.setItem('statsMe', JSON.stringify(ME));
+  afterLogin();
+}
+
+function showErr(msg) {
+  const el = document.getElementById('loginErr');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+function logout() {
+  sessionStorage.removeItem('statsMe');
+  location.reload();
+}
+
+function afterLogin() {
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('pageHero').style.display = '';
+  document.getElementById('yearBar').style.display = '';
+  document.getElementById('mainContent').style.display = '';
+  document.getElementById('nav-user').textContent = ME.name + (ME.role === 'teacher' ? ` (${ME.dept} ${ME.grade}학년 ${ME.cls}반)` : '');
+  loadData();
+}
+
+// ══════════════════════════════════════════════
+// 데이터 로드
+// ══════════════════════════════════════════════
+async function loadData() {
+  const all = await SAMIL_API.getAll().catch(() => null);
+  if (all && all.success) {
+    DB_employ  = all.employ  || [];
+    DB_reviews = all.reviews || [];
+    DB_years   = (all.years  || []).sort((a,b) => b - a);
+  }
+  if (!DB_employ.length) {
+    const adm = JSON.parse(localStorage.getItem('samilAdmin') || '{}');
+    DB_employ  = adm.employ  || adm.employs || [];
+    DB_reviews = adm.reviews || DB_reviews;
+  }
+  buildYearSel();
+  document.getElementById('loadingMsg').style.display = 'none';
+  renderAll();
+
+  // 담임이면 학과 드롭다운 로드
+  if (!document.getElementById('l-dept').options.length || document.getElementById('l-dept').options.length === 1) {
+    const dr = await SAMIL_API.getDepts().catch(() => null);
+    if (dr && dr.success) {
+      const sel = document.getElementById('l-dept');
+      sel.innerHTML = '<option value="">선택</option>';
+      dr.data.forEach(d => {
+        const o = document.createElement('option');
+        o.value = o.textContent = d.name;
+        sel.appendChild(o);
+      });
+    }
+  }
+}
+
+function buildYearSel() {
+  const allY = [...new Set([
+    ...DB_years,
+    ...DB_employ.map(e => Number(e.year)),
+  ])].filter(Boolean).sort((a,b) => b-a);
+  if (!allY.length) { const y = new Date().getFullYear()-1; allY.push(y); }
+  const sel = document.getElementById('yearSel');
+  sel.innerHTML = allY.map(y => `<option value="${y}">${y}년</option>`).join('');
+}
+
+// ══════════════════════════════════════════════
+// 렌더
+// ══════════════════════════════════════════════
+function renderAll() {
+  const year = parseInt(document.getElementById('yearSel').value) || new Date().getFullYear()-1;
+  const list = DB_employ.filter(e => Number(e.year) === year);
+
+  document.getElementById('hero-year-label').textContent = year + '년도 현황';
+
+  // 요약 카드
+  const tg = list.reduce((s,e) => s+(e.grad||0), 0);
+  const te = list.reduce((s,e) => s+(e.emp||0),  0);
+  const ta = list.reduce((s,e) => s+(e.adv||0),  0);
+  document.getElementById('s-grad').textContent = tg || '—';
+  document.getElementById('s-emp').textContent  = te || '—';
+  document.getElementById('s-adv').textContent  = ta || '—';
+  document.getElementById('s-rate').textContent = tg ? Math.round(te/tg*100)+'%' : '—';
+
+  renderDeptTable(list, year, tg, te, ta);
+  renderHistChart();
+  renderArchive(year);
+}
+
+function renderDeptTable(list, year, tg, te, ta) {
+  const card = document.getElementById('deptCard');
+  card.style.display = list.length ? '' : 'none';
+  if (!list.length) return;
+
+  document.getElementById('deptCardSub').textContent = year + '년 학과별 현황';
+  document.getElementById('deptTb').innerHTML = list.map(e => {
+    const rate    = e.grad ? Math.round(e.emp/e.grad*100) : 0;
+    const advRate = e.grad ? Math.round(e.adv/e.grad*100) : 0;
+    return `<tr>
+      <td style="text-align:left;font-weight:600">${e.dept}</td>
+      <td>${e.grad||0}</td>
+      <td>${e.emp||0}</td>
+      <td>${e.adv||0}</td>
+      <td class="rate-cell">${rate}%</td>
+      <td style="color:var(--accent)">${advRate}%</td>
+      <td>
+        <div class="bar-wrap">
+          <div class="bar-bg"><div class="bar-fill" style="width:${rate}%"></div></div>
+          <span style="font-size:11px;color:var(--text-sub);min-width:30px">${rate}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('') + (tg ? `<tr class="total-row">
+    <td style="text-align:left">전체</td>
+    <td>${tg}</td><td>${te}</td><td>${ta}</td>
+    <td class="rate-cell">${Math.round(te/tg*100)}%</td>
+    <td style="color:var(--accent)">${Math.round(ta/tg*100)}%</td>
+    <td></td>
+  </tr>` : '');
+}
+
+function renderHistChart() {
+  const card = document.getElementById('histCard');
+  // 연도별 전체 취업률 집계
+  const byYear = {};
+  DB_employ.forEach(e => {
+    if (!byYear[e.year]) byYear[e.year] = {grad:0,emp:0};
+    byYear[e.year].grad += e.grad||0;
+    byYear[e.year].emp  += e.emp||0;
+  });
+  const years = Object.keys(byYear).sort((a,b) => a-b);
+  if (years.length < 2) { card.style.display = 'none'; return; }
+  card.style.display = '';
+
+  const maxRate = 100;
+  document.getElementById('histChart').innerHTML = `
+    <div style="display:flex;align-items:flex-end;gap:12px;height:140px;padding-bottom:20px;border-bottom:1px solid var(--border)">
+      ${years.map(y => {
+        const d = byYear[y];
+        const rate = d.grad ? Math.round(d.emp/d.grad*100) : 0;
+        const h = Math.max(rate * 1.2, 10);
+        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+          <span style="font-size:12px;font-weight:700;color:var(--primary-light)">${rate}%</span>
+          <div style="width:100%;background:var(--primary-light);border-radius:4px 4px 0 0;height:${h}px;transition:.4s"></div>
+          <span style="font-size:11px;color:var(--text-sub)">${y}</span>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function renderArchive(year) {
+  const card = document.getElementById('arcCard');
+  let list = DB_reviews;
+  if (!list.length) { card.style.display = 'none'; return; }
+  card.style.display = '';
+
+  // 학과 필터 버튼
+  const depts = ['전체', ...new Set(list.map(r => r.dept).filter(Boolean))];
+  document.getElementById('arcFilters').innerHTML = depts.map(d =>
+    `<button class="af-btn ${d === currentArcFilter ? 'active' : ''}" onclick="setArcFilter('${d}',this)">${d}</button>`
+  ).join('');
+
+  if (currentArcFilter !== '전체') list = list.filter(r => r.dept === currentArcFilter);
+  // 담임은 자기 학과만
+  if (ME.role === 'teacher') list = list.filter(r => r.dept === ME.dept);
+
+  document.getElementById('arcSub').textContent = list.length + '건';
+  document.getElementById('arcList').innerHTML = list.length
+    ? list.map((r,i) => `
+      <div class="arc-card" onclick="openArc(${i})">
+        <div class="arc-co">${r.co}</div>
+        <div class="arc-meta">
+          <span class="arc-tag">${r.dept}</span>
+          <span class="arc-tag">${r.year||''}년</span>
+          ${r.type ? `<span class="arc-tag">${r.type}</span>` : ''}
+          ${r.sname ? `<span class="arc-tag">👤 ${r.sname}</span>` : ''}
+        </div>
+        ${r.review ? `<div style="font-size:12px;color:var(--text-sub);margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.review}</div>` : ''}
+      </div>`)
+    .join('')
+    : '<div class="empty">등록된 아카이브가 없습니다</div>';
+}
+
+function setArcFilter(dept, btn) {
+  currentArcFilter = dept;
+  document.querySelectorAll('.af-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const year = parseInt(document.getElementById('yearSel').value);
+  renderArchive(year);
+}
+
+let _arcFiltered = [];
+function openArc(i) {
+  const el = document.getElementById('arcList');
+  const cards = el.querySelectorAll('.arc-card');
+  // 현재 렌더된 인덱스 기반
+  let list = DB_reviews;
+  if (currentArcFilter !== '전체') list = list.filter(r => r.dept === currentArcFilter);
+  if (ME.role === 'teacher') list = list.filter(r => r.dept === ME.dept);
+  const r = list[i];
+  if (!r) return;
+
+  document.getElementById('m-co').textContent = r.co;
+  document.getElementById('m-body').innerHTML = `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      ${r.dept  ? `<span style="background:#DBEAFE;color:#1D4ED8;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600">${r.dept}</span>` : ''}
+      ${r.year  ? `<span style="background:var(--bg);padding:3px 10px;border-radius:12px;font-size:12px">${r.year}년</span>` : ''}
+      ${r.type  ? `<span style="background:var(--bg);padding:3px 10px;border-radius:12px;font-size:12px">${r.type}</span>` : ''}
+    </div>
+    ${r.sname  ? `<div class="info-row"><strong>이름</strong>${r.sname}</div>` : ''}
+    ${r.certs  ? `<div class="info-row"><strong>자격증</strong>${r.certs}</div>` : ''}
+    ${r.attend ? `<div class="info-row"><strong>출결</strong>${r.attend}</div>` : ''}
+    ${r.clubs  ? `<div class="info-row"><strong>동아리</strong>${r.clubs}</div>` : ''}
+    ${r.summary? `<div class="info-row"><strong>성적요약</strong>${r.summary}</div>` : ''}
+    ${r.review ? `<div style="margin-top:14px;padding:12px;background:var(--bg);border-radius:8px;font-size:13px;line-height:1.7"><strong>합격 후기</strong><br><br>${r.review.replace(/\n/g,'<br>')}</div>` : ''}
+    ${r.essays && r.essays.length ? `
+      <div style="margin-top:14px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">📄 합격자소서</div>
+        <div class="essay-list">${r.essays.map(f => `<a href="${f.url}" target="_blank" rel="noopener noreferrer">📎 ${f.name}</a>`).join('')}</div>
+      </div>` : ''}`;
+  document.getElementById('arcModal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('arcModal').classList.remove('open'); }
+
+// ══════════════════════════════════════════════
+// 초기화
+// ══════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', async () => {
+  // 세션 복원
+  const saved = sessionStorage.getItem('statsMe');
+  if (saved) {
+    try {
+      ME = JSON.parse(saved);
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('pageHero').style.display = '';
+      document.getElementById('yearBar').style.display = '';
+      document.getElementById('mainContent').style.display = '';
+      document.getElementById('nav-user').textContent = ME.name + (ME.role === 'teacher' ? ` (${ME.dept} ${ME.grade}학년 ${ME.cls}반)` : '');
+      loadData();
+    } catch(_) { sessionStorage.removeItem('statsMe'); }
+  }
+
+  // 학과 드롭다운 로드 (로그인 화면용)
+  const dr = await SAMIL_API.getDepts().catch(() => null);
+  if (dr && dr.success) {
+    const sel = document.getElementById('l-dept');
+    sel.innerHTML = '<option value="">선택</option>';
+    dr.data.forEach(d => {
+      const o = document.createElement('option');
+      o.value = o.textContent = d.name; sel.appendChild(o);
+    });
+  }
+});
+
+// verifyAdminPw용 GET 방식 래퍼
+SAMIL_API.verifyAdminPw = function(params) {
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycby6UpyOV0rxKOUbQkerpniceHPAgZOkLfNKJC5JFyEJqxmJbe_4BcK-HOPCHOmahnnA_g/exec';
+  return fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'verifyAdminPw', pw: params.pw }),
+    redirect: 'follow',
+  }).then(r => r.json()).catch(() => ({ success: false }));
+};
+</script>
+</body>
+</html>

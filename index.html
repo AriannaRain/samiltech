@@ -272,7 +272,7 @@ function loadData(){
   return {
     jobs:   (DB.jobs||[]).length   ? DB.jobs.filter(j=>j.active)   : SAMPLE.jobs,
     banners:(DB.banners||[]).length ? DB.banners                    : SAMPLE.banners,
-    depts:  (DB.employs||[]).length ? buildDeptStats(DB)            : SAMPLE.depts,
+    depts:  (DB.employ||DB.employs||[]).length ? buildDeptStats(DB) : SAMPLE.depts,
     stats:  buildStats(DB)
   };
 }
@@ -288,7 +288,7 @@ function buildStats(DB){
   }).length;
   const done=jobs.filter(j=>!j.active).length;
   // 취업현황 통계
-  const employs=DB.employs||[];
+  const employs=DB.employ||DB.employs||[];
   const latestYear=employs.length?Math.max(...employs.map(e=>e.year)):null;
   const yearData=latestYear?employs.filter(e=>e.year==latestYear):[];
   const totalGrad=yearData.reduce((a,e)=>a+(e.grad||0),0)||312;
@@ -303,10 +303,10 @@ function buildStats(DB){
 }
 
 function buildDeptStats(DB){
-  const employs=DB.employs||[];
-  if(!employs.length) return SAMPLE.depts;
-  const latestYear=Math.max(...employs.map(e=>e.year));
-  return employs.filter(e=>e.year==latestYear).map(e=>({
+  const employ = DB.employ || DB.employs || [];
+  if(!employ.length) return SAMPLE.depts;
+  const latestYear=Math.max(...employ.map(e=>e.year));
+  return employ.filter(e=>e.year==latestYear).map(e=>({
     dept:e.dept, g:e.grad||0, e:e.emp||0, a:e.adv||0
   }));
 }
@@ -360,21 +360,14 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     }catch(_){}
   }
 
-  // ── Sheets에서 데이터 로드 ──
-  const [jobsSet, bannersSet, statsSet, deptsSet, jobStatsSet, classesSet] = await Promise.allSettled([
-    SAMIL_API.getJobs(false),
-    SAMIL_API.getBanners(),
-    SAMIL_API.getStats(),
-    SAMIL_API.getDepts(),
-    SAMIL_API.getJobStats(),
-    SAMIL_API.getClasses({ year: new Date().getFullYear() }),
-  ]);
-  const jobsRes    = jobsSet.status    === 'fulfilled' ? jobsSet.value    : {};
-  const bannersRes = bannersSet.status === 'fulfilled' ? bannersSet.value : {};
-  const statsRes   = statsSet.status   === 'fulfilled' ? statsSet.value   : {};
-  const deptsRes   = deptsSet.status   === 'fulfilled' ? deptsSet.value   : {};
-  const jobStatsRes= jobStatsSet.status=== 'fulfilled' ? jobStatsSet.value: {};
-  const classesRes = classesSet.status === 'fulfilled' ? classesSet.value : {};
+  // ── Sheets에서 데이터 로드 (getAll 1회 호출로 cold start 최소화) ──
+  const all = await SAMIL_API.getAll(new Date().getFullYear()).catch(() => null);
+  const jobsRes     = all && all.success ? { success: true, data: all.jobs    || [] } : {};
+  const bannersRes  = all && all.success ? { success: true, data: all.banners || [] } : {};
+  const statsRes    = all && all.success ? { success: true, latest: all.latest, data: all.stats } : {};
+  const deptsRes    = all && all.success ? { success: true, data: all.depts   || [] } : {};
+  const jobStatsRes = all && all.success ? { success: true, ...all.jobStats } : {};
+  const classesRes  = all && all.success ? { success: true, data: all.classes || [] } : {};
   DATA.classes = (classesRes.success && classesRes.data) ? classesRes.data : [];
   if(jobStatsRes.success){
     const {interest={}, apply={}} = jobStatsRes;
@@ -384,6 +377,18 @@ window.addEventListener('DOMContentLoaded', async ()=>{
 
   DATA.jobs    = jobsRes.success    ? jobsRes.data    : SAMPLE.jobs;
   DATA.banners = bannersRes.success ? bannersRes.data : SAMPLE.banners;
+
+  // 학과별 취업현황 (getAll employ 데이터 우선)
+  if (all && all.success && all.employ && all.employ.length) {
+    const DB_adm = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
+    DB_adm.employ = all.employ;
+    try { localStorage.setItem('samilAdmin', JSON.stringify(DB_adm)); } catch(_) {}
+    DATA.depts = buildDeptStats(DB_adm);
+  } else {
+    const DB_adm = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
+    DATA.depts = buildDeptStats(DB_adm);
+  }
+  renderDeptTable();
 
   // 통계
   const st = statsRes.success && statsRes.latest ? statsRes.latest : {};
@@ -415,6 +420,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     const o=document.createElement('option'); o.value=name; o.textContent=name; selS.appendChild(o);
   });
   DATA.depts = depts.map(d=>({dept:d.name||d.dept,g:0,e:0,a:0}));
+  renderDeptTable();
 
   // ── 캐시 저장 및 재렌더 ──
   try{ localStorage.setItem('samilJobsCache', JSON.stringify({jobs:DATA.jobs,banners:DATA.banners,stats:DATA.stats})); }catch(_){}
@@ -431,8 +437,14 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   renderJobs();
 
   // 취업현황 테이블
+  renderDeptTable();
+});
+
+function renderDeptTable(){
   let tg=0,te=0,ta=0;
-  document.getElementById('deptTb').innerHTML = DATA.depts.map(d=>{
+  const el = document.getElementById('deptTb');
+  if (!el) return;
+  el.innerHTML = DATA.depts.map(d=>{
     tg+=d.g;te+=d.e;ta+=d.a;
     const rate=d.g?Math.round(d.e/d.g*100):0;
     const adv=d.g?Math.round(d.a/d.g*100):0;
@@ -440,7 +452,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
       <td class="dept-rate">${rate}%</td><td>${adv}%</td></tr>`;
   }).join('')+(tg?`<tr class="dept-total"><td style="text-align:left">전체</td><td>${tg}</td><td>${te}</td><td>${ta}</td>
     <td class="dept-rate">${Math.round(te/tg*100)}%</td><td>${Math.round(ta/tg*100)}%</td></tr>`:'');
-});
+}
 
 function renderBanners(){
   document.getElementById('banners').innerHTML = (DATA.banners||[]).map(b=>
