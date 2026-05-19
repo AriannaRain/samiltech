@@ -786,7 +786,17 @@ async function init() {
       DB.jobs         = all.jobs     || [];
       DB.statsHistory = all.stats    || [];
       DB.reviews      = all.reviews  || [];
-      DB.employ       = all.employ   || [];
+      // employ: GAS에 데이터 있으면 사용, 없으면 기존 localStorage 유지
+      if (all.employ && all.employ.length) {
+        DB.employ = all.employ;
+      } else if (DB.employ && DB.employ.length) {
+        // localStorage에만 있는 경우 GAS에 자동 동기화
+        const years = [...new Set(DB.employ.map(e => Number(e.year)))];
+        years.forEach(y => {
+          const yd = DB.employ.filter(e => Number(e.year) === y);
+          SAMIL_API.saveEmployStats(y, yd).catch(() => {});
+        });
+      }
       getYearData(currentYear).teachers = all.teachers || [];
       getYearData(currentYear).classes  = all.classes  || [];
       save(); renderAll();
@@ -933,7 +943,7 @@ async function loadFromSheets() {
       DB.jobs         = all.jobs     || [];
       if (all.stats)   DB.statsHistory = all.stats;
       if (all.reviews) DB.reviews      = all.reviews;
-      if (all.employ)  DB.employ       = all.employ;
+      if (all.employ && all.employ.length) DB.employ = all.employ;
     } else {
       const [deptsRes, bannersRes, jobsRes, statsRes, employRes] = await Promise.all([
         SAMIL_API.getDepts(currentYear),
@@ -946,7 +956,7 @@ async function loadFromSheets() {
       if (bannersRes.success) DB.banners      = bannersRes.data || [];
       if (jobsRes.success)    DB.jobs         = jobsRes.data    || [];
       if (statsRes.success)   DB.statsHistory = statsRes.data   || [];
-      if (employRes.success)  DB.employ       = employRes.data  || [];
+      if (employRes.success && employRes.data && employRes.data.length) DB.employ = employRes.data;
     }
     // 담임/반구조
     const [teachersRes, classesRes] = await Promise.all([
