@@ -931,6 +931,7 @@ async function loadFromSheets() {
       DB.banners      = all.banners  || [];
       DB.jobs         = all.jobs     || [];
       if (all.stats)  DB.statsHistory = all.stats;
+      if (all.reviews) DB.reviews    = all.reviews;
     } else {
       // getAll 실패 시 개별 호출
       const [deptsRes, bannersRes, jobsRes, statsRes] = await Promise.all([
@@ -957,12 +958,6 @@ async function loadFromSheets() {
     showSyncResult('⚠️ 동기화 오류: ' + e.message, true);
     console.warn('loadFromSheets 오류:', e);
   }
-  try {
-    if (typeof SAMIL_API.getReviews === 'function') {
-      const reviewsRes = await SAMIL_API.getReviews();
-      if (reviewsRes.success) { DB.reviews = reviewsRes.data; save(); renderReviews(); }
-    }
-  } catch(e) { console.warn('후기 로드 오류:', e); }
 }
 
 // ══════════════════════════════════════════════
@@ -1367,9 +1362,12 @@ async function addJob() {
 
   // Sheets 저장 후 진짜 ID로 교체
   try {
-    await SAMIL_API.addJob({ type, co, job, loc, cnt, dl, rec, recCnt, tags, files });
-    const fresh = await SAMIL_API.getJobs();
-    if (fresh.success) { DB.jobs = fresh.data; save(); renderJobs(); updateDash(); }
+    const res = await SAMIL_API.addJob({ type, co, job, loc, cnt, dl, rec, recCnt, tags, files });
+    if (res.success && res.id) {
+      const idx = DB.jobs.findIndex(j => j.id === tmpId);
+      if (idx !== -1) DB.jobs[idx].id = res.id;
+      save(); renderJobs();
+    }
   } catch(e) { console.warn('addJob 오류:', e); }
 }
 
@@ -1461,12 +1459,6 @@ async function saveJobEdit() {
   save(); renderJobs(); updateDash(); closeJobEdit();
   try {
     await SAMIL_API.updateJob({ id, ...updated, tags: updated.tags.join(',') });
-    const fresh = await SAMIL_API.getJobs();
-    if (fresh.success) {
-      // GAS 쓰기 지연 대비: 방금 수정한 job은 로컬값 유지
-      DB.jobs = fresh.data.map(j => j.id === id ? { ...j, ...updated } : j);
-      save(); renderJobs(); updateDash();
-    }
   } catch(e) {}
 }
 
@@ -1477,8 +1469,6 @@ async function toggleJob(id) {
   save(); renderJobs();
   try {
     await SAMIL_API.toggleJob(id);
-    const fresh = await SAMIL_API.getJobs();
-    if (fresh.success) { DB.jobs = fresh.data; save(); renderJobs(); }
   } catch(e) {}
 }
 
@@ -1490,8 +1480,6 @@ async function delJob(id) {
   save(); renderJobs(); updateDash();
   try {
     await SAMIL_API.deleteJob(id);
-    const fresh = await SAMIL_API.getJobs();
-    if (fresh.success) { DB.jobs = fresh.data; save(); renderJobs(); updateDash(); }
   } catch(e) {}
 }
 
@@ -1554,25 +1542,31 @@ async function addBanner() {
   const dl       = noExpiry ? '' : document.getElementById('bn-dl').value;
   const color    = document.getElementById('bn-color').value;
   if (!title) { alert('배너 제목을 입력하세요'); return; }
+  const tmpBanner = { id: 'tmp_'+Date.now(), title, url, dl, color, noExpiry, date: today() };
+  DB.banners.push(tmpBanner);
+  save(); renderBanners(); updateDash();
+  document.getElementById('bn-title').value = '';
+  document.getElementById('bn-url').value   = '';
+  document.getElementById('bn-dl').value    = '';
+  document.getElementById('bn-noExpiry').checked = false;
+  document.getElementById('bn-dl').disabled = false;
+  document.getElementById('bn-dl').style.opacity = '1';
   try {
-    await SAMIL_API.addBanner({ title, url, dl, color, noExpiry: String(noExpiry) });
-    const fresh = await SAMIL_API.getBanners();
-    if (fresh.success) { DB.banners = fresh.data; save(); renderBanners(); updateDash(); }
-    document.getElementById('bn-title').value = '';
-    document.getElementById('bn-url').value   = '';
-    document.getElementById('bn-dl').value    = '';
-    document.getElementById('bn-noExpiry').checked = false;
-    document.getElementById('bn-dl').disabled = false;
-    document.getElementById('bn-dl').style.opacity = '1';
+    const res = await SAMIL_API.addBanner({ title, url, dl, color, noExpiry: String(noExpiry) });
+    if (res.success && res.id) {
+      const idx = DB.banners.findIndex(b => b.id === tmpBanner.id);
+      if (idx !== -1) DB.banners[idx].id = res.id;
+      save();
+    }
   } catch(e) { alert('배너 추가 실패'); }
 }
 
 async function delBanner(id) {
   if (!confirm('삭제하시겠습니까?')) return;
+  DB.banners = (DB.banners||[]).filter(b => b.id !== id);
+  save(); renderBanners(); updateDash();
   try {
     await SAMIL_API.deleteBanner(id);
-    const fresh = await SAMIL_API.getBanners();
-    if (fresh.success) { DB.banners = fresh.data; save(); renderBanners(); updateDash(); }
   } catch(e) { alert('삭제 실패'); }
 }
 
@@ -1603,11 +1597,11 @@ async function saveBannerEdit() {
   const dl       = noExpiry ? '' : document.getElementById('eb-dl').value;
   const color    = document.getElementById('eb-color').value;
   if (!title) { alert('배너 제목을 입력하세요'); return; }
+  const idx = (DB.banners||[]).findIndex(b => b.id === id);
+  if (idx !== -1) DB.banners[idx] = { ...DB.banners[idx], title, url, dl, color, noExpiry };
+  save(); renderBanners(); closeBannerEdit();
   try {
     await SAMIL_API.updateBanner({ id, title, url, dl, color, noExpiry: String(noExpiry) });
-    const fresh = await SAMIL_API.getBanners();
-    if (fresh.success) { DB.banners = fresh.data; save(); renderBanners(); }
-    closeBannerEdit();
   } catch(e) { alert('수정 실패'); }
 }
 
@@ -2115,8 +2109,6 @@ async function addReview() {
 
   try {
     await SAMIL_API.addReview({ co, type, dept, year, sid, sname, middle, certs, attend, clubs, summary, essays, review });
-    const fresh = await SAMIL_API.getReviews();
-    if (fresh.success) { DB.reviews = fresh.data; save(); renderReviews(); }
   } catch(e) { console.warn('후기 Sheets 저장 오류:', e); }
 }
 
@@ -2278,8 +2270,6 @@ async function saveReviewEdit() {
   try {
     await SAMIL_API.deleteReview(id);
     await SAMIL_API.addReview({ ...updated });
-    const fresh = await SAMIL_API.getReviews();
-    if (fresh.success) { DB.reviews = fresh.data; save(); renderReviews(); }
   } catch(e) { console.warn('후기 수정 오류:', e); }
 }
 

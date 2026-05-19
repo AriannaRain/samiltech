@@ -6,6 +6,16 @@ const SAMIL_API = (() => {
   const GAS_URL     = 'https://script.google.com/macros/s/AKfycby6UpyOV0rxKOUbQkerpniceHPAgZOkLfNKJC5JFyEJqxmJbe_4BcK-HOPCHOmahnnA_g/exec';
   const ADMIN_TOKEN = 'samil_admin_2024';
 
+  // ════════════════════════════════════════════
+  // TTL 캐시 (메모리)
+  // ════════════════════════════════════════════
+  const _cache = {};
+  const _TTL = { getAll: 300000, jobs: 300000, depts: 3600000, banners: 3600000, reviews: 3600000 };
+  function _cGet(k) { const c=_cache[k]; if(!c||Date.now()-c.t>c.ttl){delete _cache[k];return null;} return c.d; }
+  function _cSet(k,d,ttl) { _cache[k]={d,t:Date.now(),ttl}; }
+  function _cDel(...keys) { keys.forEach(k=>delete _cache[k]); }
+  function _yearKey() { return 'getAll_'+new Date().getFullYear(); }
+
   async function call(params) {
     try {
       const res = await fetch(GAS_URL, {
@@ -36,14 +46,22 @@ const SAMIL_API = (() => {
   // 채용공고
   // ════════════════════════════════════════════
   async function getJobs(activeOnly = false) {
-    return get({ action: 'getJobs', activeOnly });
+    if (activeOnly) return get({ action: 'getJobs', activeOnly });
+    const c = _cGet('jobs'); if (c) return c;
+    const r = await get({ action: 'getJobs', activeOnly });
+    if (r.success) _cSet('jobs', r, _TTL.jobs);
+    return r;
   }
 
   // ════════════════════════════════════════════
   // 배치 (Cold Start 최소화)
   // ════════════════════════════════════════════
   async function getAll(year) {
-    return get({ action: 'getAll', year: year || new Date().getFullYear() });
+    const k = 'getAll_'+(year||new Date().getFullYear());
+    const c = _cGet(k); if (c) return c;
+    const r = await get({ action: 'getAll', year: year || new Date().getFullYear() });
+    if (r.success) _cSet(k, r, _TTL.getAll);
+    return r;
   }
 
   // ════════════════════════════════════════════
@@ -62,18 +80,22 @@ const SAMIL_API = (() => {
   }
 
   async function addJob(data) {
+    _cDel('jobs', _yearKey());
     return call({ action: 'addJob', token: ADMIN_TOKEN, ...flattenJob(data) });
   }
 
   async function updateJob(data) {
+    _cDel('jobs', _yearKey());
     return call({ action: 'updateJob', token: ADMIN_TOKEN, id: data.id, ...flattenJob(data) });
   }
 
   async function deleteJob(id) {
+    _cDel('jobs', _yearKey());
     return call({ action: 'deleteJob', token: ADMIN_TOKEN, id });
   }
 
   async function toggleJob(id) {
+    _cDel('jobs', _yearKey());
     return call({ action: 'toggleJob', token: ADMIN_TOKEN, id });
   }
 
@@ -185,18 +207,24 @@ const SAMIL_API = (() => {
   // 학과
   // ════════════════════════════════════════════
   async function getDepts() {
-    return get({ action: 'getDepts' });
+    const c = _cGet('depts'); if (c) return c;
+    const r = await get({ action: 'getDepts' });
+    if (r.success) _cSet('depts', r, _TTL.depts);
+    return r;
   }
 
   async function addDept(data) {
+    _cDel('depts', _yearKey());
     return call({ action: 'addDept', token: ADMIN_TOKEN, ...data });
   }
 
   async function deleteDept(name) {
+    _cDel('depts', _yearKey());
     return call({ action: 'deleteDept', token: ADMIN_TOKEN, name });
   }
 
   async function updateDept(oldName, newName, year) {
+    _cDel('depts', _yearKey());
     return call({ action: 'updateDept', token: ADMIN_TOKEN, oldName, newName, year });
   }
 
@@ -208,18 +236,24 @@ const SAMIL_API = (() => {
   // 배너
   // ════════════════════════════════════════════
   async function getBanners() {
-    return get({ action: 'getBanners' });
+    const c = _cGet('banners'); if (c) return c;
+    const r = await get({ action: 'getBanners' });
+    if (r.success) _cSet('banners', r, _TTL.banners);
+    return r;
   }
 
   async function addBanner(data) {
+    _cDel('banners', _yearKey());
     return call({ action: 'addBanner', token: ADMIN_TOKEN, ...data });
   }
 
   async function deleteBanner(id) {
+    _cDel('banners', _yearKey());
     return call({ action: 'deleteBanner', token: ADMIN_TOKEN, id });
   }
 
   async function updateBanner(data) {
+    _cDel('banners', _yearKey());
     return call({ action: 'updateBanner', token: ADMIN_TOKEN, ...data });
   }
 
@@ -250,10 +284,15 @@ const SAMIL_API = (() => {
   }
 
   async function getReviews(dept = '') {
-    return get({ action: 'getReviews', dept });
+    if (dept) return get({ action: 'getReviews', dept });
+    const c = _cGet('reviews'); if (c) return c;
+    const r = await get({ action: 'getReviews', dept });
+    if (r.success) _cSet('reviews', r, _TTL.reviews);
+    return r;
   }
 
   async function addReview(data) {
+    _cDel('reviews', _yearKey());
     return call({ action: 'addReview', token: ADMIN_TOKEN,
       year: data.year || '', type: data.type || '',
       co: data.co || '', dept: data.dept || '',
@@ -267,6 +306,7 @@ const SAMIL_API = (() => {
   }
 
   async function deleteReview(id) {
+    _cDel('reviews', _yearKey());
     return call({ action: 'deleteReview', token: ADMIN_TOKEN, id });
   }
 
