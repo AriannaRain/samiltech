@@ -348,7 +348,7 @@ function getFilteredJobs(){
 let DATA = {jobs:[],banners:[],depts:[],stats:{},statsMap:{}};
 
 window.addEventListener('DOMContentLoaded', async ()=>{
-  SAMIL_API.ping();
+  if (typeof SAMIL_API.ping === 'function') SAMIL_API.ping();
   updateNavAuth();
   // ── 캐시 우선 즉시 렌더 ──
   const cached = localStorage.getItem('samilJobsCache');

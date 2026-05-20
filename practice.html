@@ -336,7 +336,7 @@ function toggleMenu(){ document.getElementById('navMenu').classList.toggle('open
 function closeMenu(){ document.getElementById('navMenu').classList.remove('open'); }
 
 window.addEventListener('DOMContentLoaded', () => {
-  SAMIL_API.ping(); // GAS 웜업
+  if (typeof SAMIL_API.ping === "function") SAMIL_API.ping();
   render();
 });
 </script>

@@ -515,7 +515,7 @@ function closeModal() { document.getElementById('arcModal').classList.remove('op
 // 초기화
 // ══════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', async () => {
-  SAMIL_API.ping();
+  if (typeof SAMIL_API.ping === "function") SAMIL_API.ping();
   // ── 기존 세션 자동 로그인 ──
   const adminAuth   = sessionStorage.getItem('samilAdminAuth');
   const teacherAuth = sessionStorage.getItem('samilTeacherAuth');
