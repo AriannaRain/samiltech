@@ -765,12 +765,16 @@ async function loadTcDepts(){
   const sel=document.getElementById('t-dept');
   if(sel.options.length>1) return; // 이미 로드됨
   try{
-    const res=await SAMIL_API.getDepts();
-    const depts=res.success&&res.data&&res.data.length?res.data:[];
+    const [deptsRes, classesRes] = await Promise.all([
+      SAMIL_API.getDepts(),
+      SAMIL_API.getClasses({ year: new Date().getFullYear() }),
+    ]);
+    const depts=deptsRes.success&&deptsRes.data&&deptsRes.data.length?deptsRes.data:[];
     depts.forEach(d=>{
       const o=document.createElement('option');
       o.value=d.name||d.dept; o.textContent=d.name||d.dept; sel.appendChild(o);
     });
+    if(classesRes.success) DATA.classes = classesRes.data || [];
   }catch(e){}
 }
 async function loginStudent(){
