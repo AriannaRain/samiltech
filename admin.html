@@ -797,13 +797,18 @@ async function init() {
           SAMIL_API.saveEmployStats(y, yd).catch(() => {});
         });
       }
-      // teachers/classes: getAll에 없으므로 별도 로드
-      const [tRes, cRes] = await Promise.all([
-        SAMIL_API.getTeachers({ year: currentYear }),
-        SAMIL_API.getClasses({ year: currentYear }),
-      ]);
-      if (tRes.success && tRes.data) getYearData(currentYear).teachers = tRes.data;
-      if (cRes.success && cRes.data) getYearData(currentYear).classes  = cRes.data;
+      // teachers/classes: getAll에 포함되어 반환
+      if (all.teachers) getYearData(currentYear).teachers = all.teachers;
+      if (all.classes)  getYearData(currentYear).classes  = all.classes;
+      // getAll에 없는 경우(구버전 GAS) 별도 로드
+      if (!all.teachers || !all.classes) {
+        const [tRes, cRes] = await Promise.all([
+          SAMIL_API.getTeachers({ year: currentYear }),
+          SAMIL_API.getClasses({ year: currentYear }),
+        ]);
+        if (tRes.success && tRes.data) getYearData(currentYear).teachers = tRes.data;
+        if (cRes.success && cRes.data) getYearData(currentYear).classes  = cRes.data;
+      }
       save(); renderAll();
       if (typeof renderReviews === 'function') renderReviews();
       showSyncResult(`✅ ${currentYear}년 데이터 로드 완료`);
