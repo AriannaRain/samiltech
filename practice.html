@@ -157,39 +157,27 @@ function getFileIcon(name) {
   return {hwp:'📝',docx:'📝',doc:'📝',xlsx:'📊',xls:'📊',pdf:'📕',pptx:'📊',zip:'📦',jpg:'🖼',png:'🖼'}[ext] || '📄';
 }
 
-async function render() {
-  const el = document.getElementById('mainContent');
-  updateNavAuth();
+const _PRACTICE_CACHE_KEY = 'samilPracticeCache';
+const _PRACTICE_CACHE_TTL = 10 * 60 * 1000; // 10분
 
-  if (!isLoggedIn()) {
-    el.innerHTML = `<div class="login-gate">
-      <h3>🔐 로그인이 필요합니다</h3>
-      <p>현장실습 자료실은 담임교사 또는 관리자 로그인 후 이용할 수 있습니다.<br>자료 다운로드는 로그인 후 진행해주세요.</p>
-      <button class="login-gate-btn" onclick="openLogin()">로그인하기</button>
-    </div>`;
-    return;
-  }
-
-  el.innerHTML = '<div class="loading">자료를 불러오는 중...</div>';
-
-  let sections = [], allFiles = [];
+function _saveCache(sections, allFiles) {
   try {
-    const [secRes, fileRes] = await Promise.all([
-      SAMIL_API.getPracticeSections(),
-      SAMIL_API.getPracticeFiles(''),
-    ]);
-    sections = secRes.success ? secRes.data : [];
-    allFiles = fileRes.success ? fileRes.data : [];
-  } catch(e) {
-    el.innerHTML = `<div class="empty-notice">
-      <div class="empty-icon">📂</div>
-      <div class="empty-title">자료를 불러올 수 없습니다</div>
-      <div class="empty-sub">네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.</div>
-      <button onclick="render()" style="margin-top:16px;padding:9px 20px;background:var(--primary);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit">다시 시도</button>
-    </div>`;
-    return;
-  }
+    localStorage.setItem(_PRACTICE_CACHE_KEY, JSON.stringify({ sections, allFiles, ts: Date.now() }));
+  } catch(_) {}
+}
 
+function _loadCache() {
+  try {
+    const raw = localStorage.getItem(_PRACTICE_CACHE_KEY);
+    if (!raw) return null;
+    const c = JSON.parse(raw);
+    if (Date.now() - c.ts > _PRACTICE_CACHE_TTL) return null;
+    return c;
+  } catch(_) { return null; }
+}
+
+function _renderContent(sections, allFiles) {
+  const el = document.getElementById('mainContent');
   if (!sections.length) {
     el.innerHTML = `<div class="empty-notice">
       <div class="empty-icon">📂</div>
@@ -198,7 +186,6 @@ async function render() {
     </div>`;
     return;
   }
-
   el.innerHTML = sections.map(sec => {
     const files = allFiles.filter(f => f.secId === sec.id).sort((a,b) => a.order - b.order);
     const fileHtml = files.length ? files.map(f => `
@@ -220,6 +207,52 @@ async function render() {
       <div class="file-list">${fileHtml}</div>
     </div>`;
   }).join('');
+}
+
+async function render() {
+  const el = document.getElementById('mainContent');
+  updateNavAuth();
+
+  if (!isLoggedIn()) {
+    el.innerHTML = `<div class="login-gate">
+      <h3>🔐 로그인이 필요합니다</h3>
+      <p>현장실습 자료실은 담임교사 또는 관리자 로그인 후 이용할 수 있습니다.<br>자료 다운로드는 로그인 후 진행해주세요.</p>
+      <button class="login-gate-btn" onclick="openLogin()">로그인하기</button>
+    </div>`;
+    return;
+  }
+
+  // ① 캐시 즉시 표시
+  const cached = _loadCache();
+  if (cached) {
+    _renderContent(cached.sections, cached.allFiles);
+  } else {
+    el.innerHTML = '<div class="loading">자료를 불러오는 중...</div>';
+  }
+
+  // ② 백그라운드 최신 데이터 fetch
+  let sections = [], allFiles = [];
+  try {
+    const [secRes, fileRes] = await Promise.all([
+      SAMIL_API.getPracticeSections(),
+      SAMIL_API.getPracticeFiles(''),
+    ]);
+    sections = secRes.success ? secRes.data : (cached?.sections || []);
+    allFiles = fileRes.success ? fileRes.data : (cached?.allFiles || []);
+  } catch(e) {
+    if (!cached) {
+      el.innerHTML = `<div class="empty-notice">
+        <div class="empty-icon">📂</div>
+        <div class="empty-title">자료를 불러올 수 없습니다</div>
+        <div class="empty-sub">네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.</div>
+        <button onclick="render()" style="margin-top:16px;padding:9px 20px;background:var(--primary);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit">다시 시도</button>
+      </div>`;
+    }
+    return;
+  }
+
+  _saveCache(sections, allFiles);
+  _renderContent(sections, allFiles);
 }
 
 // ── 로그인 ──
@@ -302,7 +335,10 @@ function updateNavAuth() {
 function toggleMenu(){ document.getElementById('navMenu').classList.toggle('open'); }
 function closeMenu(){ document.getElementById('navMenu').classList.remove('open'); }
 
-window.addEventListener('DOMContentLoaded', render);
+window.addEventListener('DOMContentLoaded', () => {
+  SAMIL_API.ping(); // GAS 웜업
+  render();
+});
 </script>
 <script src="samil-api.js"></script>
 </body>

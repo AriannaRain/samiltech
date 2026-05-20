@@ -332,21 +332,35 @@ const SAMIL_API = (() => {
   }
 
   // ════════════════════════════════════════════
+  // GAS 웜업 ping (cold start 선점)
+  // ════════════════════════════════════════════
+  function ping() {
+    get({ action: 'getYears' }).catch(() => {});
+  }
+
+  // ════════════════════════════════════════════
   // 현장실습 섹션
   // ════════════════════════════════════════════
   async function getPracticeSections() {
-    return get({ action: 'getPracticeSections' });
+    const c = _cGet('prSec'); if (c) return c;
+    const r = await get({ action: 'getPracticeSections' });
+    if (r.success) _cSet('prSec', r, 300000);
+    return r;
   }
   async function addPracticeSection(data) {
+    _cDel('prSec', 'prFiles');
     return call({ action: 'addPracticeSection', token: ADMIN_TOKEN, ...data });
   }
   async function updatePracticeSection(data) {
+    _cDel('prSec', 'prFiles');
     return call({ action: 'updatePracticeSection', token: ADMIN_TOKEN, ...data });
   }
   async function deletePracticeSection(id) {
+    _cDel('prSec', 'prFiles');
     return call({ action: 'deletePracticeSection', token: ADMIN_TOKEN, id });
   }
   async function reorderPracticeSection(orders) {
+    _cDel('prSec');
     return call({ action: 'reorderPracticeSection', token: ADMIN_TOKEN, orders: JSON.stringify(orders) });
   }
 
@@ -354,18 +368,26 @@ const SAMIL_API = (() => {
   // 현장실습 파일
   // ════════════════════════════════════════════
   async function getPracticeFiles(secId) {
-    return get({ action: 'getPracticeFiles', secId: secId || '' });
+    if (secId) return get({ action: 'getPracticeFiles', secId });
+    const c = _cGet('prFiles'); if (c) return c;
+    const r = await get({ action: 'getPracticeFiles', secId: '' });
+    if (r.success) _cSet('prFiles', r, 300000);
+    return r;
   }
   async function addPracticeFile(data) {
+    _cDel('prFiles');
     return call({ action: 'addPracticeFile', token: ADMIN_TOKEN, ...data });
   }
   async function updatePracticeFile(data) {
+    _cDel('prFiles');
     return call({ action: 'updatePracticeFile', token: ADMIN_TOKEN, ...data });
   }
   async function deletePracticeFile(id) {
+    _cDel('prFiles');
     return call({ action: 'deletePracticeFile', token: ADMIN_TOKEN, id });
   }
   async function reorderPracticeFile(orders) {
+    _cDel('prFiles');
     return call({ action: 'reorderPracticeFile', token: ADMIN_TOKEN, orders: JSON.stringify(orders) });
   }
 
@@ -388,6 +410,7 @@ const SAMIL_API = (() => {
     getStudentCountByClass,
     getYears, addYear, deleteYear,
     verifyAdminPw,
+    ping,
     getBanners, addBanner, deleteBanner, updateBanner,
     getStats, saveAnnualStat, deleteAnnualStat, saveEmploy,
     getEmployStats, saveEmployStats,
