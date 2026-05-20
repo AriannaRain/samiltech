@@ -162,14 +162,17 @@ const SAMIL_API = (() => {
   }
 
   async function addTeacher(data) {
+    _cDel('teachers_'+(data.year||new Date().getFullYear()));
     return call({ action: 'addTeacher', token: ADMIN_TOKEN, ...data });
   }
 
   async function deleteTeacher(data) {
+    _cDel('teachers_'+(data.year||new Date().getFullYear()));
     return call({ action: 'deleteTeacher', token: ADMIN_TOKEN, ...data });
   }
 
   async function updateTeacher(data) {
+    _cDel('teachers_'+(data.year||new Date().getFullYear()));
     return call({ action: 'updateTeacher', token: ADMIN_TOKEN, ...data });
   }
 
@@ -188,14 +191,25 @@ const SAMIL_API = (() => {
   // 담임교사 / 학년-반 구조 (ScriptProperties)
   // ════════════════════════════════════════════
   async function getTeachers(opts = {}) {
-    return get({ action: 'getTeachers', ...opts });
+    const year = opts.year || new Date().getFullYear();
+    const k = 'teachers_' + year;
+    const c = _cGet(k); if (c) return c;
+    const r = await get({ action: 'getTeachers', ...opts });
+    if (r.success) _cSet(k, r, _TTL.depts);
+    return r;
   }
 
   async function getClasses(opts = {}) {
-    return get({ action: 'getClasses', ...opts });
+    const year = opts.year || new Date().getFullYear();
+    const k = 'classes_' + year;
+    const c = _cGet(k); if (c) return c;
+    const r = await get({ action: 'getClasses', ...opts });
+    if (r.success) _cSet(k, r, _TTL.depts);
+    return r;
   }
 
   async function saveClasses(data) {
+    _cDel('classes_'+(data.year||new Date().getFullYear()));
     return call({ action: 'saveClasses', token: ADMIN_TOKEN, ...data });
   }
 
