@@ -797,8 +797,13 @@ async function init() {
           SAMIL_API.saveEmployStats(y, yd).catch(() => {});
         });
       }
-      getYearData(currentYear).teachers = all.teachers || [];
-      getYearData(currentYear).classes  = all.classes  || [];
+      // teachers/classes: getAll에 없으므로 별도 로드
+      const [tRes, cRes] = await Promise.all([
+        SAMIL_API.getTeachers({ year: currentYear }),
+        SAMIL_API.getClasses({ year: currentYear }),
+      ]);
+      if (tRes.success && tRes.data) getYearData(currentYear).teachers = tRes.data;
+      if (cRes.success && cRes.data) getYearData(currentYear).classes  = cRes.data;
       save(); renderAll();
       if (typeof renderReviews === 'function') renderReviews();
       showSyncResult(`✅ ${currentYear}년 데이터 로드 완료`);
@@ -889,8 +894,7 @@ async function setYear(y) {
     DB.yearData[currentYear].teachers = [];
     DB.yearData[currentYear].classes  = [];
   }
-  save();
-  renderAll(); // 빈 상태로 먼저 렌더
+  renderAll(); // 빈 상태로 먼저 렌더 (save 하지 않음)
 
   // ② 캐시 초기화
   try { localStorage.removeItem(`sc_depts_${currentYear}`); } catch(_) {}
@@ -2441,11 +2445,7 @@ async function uploadPrFile(file, secId) {
     if (!addRes.success) { alert('저장 실패'); if(pendEl) pendEl.innerHTML=''; return; }
     if (pendEl) pendEl.innerHTML = `<div class="pr-pending" style="background:#F0FFF4">✅ ${file.name} 업로드 완료</div>`;
     setTimeout(() => { if(pendEl) pendEl.innerHTML=''; }, 2000);
-    // 로컬 즉시 반영
-    if (!_prFiles[secId]) _prFiles[secId] = [];
-    const maxOrd = _prFiles[secId].length ? Math.max(..._prFiles[secId].map(f=>f.order||0)) : 0;
-    _prFiles[secId].push({ id: addRes.id, secId, name: file.name, url: upRes.url, order: maxOrd+1, date: '' });
-    renderPrSections();
+    await loadPractice();
   } catch(e) {
     alert('오류: '+e.message);
     if (pendEl) pendEl.innerHTML = '';
@@ -2455,61 +2455,49 @@ async function uploadPrFile(file, secId) {
 async function addPrSection() {
   const title = document.getElementById('pr-sec-title').value.trim();
   if (!title) { alert('단계명을 입력하세요'); return; }
-  const tmpId = 'tmp_' + Date.now();
-  const maxOrder = _prSections.length ? Math.max(..._prSections.map(s=>s.order||0)) : 0;
-  _prSections.push({ id: tmpId, title, order: maxOrder + 1, date: '' });
-  document.getElementById('pr-sec-title').value = '';
-  renderPrSections();
   const res = await SAMIL_API.addPracticeSection({ title });
-  if (!res.success) { alert(res.error||'오류'); _prSections = _prSections.filter(s=>s.id!==tmpId); renderPrSections(); return; }
-  const idx = _prSections.findIndex(s=>s.id===tmpId);
-  if (idx !== -1) _prSections[idx].id = res.id;
-  renderPrSections();
+  if (!res.success) { alert(res.error||'오류'); return; }
+  document.getElementById('pr-sec-title').value = '';
+  await loadPractice();
 }
 
 async function editPrSection(id) {
   const sec = _prSections.find(s=>s.id===id);
   if (!sec) return;
   const t = prompt('단계명 수정:', sec.title);
-  if (!t || t.trim() === sec.title) return;
-  sec.title = t.trim();
-  renderPrSections();
-  SAMIL_API.updatePracticeSection({ id, title: t.trim() }).catch(()=>{});
+  if (!t||t.trim()===sec.title) return;
+  await SAMIL_API.updatePracticeSection({ id, title: t.trim() });
+  await loadPractice();
 }
 
 async function delPrSection(id) {
   if (!confirm('이 단계와 하위 파일을 모두 삭제하시겠습니까?')) return;
-  _prSections = _prSections.filter(s => s.id !== id);
-  delete _prFiles[id];
-  renderPrSections();
-  SAMIL_API.deletePracticeSection(id).catch(()=>{});
+  await SAMIL_API.deletePracticeSection(id);
+  await loadPractice();
 }
 
 async function movePrSection(idx, dir) {
-  const t = idx + dir;
-  if (t < 0 || t >= _prSections.length) return;
-  [_prSections[idx], _prSections[t]] = [_prSections[t], _prSections[idx]];
-  renderPrSections();
-  SAMIL_API.reorderPracticeSection(_prSections.map((s,i) => ({ id: s.id, order: i+1 }))).catch(()=>{});
+  const arr = [..._prSections];
+  const t = idx+dir;
+  if (t<0||t>=arr.length) return;
+  [arr[idx],arr[t]]=[arr[t],arr[idx]];
+  await SAMIL_API.reorderPracticeSection(arr.map((s,i)=>({id:s.id,order:i+1})));
+  await loadPractice();
 }
 
 async function delPrFile(fileId) {
   if (!confirm('파일을 삭제하시겠습니까?')) return;
-  for (const secId of Object.keys(_prFiles)) {
-    _prFiles[secId] = (_prFiles[secId]||[]).filter(f => f.id !== fileId);
-  }
-  renderPrSections();
-  SAMIL_API.deletePracticeFile(fileId).catch(()=>{});
+  await SAMIL_API.deletePracticeFile(fileId);
+  await loadPractice();
 }
 
 async function movePrFile(secId, idx, dir) {
   const files = [...(_prFiles[secId]||[])].sort((a,b)=>a.order-b.order);
-  const t = idx + dir;
-  if (t < 0 || t >= files.length) return;
-  [files[idx], files[t]] = [files[t], files[idx]];
-  _prFiles[secId] = files.map((f,i) => ({ ...f, order: i+1 }));
-  renderPrSections();
-  SAMIL_API.reorderPracticeFile(files.map((f,i) => ({ id: f.id, order: i+1 }))).catch(()=>{});
+  const t = idx+dir;
+  if (t<0||t>=files.length) return;
+  [files[idx],files[t]]=[files[t],files[idx]];
+  await SAMIL_API.reorderPracticeFile(files.map((f,i)=>({id:f.id,order:i+1})));
+  await loadPractice();
 }
 
 // Enter로 모달 저장
