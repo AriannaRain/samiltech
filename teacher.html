@@ -88,6 +88,7 @@ tr:hover td{background:#fafbfd}
 .badge-blue{background:#EBF4FF;color:var(--primary)}
 .badge-gray{background:var(--bg);color:var(--text-sub)}
 .badge-orange{background:#FFF3E0;color:var(--accent)}
+.badge-red{background:#FFF5F5;color:var(--red)}
 
 /* 업로드 영역 */
 .upload-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:32px;text-align:center;cursor:pointer;transition:.2s;background:var(--bg)}
@@ -546,6 +547,7 @@ tr:hover td{background:#fafbfd}
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="samil-api.js"></script>
 <script>
 // ── 상태 ──
 let DB = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
@@ -1328,6 +1330,5 @@ async function loadTeacherData(){
 // 클릭 외부 모달 닫기
 document.getElementById('pwModal').addEventListener('click',function(e){ if(e.target===this) closePwModal(); });
 </script>
-<script src="samil-api.js"></script>
 </body>
 </html>
