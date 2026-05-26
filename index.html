@@ -375,9 +375,12 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   };
 
   // 학과 드롭다운 — samil-login.js의 _loadStDepts()가 lazy 로딩으로 처리함
-  const depts = deptsRes.success && deptsRes.data && deptsRes.data.length ? deptsRes.data : SAMPLE.depts;
-  DATA.depts = depts.map(d=>({dept:d.name||d.dept,g:0,e:0,a:0}));
-  renderDeptTable();
+  // ★ 버그수정: all.depts는 학과명 목록으로, 취업통계로 채워진 DATA.depts를 덮어쓰면 안 됨
+  //   DATA.depts가 비어 있을 때만 학과명으로 초기화 (취업통계 없는 경우 fallback)
+  if (!DATA.depts.length && deptsRes.success && deptsRes.data && deptsRes.data.length) {
+    DATA.depts = deptsRes.data.map(d=>({dept:d.name||d.dept,g:0,e:0,a:0}));
+    renderDeptTable();
+  }
 
   // ── 캐시 저장 및 재렌더 ──
   try{ localStorage.setItem('samilJobsCache', JSON.stringify({jobs:DATA.jobs,banners:DATA.banners,stats:DATA.stats})); }catch(_){}
@@ -391,10 +394,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   document.getElementById('s-done').textContent = DATA.stats.done||'—';
 
   renderBanners();
-  renderJobs();
-
-  // 취업현황 테이블
-  renderDeptTable();
+  // ★ 최적화: renderJobs(), renderDeptTable()은 위에서 이미 호출됨 (중복 제거)
 });
 
 function renderDeptTable(){

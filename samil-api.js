@@ -19,6 +19,28 @@ const SAMIL_API = (() => {
   function _cDel(...keys) { keys.forEach(k=>delete _cache[k]); }
   function _yearKey() { return 'getAll_'+new Date().getFullYear(); }
 
+  // ════════════════════════════════════════════
+  // localStorage 영속 캐시 (페이지 리로드 간 유지)
+  // ── 메모리 캐시 → localStorage → 네트워크 순으로 조회하여
+  //    Google Apps Script Cold Start 지연 최소화
+  // ════════════════════════════════════════════
+  const _LS_PREFIX = 'samilApi_v1_';
+  function _lsGet(k) {
+    try {
+      const raw = localStorage.getItem(_LS_PREFIX + k);
+      if (!raw) return null;
+      const c = JSON.parse(raw);
+      if (Date.now() - c.t > c.ttl) { localStorage.removeItem(_LS_PREFIX + k); return null; }
+      return c.d;
+    } catch(_) { return null; }
+  }
+  function _lsSet(k, d, ttl) {
+    try { localStorage.setItem(_LS_PREFIX + k, JSON.stringify({ d, t: Date.now(), ttl })); } catch(_) {}
+  }
+  function _lsDel(...keys) {
+    keys.forEach(k => { try { localStorage.removeItem(_LS_PREFIX + k); } catch(_) {} });
+  }
+
   async function call(params) {
     try {
       const res = await fetch(GAS_URL, {
@@ -61,9 +83,14 @@ const SAMIL_API = (() => {
   // ════════════════════════════════════════════
   async function getAll(year) {
     const k = 'getAll_'+(year||new Date().getFullYear());
-    const c = _cGet(k); if (c) return c;
+    // 1순위: 메모리 캐시 (동일 세션 내 재호출 즉시 반환)
+    const mc = _cGet(k); if (mc) return mc;
+    // 2순위: localStorage 캐시 (리로드 후에도 TTL 내면 즉시 반환 → GAS Cold Start 회피)
+    const lc = _lsGet(k);
+    if (lc) { _cSet(k, lc, _TTL.getAll); return lc; }
+    // 3순위: 네트워크 (GAS 호출)
     const r = await get({ action: 'getAll', year: year || new Date().getFullYear() });
-    if (r.success) _cSet(k, r, _TTL.getAll);
+    if (r.success) { _cSet(k, r, _TTL.getAll); _lsSet(k, r, _TTL.getAll); }
     return r;
   }
 
@@ -83,22 +110,22 @@ const SAMIL_API = (() => {
   }
 
   async function addJob(data) {
-    _cDel('jobs', _yearKey());
+    _cDel('jobs', _yearKey()); _lsDel(_yearKey());
     return call({ action: 'addJob', token: getAdminToken(), ...flattenJob(data) });
   }
 
   async function updateJob(data) {
-    _cDel('jobs', _yearKey());
+    _cDel('jobs', _yearKey()); _lsDel(_yearKey());
     return call({ action: 'updateJob', token: getAdminToken(), id: data.id, ...flattenJob(data) });
   }
 
   async function deleteJob(id) {
-    _cDel('jobs', _yearKey());
+    _cDel('jobs', _yearKey()); _lsDel(_yearKey());
     return call({ action: 'deleteJob', token: getAdminToken(), id });
   }
 
   async function toggleJob(id) {
-    _cDel('jobs', _yearKey());
+    _cDel('jobs', _yearKey()); _lsDel(_yearKey());
     return call({ action: 'toggleJob', token: getAdminToken(), id });
   }
 
@@ -260,17 +287,17 @@ const SAMIL_API = (() => {
   }
 
   async function addBanner(data) {
-    _cDel('banners', _yearKey());
+    _cDel('banners', _yearKey()); _lsDel(_yearKey());
     return call({ action: 'addBanner', token: getAdminToken(), ...data });
   }
 
   async function deleteBanner(id) {
-    _cDel('banners', _yearKey());
+    _cDel('banners', _yearKey()); _lsDel(_yearKey());
     return call({ action: 'deleteBanner', token: getAdminToken(), id });
   }
 
   async function updateBanner(data) {
-    _cDel('banners', _yearKey());
+    _cDel('banners', _yearKey()); _lsDel(_yearKey());
     return call({ action: 'updateBanner', token: getAdminToken(), ...data });
   }
 
