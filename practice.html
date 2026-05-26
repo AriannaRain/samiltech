@@ -78,6 +78,7 @@ nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:var(--pri
 .form-group input,.form-group select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none}
 .form-group input:focus,.form-group select:focus{border-color:var(--primary-light)}
 .btn-submit{width:100%;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+.login-err{color:#DC2626;font-size:13px;margin-top:10px;display:none}
 footer{background:var(--primary);color:rgba(255,255,255,.65);text-align:center;padding:20px;font-size:12px;margin-top:48px}
 footer strong{color:#fff}
 </style>
@@ -140,6 +141,7 @@ footer strong{color:#fff}
         <div class="form-group"><label>관리자 비밀번호</label><input type="password" id="a-pw" onkeydown="if(event.key==='Enter')doAdminLogin()"></div>
         <button class="btn-submit" onclick="doAdminLogin()">로그인</button>
       </div>
+      <div class="login-err" id="loginErr"></div>
     </div>
   </div>
 </div>
@@ -256,7 +258,12 @@ async function render() {
 }
 
 // ── 로그인 ──
-function openLogin() { document.getElementById('loginModal').classList.add('open'); loadDepts(); }
+function openLogin() {
+  document.getElementById('loginModal').classList.add('open');
+  const err = document.getElementById('loginErr');
+  if(err) err.style.display='none';
+  loadDepts();
+}
 function closeModal(e) { if (e.target.id==='loginModal') document.getElementById('loginModal').classList.remove('open'); }
 
 function switchTab(tab, btn) {
@@ -292,7 +299,7 @@ async function doLogin() {
   const cls=document.getElementById('l-cls').value;
   const name=document.getElementById('l-name').value.trim();
   const pw=document.getElementById('l-pw').value;
-  if(!dept||!grade||!cls||!name||!pw){alert('모든 항목을 입력하세요');return;}
+  if(!dept||!grade||!cls||!name||!pw){showLoginErr('모든 항목을 입력하세요');return;}
   const btn=document.querySelector('#tab-tc .btn-submit');
   btn.textContent='확인중…';btn.disabled=true;
   const res=await SAMIL_API.loginTeacher(dept,grade,cls,name,pw);
@@ -302,7 +309,7 @@ async function doLogin() {
     sessionStorage.setItem('samilTeacherME',JSON.stringify(res.teacher));
     document.getElementById('loginModal').classList.remove('open');
     render();
-  } else { document.getElementById('l-pw').value=''; alert(res.error||'로그인 실패'); }
+  } else { document.getElementById('l-pw').value=''; showLoginErr(res.error||'로그인 실패'); }
 }
 
 async function doAdminLogin() {
@@ -312,7 +319,12 @@ async function doAdminLogin() {
     sessionStorage.setItem('samilAdminAuth','1');
     document.getElementById('loginModal').classList.remove('open');
     render();
-  } else { document.getElementById('a-pw').value=''; alert('비밀번호가 맞지 않습니다'); }
+  } else { document.getElementById('a-pw').value=''; showLoginErr('비밀번호가 맞지 않습니다'); }
+}
+
+function showLoginErr(msg) {
+  const el = document.getElementById('loginErr');
+  el.textContent = msg; el.style.display = 'block';
 }
 
 function doLogout() {
