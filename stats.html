@@ -265,7 +265,10 @@ async function loginTeacher() {
   const res = await SAMIL_API.loginTeacher(dept, grade, cls, name, pw);
   if (!res.success) { showErr(res.error || '로그인 실패'); return; }
   ME = { ...res.teacher, role: 'teacher' };
-  sessionStorage.setItem('statsMe', JSON.stringify(ME));
+  // 다른 페이지(practice.html, teacher.html 등)와 공유하는 세션 키도 함께 저장
+  sessionStorage.setItem('samilTeacherAuth', ME.id || ME.name || '1');
+  sessionStorage.setItem('samilTeacherME',   JSON.stringify(ME));
+  sessionStorage.setItem('statsMe',           JSON.stringify(ME));
   afterLogin();
 }
 
@@ -275,7 +278,9 @@ async function loginAdmin() {
   const res = await SAMIL_API.verifyAdminPw(pw);
   if (!res.success) { showErr('비밀번호가 맞지 않습니다'); return; }
   ME = { role: 'admin', name: '관리자' };
-  sessionStorage.setItem('statsMe', JSON.stringify(ME));
+  // 다른 페이지와 공유하는 세션 키도 함께 저장
+  sessionStorage.setItem('samilAdminAuth', '1');
+  sessionStorage.setItem('statsMe',        JSON.stringify(ME));
   afterLogin();
 }
 
@@ -285,7 +290,11 @@ function showErr(msg) {
 }
 
 function logout() {
+  // 자체 키 + 공유 키 모두 삭제하여 다른 페이지도 로그아웃 상태로
   sessionStorage.removeItem('statsMe');
+  sessionStorage.removeItem('samilAdminAuth');
+  sessionStorage.removeItem('samilTeacherAuth');
+  sessionStorage.removeItem('samilTeacherME');
   ME = null;
   document.getElementById('navAuth').innerHTML = '';
   location.reload();
