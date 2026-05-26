@@ -111,6 +111,9 @@ tr:hover td{background:#f9fafb}
 .login-gate-btn{padding:12px 32px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
 .login-gate-btn:hover{background:var(--primary-light)}
 .loading{text-align:center;padding:60px;color:var(--text-sub);font-size:14px}
+.gate-hero{background:var(--primary);padding:28px 32px;color:#fff}
+.gate-hero h1{font-size:22px;font-weight:700;margin-bottom:6px}
+.gate-hero p{font-size:13px;opacity:.75}
 </style>
 </head>
 <body>
@@ -557,6 +560,8 @@ window.addEventListener('DOMContentLoaded', async () => {
 });
 
 function _showContent() {
+  const gw = document.getElementById('gateWrap');
+  if (gw) gw.style.display = 'none';
   document.getElementById('loginOverlay').style.display = 'none';
   document.getElementById('pageHero').style.display = '';
   document.getElementById('yearBar').style.display = '';
@@ -568,11 +573,24 @@ function _showContent() {
 function _showLoginGate() {
   document.getElementById('pageHero').style.display = 'none';
   document.getElementById('yearBar').style.display = 'none';
-  document.getElementById('mainContent').style.display = '';
-  document.getElementById('mainContent').innerHTML = `
+  document.getElementById('mainContent').style.display = 'none';
+
+  let wrap = document.getElementById('gateWrap');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'gateWrap';
+    const mc = document.getElementById('mainContent');
+    mc.parentNode.insertBefore(wrap, mc);
+  }
+  wrap.style.display = '';
+  wrap.innerHTML = `
+    <div class="gate-hero">
+      <h1>📊 취업현황</h1>
+      <p>학과별 취업현황 및 합격자 아카이브를 확인할 수 있습니다.</p>
+    </div>
     <div style="padding:60px 16px">
       <div class="login-gate">
-        <div style="font-size:48px;margin-bottom:16px">📊</div>
+        <div style="font-size:48px;margin-bottom:16px">🔒</div>
         <h3>로그인이 필요합니다</h3>
         <p>취업현황은 담임교사 또는 관리자 로그인 후<br>이용할 수 있습니다.</p>
         <button class="login-gate-btn" onclick="openLoginModal()">로그인하기</button>
