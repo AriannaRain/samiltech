@@ -316,7 +316,7 @@ async function doAdminLogin() {
 }
 
 function doLogout() {
-  ['samilAdminAuth','samilTeacherAuth','samilTeacherME'].forEach(k=>sessionStorage.removeItem(k));
+  ['samilAdminAuth','samilTeacherAuth','samilTeacherME','statsMe'].forEach(k=>sessionStorage.removeItem(k));
   updateNavAuth(); render();
 }
 
