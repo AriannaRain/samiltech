@@ -291,7 +291,9 @@
       const res = await SAMIL_API.verifyAdminPw(pw);
       if (res.success) {
         sessionStorage.setItem('samilAdminAuth', '1');
-        sessionStorage.setItem('samilAdminToken', pw);  // ★ 보안 패치: 입력한 PW를 API 토큰으로 저장
+        // ★ 보안 패치: GAS가 verifyAdminPw 성공 시 반환한 실제 token을 저장
+        // 소스코드에 토큰이 노출되지 않고, 비밀번호 변경 시에도 자동 갱신됨
+        if (res.token) sessionStorage.setItem('samilAdminToken', res.token);
         sessionStorage.setItem('statsMe', JSON.stringify({ role: 'admin', name: '관리자' }));
         closeLogin();
         updateNavAuth();
@@ -377,8 +379,8 @@
     try {
       const res = await SAMIL_API.changeAdminPw(cur, newPw);
       if (res && res.success) {
-        // 세션 토큰도 새 비밀번호로 갱신
-        sessionStorage.setItem('samilAdminToken', newPw);
+        // GAS가 반환한 새 token으로 세션 갱신 (없으면 newPw 사용)
+        sessionStorage.setItem('samilAdminToken', res.token || newPw);
         btn.style.display = 'none';
         document.getElementById('cpw-ok').style.display = '';
         setTimeout(closeChangeAdminPw, 2000);
