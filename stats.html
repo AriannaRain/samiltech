@@ -207,7 +207,61 @@ let DB_years   = [];
 let currentArcFilter = '전체';
 
 // ══════════════════════════════════════════════
-// 로그인
+// 데이터 로드
+// ══════════════════════════════════════════════
+async function loadData() {
+  const all = await SAMIL_API.getAll().catch(() => null);
+  if (all && all.success) {
+    DB_employ  = all.employ  || [];
+    DB_reviews = all.reviews || [];
+    DB_years   = (all.years  || []).sort((a,b) => b - a);
+  }
+  // localStorage 폴백
+  if (!DB_employ.length || !DB_reviews.length) {
+    const adm = JSON.parse(localStorage.getItem('samilAdmin') || '{}');
+    if (!DB_employ.length)  DB_employ  = adm.employ  || adm.employs || [];
+    if (!DB_reviews.length) DB_reviews = adm.reviews || [];
+  }
+
+  buildYearSel();
+
+  // 연도별 employ 전체 로드 (히스토리 차트용)
+  const years = DB_years.length
+    ? DB_years
+    : [...new Set(DB_employ.map(e => Number(e.year)))].sort((a,b) => b-a);
+
+  const currentYear = new Date().getFullYear();
+  const otherYears = years.filter(y => Number(y) !== currentYear);
+  if (otherYears.length) {
+    const extras = await Promise.all(
+      otherYears.map(y => SAMIL_API.getEmployStats(y).catch(() => null))
+    );
+    extras.forEach(r => {
+      if (r && r.success && r.data && r.data.length) {
+        r.data.forEach(e => {
+          const exists = DB_employ.find(x => Number(x.year) === Number(e.year) && x.dept === e.dept);
+          if (!exists) DB_employ.push(e);
+        });
+      }
+    });
+  }
+
+  document.getElementById('loadingMsg').style.display = 'none';
+  renderAll();
+}
+
+function buildYearSel() {
+  const allY = [...new Set([
+    ...DB_years,
+    ...DB_employ.map(e => Number(e.year)),
+  ])].filter(Boolean).sort((a,b) => b-a);
+  if (!allY.length) { const y = new Date().getFullYear()-1; allY.push(y); }
+  const sel = document.getElementById('yearSel');
+  sel.innerHTML = allY.map(y => `<option value="${y}">${y}년</option>`).join('');
+}
+
+// ══════════════════════════════════════════════
+// 렌더
 // ══════════════════════════════════════════════
 function renderAll() {
   const year = parseInt(document.getElementById('yearSel').value) || new Date().getFullYear()-1;
