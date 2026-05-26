@@ -596,6 +596,7 @@ function _showLoginGate() {
         <button class="login-gate-btn" onclick="openLoginModal()">로그인하기</button>
       </div>
     </div>`;
+  _renderNavAuth();
 }
 
 function openLoginModal() {
@@ -609,7 +610,11 @@ function closeLoginModal() {
 
 function _renderNavAuth() {
   const el = document.getElementById('navAuth');
-  if (!el || !ME) return;
+  if (!el) return;
+  if (!ME) {
+    el.innerHTML = `<a href="#" class="nav-login" onclick="openLoginModal();return false">로그인</a>`;
+    return;
+  }
   if (ME.role === 'admin') {
     el.innerHTML =
       `<a href="admin.html" class="nav-login nav-login-green">관리자 페이지</a>` +
