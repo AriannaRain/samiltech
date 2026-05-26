@@ -172,21 +172,28 @@ async function render() {
     el.innerHTML = '<div class="loading">자료를 불러오는 중...</div>';
   }
 
-  // ② 백그라운드 최신 데이터 fetch
+  // ② 백그라운드 최신 데이터 fetch (10초 타임아웃)
+  const _timeout = ms => new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms));
   let sections = [], allFiles = [];
   try {
-    const [secRes, fileRes] = await Promise.all([
-      SAMIL_API.getPracticeSections(),
-      SAMIL_API.getPracticeFiles(''),
+    const [secRes, fileRes] = await Promise.race([
+      Promise.all([
+        SAMIL_API.getPracticeSections(),
+        SAMIL_API.getPracticeFiles(''),
+      ]),
+      _timeout(10000).then(() => { throw new Error('timeout'); })
     ]);
     sections = secRes.success ? secRes.data : (cached?.sections || []);
     allFiles = fileRes.success ? fileRes.data : (cached?.allFiles || []);
   } catch(e) {
     if (!cached) {
+      const msg = e.message === 'timeout'
+        ? '서버 응답이 지연되고 있습니다.<br>잠시 후 다시 시도해주세요.'
+        : '네트워크 오류가 발생했습니다.<br>잠시 후 다시 시도해주세요.';
       el.innerHTML = `<div class="empty-notice">
         <div class="empty-icon">📂</div>
         <div class="empty-title">자료를 불러올 수 없습니다</div>
-        <div class="empty-sub">네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.</div>
+        <div class="empty-sub">${msg}</div>
         <button onclick="render()" style="margin-top:16px;padding:9px 20px;background:var(--primary);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit">다시 시도</button>
       </div>`;
     }
@@ -201,11 +208,12 @@ async function render() {
 function closeMenu(){ document.getElementById('navMenu').classList.remove('open'); }
 
 window.addEventListener('DOMContentLoaded', () => {
-  if (typeof SAMIL_API.ping === "function") SAMIL_API.ping();
+  if (typeof SAMIL_API !== 'undefined' && typeof SAMIL_API.ping === "function") SAMIL_API.ping();
   render();
 });
 </script>
 <script>
+// ★ samil-login.js 로드 전에 config 먼저 선언
 window.SAMIL_LOGIN_CONFIG = {
   tabs: ['teacher', 'admin'],
   navAuthId: 'nav-auth',
