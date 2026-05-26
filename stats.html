@@ -35,18 +35,7 @@ nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:var(--pri
 .nav-login-green{background:var(--green) !important;color:#fff !important}
 .btn-logout{background:none;border:none;color:rgba(255,255,255,.7);padding:7px 10px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit}
 .btn-logout:hover{color:#fff}
-/* 로그인 모달 */
-.modal-sm{max-width:400px !important;overflow:hidden !important;max-height:none !important}
-.login-tab{display:flex;gap:4px;margin-bottom:18px;background:var(--bg);padding:4px;border-radius:10px}
-.login-tab button{flex:1;padding:8px;border:none;background:none;border-radius:8px;font-size:13px;cursor:pointer;color:var(--text-sub);font-family:inherit}
-.login-tab button.active{background:#fff;color:var(--primary);font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.1)}
-.form-group{margin-bottom:13px}
-.form-group label{display:block;font-size:13px;font-weight:500;margin-bottom:5px}
-.form-group input,.form-group select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none}
-.form-group input:focus,.form-group select:focus{border-color:var(--primary-light)}
-.btn-login{width:100%;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
-.btn-login:hover{opacity:.9}
-.login-err{color:var(--red);font-size:13px;margin-top:10px;display:none}
+/* 로그인 모달 CSS → samil-login.js */
 /* 메인 */
 .page-hero{background:var(--primary);padding:32px 24px 28px;color:#fff;text-align:center}
 .page-hero h1{font-size:24px;font-weight:700;margin-bottom:4px}
@@ -116,43 +105,6 @@ tr:hover td{background:#f9fafb}
 </head>
 <body>
 
-<!-- 로그인 모달 -->
-<div class="modal-overlay" id="loginOverlay" onclick="if(event.target===this)closeLoginModal()">
-  <div class="modal modal-sm">
-    <div class="modal-header">
-      <h3>로그인</h3>
-      <button class="modal-close" onclick="closeLoginModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="login-tab">
-        <button class="active" onclick="switchTab('tc',this)">담임교사</button>
-        <button onclick="switchTab('ad',this)">관리자</button>
-      </div>
-      <!-- 담임 로그인 -->
-      <div id="lt-tc">
-        <div class="form-group"><label>학과</label><select id="l-dept" onchange="updateClsSt()"><option value="">선택</option></select></div>
-        <div style="display:flex;gap:8px">
-          <div class="form-group" style="flex:1"><label>학년</label>
-            <select id="l-grade" onchange="updateClsSt()"><option value="">학년</option><option>1</option><option>2</option><option>3</option></select>
-          </div>
-          <div class="form-group" style="flex:1"><label>반</label>
-            <select id="l-cls"><option value="">반</option></select>
-          </div>
-        </div>
-        <div class="form-group"><label>이름</label><input id="l-name" placeholder="홍길동" onkeydown="if(event.key==='Enter')loginTeacher()"></div>
-        <div class="form-group"><label>비밀번호</label><input id="l-pw" type="password" onkeydown="if(event.key==='Enter')loginTeacher()"></div>
-        <button class="btn-login" onclick="loginTeacher()">로그인</button>
-      </div>
-      <!-- 관리자 로그인 -->
-      <div id="lt-ad" style="display:none">
-        <div class="form-group"><label>관리자 비밀번호</label><input id="l-apw" type="password" onkeydown="if(event.key==='Enter')loginAdmin()"></div>
-        <button class="btn-login" onclick="loginAdmin()">로그인</button>
-      </div>
-      <div class="login-err" id="loginErr"></div>
-    </div>
-  </div>
-</div>
-
 <nav>
   <div class="nav-brand">
     <div class="nav-logo">삼일</div>
@@ -166,7 +118,7 @@ tr:hover td{background:#f9fafb}
     <a href="jobs.html" onclick="closeMenu()">채용공고</a>
     <a href="stats.html" class="active" onclick="closeMenu()">취업현황</a>
     <a href="practice.html" onclick="closeMenu()">현장실습</a>
-    <span id="navAuth"></span>
+    <span id="nav-auth"></span>
   </div>
 </nav>
 
@@ -238,7 +190,15 @@ tr:hover td{background:#f9fafb}
   </div>
 </div>
 
+<script>
+window.SAMIL_LOGIN_CONFIG = {
+  tabs: ['teacher', 'admin'],
+  navAuthId: 'nav-auth',
+  onSuccess: function() { location.reload(); },
+};
+</script>
 <script src="samil-api.js"></script>
+<script src="samil-login.js"></script>
 <script>
 let ME = null;
 let DB_employ = [];   // [{year,dept,grad,emp,adv}]
@@ -248,147 +208,6 @@ let currentArcFilter = '전체';
 
 // ══════════════════════════════════════════════
 // 로그인
-// ══════════════════════════════════════════════
-let _stClasses = [];  // 담임 반 목록 (stats용)
-
-function updateClsSt() {
-  const dept  = document.getElementById('l-dept').value;
-  const grade = document.getElementById('l-grade').value;
-  const sel   = document.getElementById('l-cls');
-  sel.innerHTML = '<option value="">반</option>';
-  if (!dept || !grade) return;
-  const nums = _stClasses
-    .filter(c => c.dept === dept && String(c.grade) === String(grade))
-    .map(c => Number(c.num || c.cls))
-    .filter(n => !isNaN(n))
-    .sort((a, b) => a - b);
-  if (nums.length) {
-    nums.forEach(n => { const o = document.createElement('option'); o.value = n; o.textContent = n; sel.appendChild(o); });
-  } else {
-    // 클래스 정보 없으면 기본 1~4 제공
-    [1,2,3,4].forEach(n => { const o = document.createElement('option'); o.value = n; o.textContent = n; sel.appendChild(o); });
-  }
-}
-
-function switchTab(id, btn) {
-  document.querySelectorAll('.login-tab button').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('lt-tc').style.display = id === 'tc' ? '' : 'none';
-  document.getElementById('lt-ad').style.display = id === 'ad' ? '' : 'none';
-  document.getElementById('loginErr').style.display = 'none';
-}
-
-async function loginTeacher() {
-  const dept  = document.getElementById('l-dept').value;
-  const grade = document.getElementById('l-grade').value;
-  const cls   = document.getElementById('l-cls').value;
-  const name  = document.getElementById('l-name').value.trim();
-  const pw    = document.getElementById('l-pw').value;
-  if (!dept || !grade || !cls || !name || !pw) { showErr('모든 항목을 입력하세요'); return; }
-  const res = await SAMIL_API.loginTeacher(dept, grade, cls, name, pw);
-  if (!res.success) { showErr(res.error || '로그인 실패'); return; }
-  ME = { ...res.teacher, role: 'teacher' };
-  // 다른 페이지(practice.html, teacher.html 등)와 공유하는 세션 키도 함께 저장
-  sessionStorage.setItem('samilTeacherAuth', ME.id || ME.name || '1');
-  sessionStorage.setItem('samilTeacherME',   JSON.stringify(ME));
-  sessionStorage.setItem('statsMe',           JSON.stringify(ME));
-  afterLogin();
-}
-
-async function loginAdmin() {
-  const pw = document.getElementById('l-apw').value;
-  if (!pw) { showErr('비밀번호를 입력하세요'); return; }
-  const res = await SAMIL_API.verifyAdminPw(pw);
-  if (!res.success) { showErr('비밀번호가 맞지 않습니다'); return; }
-  ME = { role: 'admin', name: '관리자' };
-  // 다른 페이지와 공유하는 세션 키도 함께 저장
-  sessionStorage.setItem('samilAdminAuth', '1');
-  sessionStorage.setItem('statsMe',        JSON.stringify(ME));
-  afterLogin();
-}
-
-function showErr(msg) {
-  const el = document.getElementById('loginErr');
-  el.textContent = msg; el.style.display = 'block';
-}
-
-function logout() {
-  // 자체 키 + 공유 키 모두 삭제하여 다른 페이지도 로그아웃 상태로
-  sessionStorage.removeItem('statsMe');
-  sessionStorage.removeItem('samilAdminAuth');
-  sessionStorage.removeItem('samilTeacherAuth');
-  sessionStorage.removeItem('samilTeacherME');
-  ME = null;
-  document.getElementById('navAuth').innerHTML = '';
-  location.reload();
-}
-
-function afterLogin() {
-  sessionStorage.setItem('statsMe', JSON.stringify(ME));
-  closeLoginModal();
-  _showContent();
-  _renderNavAuth();
-  loadData();
-}
-
-// ══════════════════════════════════════════════
-// 데이터 로드
-// ══════════════════════════════════════════════
-async function loadData() {
-  const all = await SAMIL_API.getAll().catch(() => null);
-  if (all && all.success) {
-    DB_employ  = all.employ  || [];
-    DB_reviews = all.reviews || [];
-    DB_years   = (all.years  || []).sort((a,b) => b - a);
-  }
-  // localStorage 폴백
-  if (!DB_employ.length || !DB_reviews.length) {
-    const adm = JSON.parse(localStorage.getItem('samilAdmin') || '{}');
-    if (!DB_employ.length)  DB_employ  = adm.employ  || adm.employs || [];
-    if (!DB_reviews.length) DB_reviews = adm.reviews || [];
-  }
-
-  buildYearSel();
-
-  // 연도별 employ 전체 로드 (히스토리 차트용)
-  const years = DB_years.length
-    ? DB_years
-    : [...new Set(DB_employ.map(e => Number(e.year)))].sort((a,b) => b-a);
-
-  // 현재 연도 제외 나머지 연도 추가 로드
-  const currentYear = new Date().getFullYear();
-  const otherYears = years.filter(y => Number(y) !== currentYear);
-  if (otherYears.length) {
-    const extras = await Promise.all(
-      otherYears.map(y => SAMIL_API.getEmployStats(y).catch(() => null))
-    );
-    extras.forEach(r => {
-      if (r && r.success && r.data && r.data.length) {
-        // 중복 제거 후 병합
-        r.data.forEach(e => {
-          const exists = DB_employ.find(x => Number(x.year) === Number(e.year) && x.dept === e.dept);
-          if (!exists) DB_employ.push(e);
-        });
-      }
-    });
-  }
-
-  document.getElementById('loadingMsg').style.display = 'none';
-  renderAll();
-}
-
-function buildYearSel() {
-  const allY = [...new Set([
-    ...DB_years,
-    ...DB_employ.map(e => Number(e.year)),
-  ])].filter(Boolean).sort((a,b) => b-a);
-  if (!allY.length) { const y = new Date().getFullYear()-1; allY.push(y); }
-  const sel = document.getElementById('yearSel');
-  sel.innerHTML = allY.map(y => `<option value="${y}">${y}년</option>`).join('');
-}
-
-// ══════════════════════════════════════════════
-// 렌더
 // ══════════════════════════════════════════════
 function renderAll() {
   const year = parseInt(document.getElementById('yearSel').value) || new Date().getFullYear()-1;
@@ -559,20 +378,20 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (adminAuth === '1') {
     ME = { role: 'admin', name: '관리자' };
     sessionStorage.setItem('statsMe', JSON.stringify(ME));
-    _showContent(); _renderNavAuth(); loadData();
+    _showContent(); updateNavAuth(); loadData();
   } else if (teacherAuth && teacherME) {
     try {
       const t = JSON.parse(teacherME);
       ME = { ...t, role: 'teacher' };
       sessionStorage.setItem('statsMe', JSON.stringify(ME));
-      _showContent(); _renderNavAuth(); loadData();
+      _showContent(); updateNavAuth(); loadData();
     } catch(_) { _showLoginGate(); }
   } else {
     const saved = sessionStorage.getItem('statsMe');
     if (saved) {
       try {
         ME = JSON.parse(saved);
-        _showContent(); _renderNavAuth(); loadData();
+        _showContent(); updateNavAuth(); loadData();
       } catch(_) { sessionStorage.removeItem('statsMe'); _showLoginGate(); }
     } else {
       _showLoginGate();
@@ -596,12 +415,12 @@ window.addEventListener('DOMContentLoaded', async () => {
 function _showContent() {
   const gw = document.getElementById('gateWrap');
   if (gw) gw.style.display = 'none';
-  document.getElementById('loginOverlay').classList.remove('open');
+  closeLogin();
   document.getElementById('pageHero').style.display = '';
   document.getElementById('yearBar').style.display = '';
   document.getElementById('mainContent').style.display = '';
   document.getElementById('mainContent').innerHTML = '<div class="loading">데이터를 불러오는 중...</div>';
-  _renderNavAuth();
+  updateNavAuth();
 }
 
 function _showLoginGate() {
@@ -627,43 +446,13 @@ function _showLoginGate() {
         <div style="font-size:48px;margin-bottom:16px">🔒</div>
         <h3>로그인이 필요합니다</h3>
         <p>취업현황은 담임교사 또는 관리자 로그인 후<br>이용할 수 있습니다.</p>
-        <button class="login-gate-btn" onclick="openLoginModal()">로그인하기</button>
+        <button class="login-gate-btn" onclick="openLogin()">로그인하기</button>
       </div>
     </div>`;
-  _renderNavAuth();
+  updateNavAuth();
 }
 
-function openLoginModal() {
-  document.getElementById('loginOverlay').classList.add('open');
-  // 탭 초기화
-  document.getElementById('lt-tc').style.display = '';
-  document.getElementById('lt-ad').style.display = 'none';
-  document.querySelectorAll('.login-tab button').forEach((b,i) => b.classList.toggle('active', i===0));
-  document.getElementById('loginErr').style.display = 'none';
-}
-
-function closeLoginModal() {
-  document.getElementById('loginOverlay').classList.remove('open');
-}
-
-function _renderNavAuth() {
-  const el = document.getElementById('navAuth');
-  if (!el) return;
-  if (!ME) {
-    el.innerHTML = `<a href="#" class="nav-login" onclick="openLoginModal();return false">로그인</a>`;
-    return;
-  }
-  if (ME.role === 'admin') {
-    el.innerHTML =
-      `<a href="admin.html" class="nav-login nav-login-green">관리자 페이지</a>` +
-      `<a href="#" onclick="logout();return false" class="btn-logout">로그아웃</a>`;
-  } else {
-    const label = (ME.name || '담임') + ' 선생님';
-    el.innerHTML =
-      `<a href="teacher.html" class="nav-login nav-login-green">${label}</a>` +
-      `<a href="#" onclick="logout();return false" class="btn-logout">로그아웃</a>`;
-  }
-}
+// openLogin() / closeLogin() / updateNavAuth() / doLogout() → samil-login.js 에서 제공
 
 function closeMenu() {
   document.getElementById('navMenu')?.classList.remove('open');
