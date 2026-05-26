@@ -653,3 +653,21 @@ function _renderNavAuth() {
     el.innerHTML = `<a href="#" class="nav-login" onclick="openLoginModal();return false">로그인</a>`;
     return;
   }
+  if (ME.role === 'admin') {
+    el.innerHTML =
+      `<a href="admin.html" class="nav-login nav-login-green">관리자 페이지</a>` +
+      `<a href="#" onclick="logout();return false" class="btn-logout">로그아웃</a>`;
+  } else {
+    const label = (ME.name || '담임') + ' 선생님';
+    el.innerHTML =
+      `<a href="teacher.html" class="nav-login nav-login-green">${label}</a>` +
+      `<a href="#" onclick="logout();return false" class="btn-logout">로그아웃</a>`;
+  }
+}
+
+function closeMenu() {
+  document.getElementById('navMenu')?.classList.remove('open');
+}
+</script>
+</body>
+</html>
