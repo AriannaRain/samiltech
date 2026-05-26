@@ -4,7 +4,10 @@
 
 const SAMIL_API = (() => {
   const GAS_URL     = 'https://script.google.com/macros/s/AKfycby6UpyOV0rxKOUbQkerpniceHPAgZOkLfNKJC5JFyEJqxmJbe_4BcK-HOPCHOmahnnA_g/exec';
-  const ADMIN_TOKEN = 'samil_admin_2024';
+  // ★ 보안 패치: ADMIN_TOKEN 하드코딩 제거 → 동적 토큰 사용
+  function getAdminToken() {
+    return sessionStorage.getItem('samilAdminToken') || '';
+  }
 
   // ════════════════════════════════════════════
   // TTL 캐시 (메모리)
@@ -72,31 +75,31 @@ const SAMIL_API = (() => {
   }
 
   async function addYear(year) {
-    return call({ action: 'addYear', token: ADMIN_TOKEN, year });
+    return call({ action: 'addYear', token: getAdminToken(), year });
   }
 
   async function deleteYear(year) {
-    return call({ action: 'deleteYear', token: ADMIN_TOKEN, year });
+    return call({ action: 'deleteYear', token: getAdminToken(), year });
   }
 
   async function addJob(data) {
     _cDel('jobs', _yearKey());
-    return call({ action: 'addJob', token: ADMIN_TOKEN, ...flattenJob(data) });
+    return call({ action: 'addJob', token: getAdminToken(), ...flattenJob(data) });
   }
 
   async function updateJob(data) {
     _cDel('jobs', _yearKey());
-    return call({ action: 'updateJob', token: ADMIN_TOKEN, id: data.id, ...flattenJob(data) });
+    return call({ action: 'updateJob', token: getAdminToken(), id: data.id, ...flattenJob(data) });
   }
 
   async function deleteJob(id) {
     _cDel('jobs', _yearKey());
-    return call({ action: 'deleteJob', token: ADMIN_TOKEN, id });
+    return call({ action: 'deleteJob', token: getAdminToken(), id });
   }
 
   async function toggleJob(id) {
     _cDel('jobs', _yearKey());
-    return call({ action: 'toggleJob', token: ADMIN_TOKEN, id });
+    return call({ action: 'toggleJob', token: getAdminToken(), id });
   }
 
   function flattenJob(d) {
@@ -121,7 +124,7 @@ const SAMIL_API = (() => {
 
   async function getStudents(opts = {}) {
     const params = { action: 'getStudents', ...opts };
-    if (opts.adminMode) params.token = ADMIN_TOKEN;
+    if (opts.adminMode) params.token = getAdminToken();
     return call(params);
   }
 
@@ -139,11 +142,11 @@ const SAMIL_API = (() => {
   }
 
   async function addStudent(data) {
-    return call({ action: 'addStudent', token: ADMIN_TOKEN, ...data });
+    return call({ action: 'addStudent', token: getAdminToken(), ...data });
   }
 
   async function resetStudentPw(id) {
-    return call({ action: 'resetStudentPw', token: ADMIN_TOKEN, id });
+    return call({ action: 'resetStudentPw', token: getAdminToken(), id });
   }
 
   // ════════════════════════════════════════════
@@ -163,17 +166,17 @@ const SAMIL_API = (() => {
 
   async function addTeacher(data) {
     _cDel('teachers_'+(data.year||new Date().getFullYear()));
-    return call({ action: 'addTeacher', token: ADMIN_TOKEN, ...data });
+    return call({ action: 'addTeacher', token: getAdminToken(), ...data });
   }
 
   async function deleteTeacher(data) {
     _cDel('teachers_'+(data.year||new Date().getFullYear()));
-    return call({ action: 'deleteTeacher', token: ADMIN_TOKEN, ...data });
+    return call({ action: 'deleteTeacher', token: getAdminToken(), ...data });
   }
 
   async function updateTeacher(data) {
     _cDel('teachers_'+(data.year||new Date().getFullYear()));
-    return call({ action: 'updateTeacher', token: ADMIN_TOKEN, ...data });
+    return call({ action: 'updateTeacher', token: getAdminToken(), ...data });
   }
 
   async function getJobStats()            { return get({ action: 'getJobStats' }); }
@@ -184,7 +187,7 @@ const SAMIL_API = (() => {
   async function getApplicants(data)    { return call({ action: 'getApplicants',  ...data }); }
   async function deleteApply(data)      { return call({ action: 'deleteApply',    ...data }); }
   async function toggleInterest(data)   { return call({ action: 'toggleInterest', ...data }); }
-  async function getInterested(data)    { return call({ action: 'getInterested',  token: ADMIN_TOKEN, ...data }); }
+  async function getInterested(data)    { return call({ action: 'getInterested',  token: getAdminToken(), ...data }); }
   async function getMyInterests(data)   { return call({ action: 'getMyInterests', ...data }); }
 
   // ════════════════════════════════════════════
@@ -210,11 +213,11 @@ const SAMIL_API = (() => {
 
   async function saveClasses(data) {
     _cDel('classes_'+(data.year||new Date().getFullYear()));
-    return call({ action: 'saveClasses', token: ADMIN_TOKEN, ...data });
+    return call({ action: 'saveClasses', token: getAdminToken(), ...data });
   }
 
   async function updateStudentEmploy(data) {
-    return call({ action: 'updateStudentEmploy', token: ADMIN_TOKEN, ...data });
+    return call({ action: 'updateStudentEmploy', token: getAdminToken(), ...data });
   }
 
   // ════════════════════════════════════════════
@@ -229,17 +232,17 @@ const SAMIL_API = (() => {
 
   async function addDept(data) {
     _cDel('depts', _yearKey());
-    return call({ action: 'addDept', token: ADMIN_TOKEN, ...data });
+    return call({ action: 'addDept', token: getAdminToken(), ...data });
   }
 
   async function deleteDept(name) {
     _cDel('depts', _yearKey());
-    return call({ action: 'deleteDept', token: ADMIN_TOKEN, name });
+    return call({ action: 'deleteDept', token: getAdminToken(), name });
   }
 
   async function updateDept(oldName, newName, year) {
     _cDel('depts', _yearKey());
-    return call({ action: 'updateDept', token: ADMIN_TOKEN, oldName, newName, year });
+    return call({ action: 'updateDept', token: getAdminToken(), oldName, newName, year });
   }
 
   async function getStudentCountByClass(year) {
@@ -258,17 +261,17 @@ const SAMIL_API = (() => {
 
   async function addBanner(data) {
     _cDel('banners', _yearKey());
-    return call({ action: 'addBanner', token: ADMIN_TOKEN, ...data });
+    return call({ action: 'addBanner', token: getAdminToken(), ...data });
   }
 
   async function deleteBanner(id) {
     _cDel('banners', _yearKey());
-    return call({ action: 'deleteBanner', token: ADMIN_TOKEN, id });
+    return call({ action: 'deleteBanner', token: getAdminToken(), id });
   }
 
   async function updateBanner(data) {
     _cDel('banners', _yearKey());
-    return call({ action: 'updateBanner', token: ADMIN_TOKEN, ...data });
+    return call({ action: 'updateBanner', token: getAdminToken(), ...data });
   }
 
   // ════════════════════════════════════════════
@@ -276,6 +279,10 @@ const SAMIL_API = (() => {
   // ════════════════════════════════════════════
   async function verifyAdminPw(pw) {
     return call({ action: 'verifyAdminPw', pw });
+  }
+
+  async function changeAdminPw(currentPw, newPw) {
+    return call({ action: 'changeAdminPw', currentPw, newPw, token: getAdminToken() });
   }
 
   async function getStats() {
@@ -292,19 +299,19 @@ const SAMIL_API = (() => {
 
   async function saveEmployStats(year, data) {
     _cDel('employ_'+year, _yearKey());
-    return call({ action: 'saveEmployStats', token: ADMIN_TOKEN, year, data: JSON.stringify(data) });
+    return call({ action: 'saveEmployStats', token: getAdminToken(), year, data: JSON.stringify(data) });
   }
 
   async function saveAnnualStat(data) {
-    return call({ action: 'saveAnnualStat', token: ADMIN_TOKEN, ...data });
+    return call({ action: 'saveAnnualStat', token: getAdminToken(), ...data });
   }
 
   async function deleteAnnualStat(year) {
-    return call({ action: 'deleteAnnualStat', token: ADMIN_TOKEN, year });
+    return call({ action: 'deleteAnnualStat', token: getAdminToken(), year });
   }
 
   async function saveEmploy(data) {
-    return call({ action: 'saveEmploy', token: ADMIN_TOKEN, ...data });
+    return call({ action: 'saveEmploy', token: getAdminToken(), ...data });
   }
 
   // ════════════════════════════════════════════
@@ -324,7 +331,7 @@ const SAMIL_API = (() => {
 
   async function addReview(data) {
     _cDel('reviews', _yearKey());
-    return call({ action: 'addReview', token: ADMIN_TOKEN,
+    return call({ action: 'addReview', token: getAdminToken(),
       year: data.year || '', type: data.type || '',
       co: data.co || '', dept: data.dept || '',
       sid: data.sid || '', sname: data.sname || '',
@@ -338,11 +345,11 @@ const SAMIL_API = (() => {
 
   async function deleteReview(id) {
     _cDel('reviews', _yearKey());
-    return call({ action: 'deleteReview', token: ADMIN_TOKEN, id });
+    return call({ action: 'deleteReview', token: getAdminToken(), id });
   }
 
   async function uploadFile(name, base64, mimeType) {
-    return call({ action: 'uploadFileToDrive', token: ADMIN_TOKEN, name, base64, mimeType: mimeType || 'application/octet-stream' });
+    return call({ action: 'uploadFileToDrive', token: getAdminToken(), name, base64, mimeType: mimeType || 'application/octet-stream' });
   }
 
   // ════════════════════════════════════════════
@@ -363,19 +370,19 @@ const SAMIL_API = (() => {
   }
   async function addPracticeSection(data) {
     _cDel('prSec', 'prFiles');
-    return call({ action: 'addPracticeSection', token: ADMIN_TOKEN, ...data });
+    return call({ action: 'addPracticeSection', token: getAdminToken(), ...data });
   }
   async function updatePracticeSection(data) {
     _cDel('prSec', 'prFiles');
-    return call({ action: 'updatePracticeSection', token: ADMIN_TOKEN, ...data });
+    return call({ action: 'updatePracticeSection', token: getAdminToken(), ...data });
   }
   async function deletePracticeSection(id) {
     _cDel('prSec', 'prFiles');
-    return call({ action: 'deletePracticeSection', token: ADMIN_TOKEN, id });
+    return call({ action: 'deletePracticeSection', token: getAdminToken(), id });
   }
   async function reorderPracticeSection(orders) {
     _cDel('prSec');
-    return call({ action: 'reorderPracticeSection', token: ADMIN_TOKEN, orders: JSON.stringify(orders) });
+    return call({ action: 'reorderPracticeSection', token: getAdminToken(), orders: JSON.stringify(orders) });
   }
 
   // ════════════════════════════════════════════
@@ -390,26 +397,26 @@ const SAMIL_API = (() => {
   }
   async function addPracticeFile(data) {
     _cDel('prFiles');
-    return call({ action: 'addPracticeFile', token: ADMIN_TOKEN, ...data });
+    return call({ action: 'addPracticeFile', token: getAdminToken(), ...data });
   }
   async function updatePracticeFile(data) {
     _cDel('prFiles');
-    return call({ action: 'updatePracticeFile', token: ADMIN_TOKEN, ...data });
+    return call({ action: 'updatePracticeFile', token: getAdminToken(), ...data });
   }
   async function deletePracticeFile(id) {
     _cDel('prFiles');
-    return call({ action: 'deletePracticeFile', token: ADMIN_TOKEN, id });
+    return call({ action: 'deletePracticeFile', token: getAdminToken(), id });
   }
   async function reorderPracticeFile(orders) {
     _cDel('prFiles');
-    return call({ action: 'reorderPracticeFile', token: ADMIN_TOKEN, orders: JSON.stringify(orders) });
+    return call({ action: 'reorderPracticeFile', token: getAdminToken(), orders: JSON.stringify(orders) });
   }
 
   // ════════════════════════════════════════════
   // 시트 초기화
   // ════════════════════════════════════════════
   async function initSheets() {
-    return call({ action: 'initSheets', token: ADMIN_TOKEN });
+    return call({ action: 'initSheets', token: getAdminToken() });
   }
 
   return {
@@ -423,7 +430,7 @@ const SAMIL_API = (() => {
     getDepts, addDept, deleteDept, updateDept,
     getStudentCountByClass,
     getYears, addYear, deleteYear,
-    verifyAdminPw,
+    verifyAdminPw, changeAdminPw,
     ping,
     getBanners, addBanner, deleteBanner, updateBanner,
     getStats, saveAnnualStat, deleteAnnualStat, saveEmploy,

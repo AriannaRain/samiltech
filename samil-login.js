@@ -291,6 +291,7 @@
       const res = await SAMIL_API.verifyAdminPw(pw);
       if (res.success) {
         sessionStorage.setItem('samilAdminAuth', '1');
+        sessionStorage.setItem('samilAdminToken', pw);  // ★ 보안 패치: 입력한 PW를 API 토큰으로 저장
         sessionStorage.setItem('statsMe', JSON.stringify({ role: 'admin', name: '관리자' }));
         closeLogin();
         updateNavAuth();
@@ -304,6 +305,95 @@
     } catch (_) { _btnLoad('sl-ad-btn', false); _err('오류가 발생했습니다.'); }
   }
 
+  /* ── 관리자 비밀번호 변경 모달 ───────────────────────── */
+  function _injectChangePwModal() {
+    if (document.getElementById('samilChangePwModal')) return;
+    const el = document.createElement('div');
+    el.id = 'samilChangePwModal';
+    el.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;align-items:center;justify-content:center;padding:16px';
+    el.innerHTML = `
+      <div class="sl-box" style="max-width:360px">
+        <div class="sl-header">
+          <h3>🔑 관리자 비밀번호 변경</h3>
+          <button class="sl-close" onclick="closeChangeAdminPw()">✕</button>
+        </div>
+        <div style="padding:20px">
+          <div class="sl-fg">
+            <label class="sl-label">현재 비밀번호</label>
+            <input id="cpw-current" type="password" class="sl-input" placeholder="현재 비밀번호 입력">
+          </div>
+          <div class="sl-fg">
+            <label class="sl-label">새 비밀번호</label>
+            <input id="cpw-new" type="password" class="sl-input" placeholder="새 비밀번호 (8자 이상 권장)">
+          </div>
+          <div class="sl-fg">
+            <label class="sl-label">새 비밀번호 확인</label>
+            <input id="cpw-confirm" type="password" class="sl-input" placeholder="새 비밀번호 다시 입력"
+              onkeydown="if(event.key==='Enter')_doChangeAdminPw()">
+          </div>
+          <div id="cpw-err" style="color:#DC2626;font-size:13px;min-height:18px;margin-bottom:8px"></div>
+          <button id="cpw-btn" class="sl-btn" onclick="_doChangeAdminPw()" style="width:100%">비밀번호 변경</button>
+          <div id="cpw-ok" style="display:none;text-align:center;color:#16A34A;font-size:14px;font-weight:600;padding:10px 0">
+            ✅ 비밀번호가 성공적으로 변경되었습니다.
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(el);
+  }
+
+  function openChangeAdminPw() {
+    _injectChangePwModal();
+    const modal = document.getElementById('samilChangePwModal');
+    // 입력 초기화
+    ['cpw-current','cpw-new','cpw-confirm'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    document.getElementById('cpw-err').textContent = '';
+    document.getElementById('cpw-ok').style.display = 'none';
+    document.getElementById('cpw-btn').style.display = '';
+    modal.style.display = 'flex';
+  }
+
+  function closeChangeAdminPw() {
+    const modal = document.getElementById('samilChangePwModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  async function _doChangeAdminPw() {
+    const cur     = (document.getElementById('cpw-current') || {}).value || '';
+    const newPw   = (document.getElementById('cpw-new')     || {}).value || '';
+    const confirm = (document.getElementById('cpw-confirm') || {}).value || '';
+    const errEl   = document.getElementById('cpw-err');
+    const btn     = document.getElementById('cpw-btn');
+
+    errEl.textContent = '';
+    if (!cur)              { errEl.textContent = '현재 비밀번호를 입력하세요.'; return; }
+    if (!newPw)            { errEl.textContent = '새 비밀번호를 입력하세요.'; return; }
+    if (newPw.length < 6)  { errEl.textContent = '비밀번호는 6자 이상이어야 합니다.'; return; }
+    if (newPw !== confirm)  { errEl.textContent = '새 비밀번호가 일치하지 않습니다.'; return; }
+    if (cur === newPw)      { errEl.textContent = '현재 비밀번호와 동일합니다.'; return; }
+
+    btn.disabled = true; btn.textContent = '변경 중...';
+    try {
+      const res = await SAMIL_API.changeAdminPw(cur, newPw);
+      if (res && res.success) {
+        // 세션 토큰도 새 비밀번호로 갱신
+        sessionStorage.setItem('samilAdminToken', newPw);
+        btn.style.display = 'none';
+        document.getElementById('cpw-ok').style.display = '';
+        setTimeout(closeChangeAdminPw, 2000);
+      } else {
+        errEl.textContent = res?.error || '현재 비밀번호가 맞지 않거나 오류가 발생했습니다.';
+        btn.disabled = false; btn.textContent = '비밀번호 변경';
+        const curEl = document.getElementById('cpw-current');
+        if (curEl) curEl.value = '';
+      }
+    } catch(e) {
+      errEl.textContent = '오류가 발생했습니다. 다시 시도해주세요.';
+      btn.disabled = false; btn.textContent = '비밀번호 변경';
+    }
+  }
+
   /* ── Nav 인증 영역 갱신 ──────────────────────────────── */
   function updateNavAuth() {
     const el = document.getElementById(cfg.navAuthId);
@@ -311,6 +401,8 @@
     if (sessionStorage.getItem('samilAdminAuth') === '1') {
       el.innerHTML =
         `<a href="admin.html" class="nav-login" style="background:#16A34A!important">관리자 페이지</a>` +
+        `<a href="#" onclick="openChangeAdminPw();return false"
+           style="color:rgba(255,255,255,.7);font-size:13px;padding:7px 10px">🔑 비번변경</a>` +
         `<a href="#" onclick="doLogout();return false"
            style="color:rgba(255,255,255,.7);font-size:13px;padding:7px 10px">로그아웃</a>`;
     } else if (sessionStorage.getItem('samilTeacherAuth')) {
@@ -333,7 +425,7 @@
 
   /* ── 로그아웃 ────────────────────────────────────────── */
   function doLogout() {
-    ['samilAdminAuth','samilTeacherAuth','samilTeacherME',
+    ['samilAdminAuth','samilAdminToken','samilTeacherAuth','samilTeacherME',
      'samilStudentAuth','samilStudentME','statsMe'].forEach(k => sessionStorage.removeItem(k));
     updateNavAuth();
     if (cfg.onLogout) cfg.onLogout();
@@ -357,11 +449,14 @@
   }
 
   /* ── 공개 API ─────────────────────────────────────────── */
-  window.SAMIL_LOGIN  = { _tab, _updateCls, _loginSt, _loginTc, _loginAd };
-  window.openLogin    = openLogin;
-  window.closeLogin   = closeLogin;
-  window.updateNavAuth = updateNavAuth;
-  window.doLogout     = doLogout;
+  window.SAMIL_LOGIN        = { _tab, _updateCls, _loginSt, _loginTc, _loginAd };
+  window.openLogin          = openLogin;
+  window.closeLogin         = closeLogin;
+  window.updateNavAuth      = updateNavAuth;
+  window.doLogout           = doLogout;
+  window.openChangeAdminPw  = openChangeAdminPw;
+  window.closeChangeAdminPw = closeChangeAdminPw;
+  window._doChangeAdminPw   = _doChangeAdminPw;
 
   // 페이지 로드 시 nav 초기화
   if (document.readyState === 'loading') {
