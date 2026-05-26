@@ -102,6 +102,27 @@ footer strong{color:#fff}
 
 <!-- 로그인 모달 -->
 <script>
+/* ── 캐시 상수 ── */
+const _PRACTICE_CACHE_KEY = 'samilPracticeCache';
+const _PRACTICE_CACHE_TTL = 5 * 60 * 1000; // 5분
+
+/* ── 파일 아이콘 헬퍼 ── */
+function getFileIcon(name) {
+  if (!name) return '📄';
+  const ext = (name.split('.').pop() || '').toLowerCase();
+  const map = {
+    pdf: '📕', doc: '📝', docx: '📝', xls: '📊', xlsx: '📊',
+    ppt: '📑', pptx: '📑', hwp: '📄', hwpx: '📄',
+    zip: '🗜', jpg: '🖼', jpeg: '🖼', png: '🖼', gif: '🖼',
+    mp4: '🎬', avi: '🎬', mov: '🎬', txt: '📃',
+  };
+  return map[ext] || '📄';
+}
+
+/* ── 햄버거 메뉴 ── */
+function toggleMenu() { document.getElementById('navMenu').classList.toggle('open'); }
+function closeMenu()  { document.getElementById('navMenu').classList.remove('open'); }
+
 function _saveCache(sections, allFiles) {
   try {
     localStorage.setItem(_PRACTICE_CACHE_KEY, JSON.stringify({ sections, allFiles, ts: Date.now() }));
@@ -181,7 +202,7 @@ async function render() {
         SAMIL_API.getPracticeSections(),
         SAMIL_API.getPracticeFiles(''),
       ]),
-      _timeout(10000).then(() => { throw new Error('timeout'); })
+      _timeout(8000)
     ]);
     sections = secRes.success ? secRes.data : (cached?.sections || []);
     allFiles = fileRes.success ? fileRes.data : (cached?.allFiles || []);
@@ -201,7 +222,15 @@ async function render() {
   }
 
   _saveCache(sections, allFiles);
-  _renderContent(sections, allFiles);
+  try { _renderContent(sections, allFiles); }
+  catch(renderErr) {
+    console.error('[practice] 렌더링 오류:', renderErr);
+    document.getElementById('mainContent').innerHTML =
+      '<div class="empty-notice"><div class="empty-icon">⚠️</div>' +
+      '<div class="empty-title">표시 오류가 발생했습니다</div>' +
+      '<div class="empty-sub">페이지를 새로고침하거나 관리자에게 문의하세요.</div>' +
+      '<button onclick="location.reload()" style="margin-top:16px;padding:9px 20px;background:var(--primary);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit">새로고침</button></div>';
+  }
 }
 
 // ── 로그인 ──
