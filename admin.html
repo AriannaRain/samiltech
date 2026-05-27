@@ -2793,7 +2793,7 @@ async function loadPrograms() {
   if (!listEl) return;
   listEl.innerHTML = '<div style="text-align:center;color:var(--text-sub);padding:32px;font-size:13px">⏳ 불러오는 중...</div>';
   const res = await SAMIL_API.getPrograms().catch(() => null);
-  const programs = (res && res.success) ? (res.data || []) : [];
+  const programs = (res && res.success) ? (res.list || res.data || []) : [];
   if (!programs.length) {
     listEl.innerHTML = '<div style="text-align:center;color:var(--text-sub);padding:32px;font-size:13px">등록된 프로그램이 없습니다.</div>';
     return;
