@@ -338,8 +338,12 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     }catch(_){}
   }
 
-  // ── Sheets에서 데이터 로드 (getAll 1회 호출로 cold start 최소화) ──
-  const all = await SAMIL_API.getAll(new Date().getFullYear()).catch(() => null);
+  // ── Sheets에서 데이터 로드 (getAll + 전년도 employ 병렬 요청) ──
+  const _curYear = new Date().getFullYear();
+  const [all, _prevEmployRes] = await Promise.all([
+    SAMIL_API.getAll(_curYear).catch(() => null),
+    SAMIL_API.getEmployStats(_curYear - 1).catch(() => null),
+  ]);
   const jobsRes     = all && all.success ? { success: true, data: all.jobs    || [] } : {};
   const bannersRes  = all && all.success ? { success: true, data: all.banners || [] } : {};
   const statsRes    = all && all.success ? { success: true, latest: all.latest, data: all.stats } : {};
@@ -356,28 +360,16 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   DATA.jobs    = jobsRes.success    ? jobsRes.data    : SAMPLE.jobs;
   DATA.banners = bannersRes.success ? bannersRes.data : SAMPLE.banners;
 
-  // 학과별 취업현황
-  // getAll은 현재연도(2026) employ를 반환 → 데이터가 전년도(2025)에 있으면 빈 배열
-  // → 빈 경우 전년도까지 순서대로 추가 시도
-  let employData = (all && all.success && all.employ) ? all.employ : [];
-  if (!employData.length) {
-    const curYear = new Date().getFullYear();
-    // 전년도, 전전년도 순으로 데이터 탐색 (최대 2년 전까지)
-    for (let y = curYear - 1; y >= curYear - 2; y--) {
-      const r = await SAMIL_API.getEmployStats(y).catch(() => null);
-      if (r && r.success && r.data && r.data.length) {
-        employData = r.data;
-        break;
-      }
-    }
-  }
+  // 학과별 취업현황 — 전년도 데이터를 병렬 요청으로 이미 받아둠
+  const employData = (_prevEmployRes && _prevEmployRes.success && _prevEmployRes.data && _prevEmployRes.data.length)
+    ? _prevEmployRes.data
+    : (all && all.success && all.employ && all.employ.length ? all.employ : []);
   if (employData.length) {
     const DB_adm = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
     DB_adm.employ = employData;
     try { localStorage.setItem('samilAdmin', JSON.stringify(DB_adm)); } catch(_) {}
     DATA.depts = buildDeptStats({ employ: employData });
   } else {
-    // 최후 fallback: localStorage (관리자 컴퓨터에서만 유효)
     const DB_adm = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
     DATA.depts = buildDeptStats(DB_adm);
   }
@@ -415,7 +407,8 @@ window.addEventListener('DOMContentLoaded', async ()=>{
 
   // ── 캐시 저장 및 재렌더 ──
   // ★ employ도 캐시에 저장 → 다음 방문 시 즉시 표 렌더링
-  const employToCache = (all && all.success && all.employ) ? all.employ : [];
+  // 캐시 저장 — 전년도 employ 우선 저장
+  const employToCache = employData.length ? employData : [];
   try{ localStorage.setItem('samilJobsCache', JSON.stringify({jobs:DATA.jobs, banners:DATA.banners, stats:DATA.stats, employ:employToCache})); }catch(_){}
   renderJobs();
 
