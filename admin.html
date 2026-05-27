@@ -2354,7 +2354,11 @@ window.onload = init;
 let _prSections = [];
 let _prFiles    = {};
 
-async function loadPractice() {
+async function loadPractice(showLoading = true) {
+  if (showLoading) {
+    const el = document.getElementById('prSectionList');
+    if (el) el.innerHTML = '<div class="card" style="text-align:center;color:var(--text-sub);padding:32px">⏳ 자료를 불러오는 중...</div>';
+  }
   const [secRes, fileRes] = await Promise.all([
     SAMIL_API.getPracticeSections(),
     SAMIL_API.getPracticeFiles(''),
@@ -2368,6 +2372,15 @@ async function loadPractice() {
     });
   }
   renderPrSections();
+}
+
+/* 로컬 상태만 업데이트하고 즉시 재렌더 (API 완료 대기 없이 UI 즉각 반응) */
+function _prRebuildFiles(flatList) {
+  _prFiles = {};
+  flatList.forEach(f => {
+    if (!_prFiles[f.secId]) _prFiles[f.secId] = [];
+    _prFiles[f.secId].push(f);
+  });
 }
 
 function prFileIcon(name) {
@@ -2450,7 +2463,13 @@ async function uploadPrFile(file, secId) {
     if (!addRes.success) { alert('저장 실패'); if(pendEl) pendEl.innerHTML=''; return; }
     if (pendEl) pendEl.innerHTML = `<div class="pr-pending" style="background:#F0FFF4">✅ ${file.name} 업로드 완료</div>`;
     setTimeout(() => { if(pendEl) pendEl.innerHTML=''; }, 2000);
-    await loadPractice();
+    // 로컬 즉시 추가 (재조회 없이)
+    const newFile = addRes.data || { id: addRes.id||('tmpf_'+Date.now()), secId, name: file.name, url: upRes.url, order: (_prFiles[secId]||[]).length+1 };
+    if (!_prFiles[secId]) _prFiles[secId] = [];
+    _prFiles[secId].push(newFile);
+    renderPrSections();
+    // 백그라운드 동기
+    loadPractice(false);
   } catch(e) {
     alert('오류: '+e.message);
     if (pendEl) pendEl.innerHTML = '';
@@ -2460,10 +2479,19 @@ async function uploadPrFile(file, secId) {
 async function addPrSection() {
   const title = document.getElementById('pr-sec-title').value.trim();
   if (!title) { alert('단계명을 입력하세요'); return; }
+  const btn = document.querySelector('#tab-practice .btn[onclick="addPrSection()"]') ||
+              document.querySelector('button[onclick="addPrSection()"]');
+  if (btn) { btn.disabled = true; btn.textContent = '추가 중...'; }
   const res = await SAMIL_API.addPracticeSection({ title });
+  if (btn) { btn.disabled = false; btn.textContent = '+ 단계 추가'; }
   if (!res.success) { alert(res.error||'오류'); return; }
   document.getElementById('pr-sec-title').value = '';
-  await loadPractice();
+  // 로컬 즉시 반영 (재조회 없이)
+  const newSec = res.data || { id: res.id || ('tmp_'+Date.now()), title, order: _prSections.length+1 };
+  _prSections.push(newSec);
+  renderPrSections();
+  // 백그라운드에서 최신 데이터 동기 (캐시 무효화 후 조용히)
+  loadPractice(false);
 }
 
 async function editPrSection(id) {
@@ -2471,14 +2499,26 @@ async function editPrSection(id) {
   if (!sec) return;
   const t = prompt('단계명 수정:', sec.title);
   if (!t||t.trim()===sec.title) return;
-  await SAMIL_API.updatePracticeSection({ id, title: t.trim() });
-  await loadPractice();
+  const newTitle = t.trim();
+  // 로컬 즉시 반영
+  sec.title = newTitle;
+  renderPrSections();
+  // 백그라운드 API
+  SAMIL_API.updatePracticeSection({ id, title: newTitle }).then(r => {
+    if (!r.success) { alert(r.error||'수정 오류'); loadPractice(false); }
+  });
 }
 
 async function delPrSection(id) {
   if (!confirm('이 단계와 하위 파일을 모두 삭제하시겠습니까?')) return;
-  await SAMIL_API.deletePracticeSection(id);
-  await loadPractice();
+  // 로컬 즉시 반영
+  _prSections = _prSections.filter(s => s.id !== id);
+  delete _prFiles[id];
+  renderPrSections();
+  // 백그라운드 API
+  SAMIL_API.deletePracticeSection(id).then(r => {
+    if (!r.success) { alert(r.error||'삭제 오류'); loadPractice(false); }
+  });
 }
 
 async function movePrSection(idx, dir) {
@@ -2486,14 +2526,26 @@ async function movePrSection(idx, dir) {
   const t = idx+dir;
   if (t<0||t>=arr.length) return;
   [arr[idx],arr[t]]=[arr[t],arr[idx]];
-  await SAMIL_API.reorderPracticeSection(arr.map((s,i)=>({id:s.id,order:i+1})));
-  await loadPractice();
+  // 로컬 즉시 반영
+  _prSections = arr;
+  renderPrSections();
+  // 백그라운드 API
+  SAMIL_API.reorderPracticeSection(arr.map((s,i)=>({id:s.id,order:i+1}))).then(r => {
+    if (!r.success) { loadPractice(false); }
+  });
 }
 
 async function delPrFile(fileId) {
   if (!confirm('파일을 삭제하시겠습니까?')) return;
-  await SAMIL_API.deletePracticeFile(fileId);
-  await loadPractice();
+  // 로컬 즉시 반영
+  for (const secId in _prFiles) {
+    _prFiles[secId] = _prFiles[secId].filter(f => f.id !== fileId);
+  }
+  renderPrSections();
+  // 백그라운드 API
+  SAMIL_API.deletePracticeFile(fileId).then(r => {
+    if (!r.success) { alert(r.error||'삭제 오류'); loadPractice(false); }
+  });
 }
 
 async function movePrFile(secId, idx, dir) {
@@ -2501,8 +2553,13 @@ async function movePrFile(secId, idx, dir) {
   const t = idx+dir;
   if (t<0||t>=files.length) return;
   [files[idx],files[t]]=[files[t],files[idx]];
-  await SAMIL_API.reorderPracticeFile(files.map((f,i)=>({id:f.id,order:i+1})));
-  await loadPractice();
+  // 로컬 즉시 반영
+  _prFiles[secId] = files;
+  renderPrSections();
+  // 백그라운드 API
+  SAMIL_API.reorderPracticeFile(files.map((f,i)=>({id:f.id,order:i+1}))).then(r => {
+    if (!r.success) { loadPractice(false); }
+  });
 }
 
 // Enter로 모달 저장
