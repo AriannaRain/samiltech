@@ -362,6 +362,15 @@ tr:hover td{background:#fafbfd}
     <!-- 생기부 업로드 -->
     <div class="tab-panel" id="tab-upload">
       <div class="page-header"><h1>생활기록부 Excel 업로드</h1><p>추출기로 생성한 Excel 파일을 업로드하면 학생 계정이 자동 생성됩니다.</p></div>
+      <!-- 프로그램 다운로드 -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title" style="display:flex;align-items:center;gap:8px">
+          <span>💾 프로그램 다운로드</span>
+          <span style="font-size:11px;color:var(--text-sub);font-weight:400">관리자가 등록한 프로그램을 다운로드하세요</span>
+        </div>
+        <div id="tc-program-list"><div style="text-align:center;color:var(--text-sub);padding:24px;font-size:13px">⏳ 불러오는 중...</div></div>
+      </div>
+
       <div class="card">
         <div class="card-title">파일 업로드</div>
         <div class="alert alert-info">✅ 업로드 가능 파일: 생활기록부 추출기(samil_record_extractor.exe)로 생성한 <strong>.xlsx</strong> 파일</div>
@@ -1067,12 +1076,66 @@ async function changePw(){
 }
 
 // ── 탭 ──
+// ── 프로그램 다운로드 (담임용) ──
+async function loadTcPrograms() {
+  const listEl = document.getElementById('tc-program-list');
+  if (!listEl) return;
+
+  // 이미 로드됐으면 스킵 (새로고침 버튼으로만 재로드)
+  if (listEl.dataset.loaded === '1') return;
+
+  listEl.innerHTML = '<div style="text-align:center;color:var(--text-sub);padding:24px;font-size:13px">⏳ 불러오는 중...</div>';
+
+  const res = await SAMIL_API.getPrograms().catch(() => null);
+  const programs = (res && res.success) ? (res.data || []) : [];
+
+  if (!programs.length) {
+    listEl.innerHTML = `
+      <div style="text-align:center;padding:20px;color:var(--text-sub);font-size:13px">
+        <div style="font-size:24px;margin-bottom:8px">📭</div>
+        등록된 프로그램이 없습니다.
+      </div>`;
+    listEl.dataset.loaded = '1';
+    return;
+  }
+
+  listEl.innerHTML = `
+    <div style="display:grid;gap:10px">
+      ${programs.map(p => {
+        const mb   = p.size ? (p.size/1048576).toFixed(1)+' MB' : '';
+        const date = (p.date||'').substring(0,10);
+        return `<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg);border-radius:10px;border:1px solid var(--border)">
+          <div style="font-size:26px;flex-shrink:0">💾</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:700;margin-bottom:2px">
+              ${p.name}${p.version ? ' <span style="font-size:11px;color:var(--primary);background:#EBF4FF;padding:1px 7px;border-radius:10px">'+p.version+'</span>' : ''}
+            </div>
+            ${p.desc ? `<div style="font-size:12px;color:var(--text-sub);margin-bottom:2px">${p.desc}</div>` : ''}
+            <div style="font-size:11px;color:var(--text-sub)">${p.filename||''}${mb?' · '+mb:''}${date?' · 등록일 '+date:''}</div>
+          </div>
+          <a href="${p.url}" target="_blank" download
+            style="display:flex;align-items:center;gap:5px;padding:8px 18px;background:var(--primary);color:#fff;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;flex-shrink:0;white-space:nowrap">
+            ⬇ 다운로드
+          </a>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="text-align:right;margin-top:8px">
+      <button onclick="document.getElementById('tc-program-list').dataset.loaded='0';loadTcPrograms()"
+        style="font-size:11px;color:var(--text-sub);background:none;border:none;cursor:pointer;padding:4px 8px">
+        🔄 목록 새로고침
+      </button>
+    </div>`;
+  listEl.dataset.loaded = '1';
+}
+
 function showTab(id,el){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
   el.classList.add('active');
   if(id==='recommend') initRecommendTab();
+  if(id==='upload') loadTcPrograms();
 }
 
 

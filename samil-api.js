@@ -459,6 +459,28 @@ const SAMIL_API = (() => {
     return call({ action: 'initSheets', token: getAdminToken() });
   }
 
+  // ════════════════════════════════════════════
+  // 프로그램 다운로드 관리
+  // ════════════════════════════════════════════
+  async function getPrograms() {
+    const mc = _cGet('programs'); if (mc) return mc;
+    const lc = _lsGet('programs');
+    if (lc) { _cSet('programs', lc, 300000); return lc; }
+    const r = await get({ action: 'getPrograms' });
+    if (r.success) { _cSet('programs', r, 300000); _lsSet('programs', r, 300000); }
+    return r;
+  }
+
+  async function addProgram(data) {
+    _cDel('programs'); _lsDel('programs');
+    return call({ action: 'addProgram', token: getAdminToken(), ...data });
+  }
+
+  async function deleteProgram(id) {
+    _cDel('programs'); _lsDel('programs');
+    return call({ action: 'deleteProgram', token: getAdminToken(), id });
+  }
+
   return {
     getAll,
     getJobs, addJob, updateJob, deleteJob, toggleJob,
@@ -481,6 +503,7 @@ const SAMIL_API = (() => {
     uploadFile,
     getPracticeSections, addPracticeSection, updatePracticeSection, deletePracticeSection, reorderPracticeSection,
     getPracticeFiles, addPracticeFile, updatePracticeFile, deletePracticeFile, reorderPracticeFile,
+    getPrograms, addProgram, deleteProgram,
     initSheets,
   };
 })();
