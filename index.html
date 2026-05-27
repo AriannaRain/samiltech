@@ -316,9 +316,25 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   if(cached){
     try{
       const cd = JSON.parse(cached);
-      DATA.jobs = cd.jobs||[]; DATA.banners = cd.banners||[]; DATA.stats = cd.stats||DATA.stats;
+      DATA.jobs    = cd.jobs    || [];
+      DATA.banners = cd.banners || [];
+      DATA.stats   = cd.stats   || DATA.stats;
+      // ★ employ 캐시도 즉시 복원 → renderDeptTable 지연 제거
+      if (cd.employ && cd.employ.length) {
+        DATA.depts = buildDeptStats({ employ: cd.employ });
+      }
       renderJobs();
       renderBanners();
+      renderDeptTable();
+      // 통계 카드도 캐시에서 즉시 표시
+      if (cd.stats) {
+        const s = cd.stats;
+        if (s.grad)    document.getElementById('s-grad').textContent    = s.grad;
+        if (s.rate)    document.getElementById('s-rate').textContent    = s.rate;
+        if (s.active)  document.getElementById('s-active').textContent  = s.active;
+        if (s.closing) document.getElementById('s-closing').textContent = s.closing;
+        if (s.done)    document.getElementById('s-done').textContent    = s.done;
+      }
     }catch(_){}
   }
 
@@ -383,7 +399,9 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   }
 
   // ── 캐시 저장 및 재렌더 ──
-  try{ localStorage.setItem('samilJobsCache', JSON.stringify({jobs:DATA.jobs,banners:DATA.banners,stats:DATA.stats})); }catch(_){}
+  // ★ employ도 캐시에 저장 → 다음 방문 시 즉시 표 렌더링
+  const employToCache = (all && all.success && all.employ) ? all.employ : [];
+  try{ localStorage.setItem('samilJobsCache', JSON.stringify({jobs:DATA.jobs, banners:DATA.banners, stats:DATA.stats, employ:employToCache})); }catch(_){}
   renderJobs();
 
   // 통계 표시
