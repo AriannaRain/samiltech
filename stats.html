@@ -152,6 +152,15 @@ tr:hover td{background:#f9fafb}
     </div>
   </div>
 
+  <!-- 데이터 없음 안내 -->
+  <div id="statsEmptyNotice" style="display:none;text-align:center;padding:48px 24px">
+    <div style="font-size:40px;margin-bottom:12px">📋</div>
+    <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px">등록된 취업현황 데이터가 없습니다</div>
+    <div style="font-size:13px;color:var(--text-sub);line-height:1.7">
+      관리자 페이지 → 취업현황 메뉴에서<br>해당 연도의 학과별 취업현황을 입력해주세요.
+    </div>
+  </div>
+
   <!-- 학과별 취업현황 테이블 -->
   <div class="card" id="deptCard" style="display:none">
     <div class="card-header">
@@ -261,8 +270,8 @@ async function loadData() {
   if (cached) {
     _applyData(cached.employ, cached.reviews, cached.years);
     buildYearSel();
-    renderAll();
     if (loadEl) loadEl.style.display = 'none';
+    renderAll();
     // 백그라운드에서 조용히 최신 데이터 갱신
     _loadDataBackground();
     return;
@@ -372,6 +381,10 @@ function renderAll() {
   document.getElementById('s-emp').textContent  = te || '—';
   document.getElementById('s-adv').textContent  = ta || '—';
   document.getElementById('s-rate').textContent = tg ? Math.round(te/tg*100)+'%' : '—';
+
+  // 빈 데이터 안내
+  const emptyNotice = document.getElementById('statsEmptyNotice');
+  if (emptyNotice) emptyNotice.style.display = list.length ? 'none' : 'block';
 
   renderDeptTable(list, year, tg, te, ta);
   renderHistChart();
