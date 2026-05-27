@@ -500,40 +500,46 @@ tr:last-child td{border-bottom:none}
 
       <!-- 프로그램 추가 -->
       <div class="card" style="margin-bottom:20px">
-        <div class="card-title">새 프로그램 업로드</div>
+        <div class="card-title">새 프로그램 등록</div>
+
+        <!-- 안내 배너 -->
+        <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#1D4ED8;line-height:1.6">
+          <strong>📌 등록 방법</strong><br>
+          ① 파일을 <strong>구글 드라이브</strong>에 업로드 → ② 링크 공유 설정을 <strong>"링크가 있는 모든 사용자"</strong>로 변경 → ③ 아래에 링크 붙여넣기
+        </div>
+
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
           <div>
             <label style="font-size:13px;font-weight:600;display:block;margin-bottom:5px">프로그램명 <span style="color:#DC2626">*</span></label>
-            <input id="pg-name" type="text" placeholder="예: 생활기록부 추출기 v2.1"
+            <input id="pg-name" type="text" placeholder="예: 생활기록부데이터추출기"
               style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box">
           </div>
           <div>
             <label style="font-size:13px;font-weight:600;display:block;margin-bottom:5px">버전</label>
-            <input id="pg-ver" type="text" placeholder="예: v2.1.0"
+            <input id="pg-ver" type="text" placeholder="예: V05"
               style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box">
           </div>
         </div>
         <div style="margin-bottom:12px">
           <label style="font-size:13px;font-weight:600;display:block;margin-bottom:5px">설명</label>
-          <input id="pg-desc" type="text" placeholder="예: 학생 생활기록부 데이터 추출 프로그램"
+          <input id="pg-desc" type="text" placeholder="예: 학급학생 생기부 데이터 추출(출결,교과성적,자격증,동아리활동,임원활동,성적요약,출신중학교 추출 등)"
+            style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box">
+        </div>
+        <div style="margin-bottom:12px">
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:5px">파일명 <span style="color:#DC2626">*</span></label>
+          <input id="pg-filename" type="text" placeholder="예: samil_record_extractor_V05.exe"
             style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box">
         </div>
         <div style="margin-bottom:14px">
-          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:5px">파일 선택 <span style="color:#DC2626">*</span></label>
-          <div id="pg-drop" onclick="document.getElementById('pg-file-input').click()"
-            ondragover="event.preventDefault();this.style.borderColor='var(--primary)'"
-            ondragleave="this.style.borderColor='var(--border)'"
-            ondrop="handlePgDrop(event)"
-            style="border:2px dashed var(--border);border-radius:8px;padding:28px;text-align:center;cursor:pointer;transition:.2s;background:var(--bg)">
-            <div style="font-size:28px;margin-bottom:8px">📁</div>
-            <div id="pg-file-label" style="font-size:13px;color:var(--text-sub)">파일을 드래그하거나 클릭해서 선택</div>
-            <input type="file" id="pg-file-input" style="display:none" onchange="handlePgFileSelect(event)">
-          </div>
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:5px">구글 드라이브 다운로드 링크 <span style="color:#DC2626">*</span></label>
+          <input id="pg-url" type="url" placeholder="https://drive.google.com/file/d/..."
+            style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box">
+          <div style="font-size:12px;color:var(--text-sub);margin-top:4px">구글 드라이브에서 파일 우클릭 → 공유 → "링크가 있는 모든 사용자"로 변경 후 링크 복사</div>
         </div>
         <div id="pg-upload-status" style="min-height:20px;font-size:13px;margin-bottom:10px"></div>
         <button onclick="uploadProgram()"
           style="padding:10px 28px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">
-          ⬆ 업로드
+          ✅ 등록
         </button>
       </div>
 
@@ -2620,87 +2626,67 @@ async function movePrFile(secId, idx, dir) {
 // ══════════════════════════════════════════════
 // 프로그램 관리
 // ══════════════════════════════════════════════
-let _pgSelectedFile = null;
 
-function handlePgDrop(event) {
-  event.preventDefault();
-  document.getElementById('pg-drop').style.borderColor = 'var(--border)';
-  const file = event.dataTransfer.files[0];
-  if (file) _setPgFile(file);
-}
-
-function handlePgFileSelect(event) {
-  const file = event.target.files[0];
-  if (file) _setPgFile(file);
-  event.target.value = '';
-}
-
-function _setPgFile(file) {
-  _pgSelectedFile = file;
-  const mb = (file.size / 1048576).toFixed(1);
-  document.getElementById('pg-file-label').innerHTML =
-    `<strong style="color:var(--primary)">✅ ${file.name}</strong> <span style="color:var(--text-sub)">(${mb} MB)</span>`;
-  document.getElementById('pg-drop').style.borderColor = 'var(--primary)';
+// 구글 드라이브 공유 링크 → 직접 다운로드 링크로 변환
+function _convertDriveLink(url) {
+  if (!url) return url;
+  // https://drive.google.com/file/d/FILE_ID/view?... 형태 처리
+  const m = url.match(/\/file\/d\/([^/]+)/);
+  if (m) return `https://drive.google.com/uc?export=download&id=${m[1]}`;
+  // https://drive.google.com/open?id=FILE_ID 형태 처리
+  const m2 = url.match(/[?&]id=([^&]+)/);
+  if (m2) return `https://drive.google.com/uc?export=download&id=${m2[1]}`;
+  return url; // 변환 불필요한 링크는 그대로
 }
 
 async function uploadProgram() {
-  const name = document.getElementById('pg-name').value.trim();
-  const ver  = document.getElementById('pg-ver').value.trim();
-  const desc = document.getElementById('pg-desc').value.trim();
+  const name     = document.getElementById('pg-name').value.trim();
+  const ver      = document.getElementById('pg-ver').value.trim();
+  const desc     = document.getElementById('pg-desc').value.trim();
+  const filename = document.getElementById('pg-filename').value.trim();
+  const rawUrl   = document.getElementById('pg-url').value.trim();
   const statusEl = document.getElementById('pg-upload-status');
 
-  if (!name) { alert('프로그램명을 입력하세요'); return; }
-  if (!_pgSelectedFile) { alert('파일을 선택하세요'); return; }
+  if (!name)     { alert('프로그램명을 입력하세요'); return; }
+  if (!filename) { alert('파일명을 입력하세요'); return; }
+  if (!rawUrl)   { alert('구글 드라이브 링크를 입력하세요'); return; }
+  if (!rawUrl.includes('drive.google.com')) {
+    alert('구글 드라이브 링크를 입력해주세요\n예: https://drive.google.com/file/d/...');
+    return;
+  }
 
-  statusEl.innerHTML = '<span style="color:var(--primary)">⏳ 업로드 중... (파일 크기에 따라 수십 초 소요될 수 있습니다)</span>';
-  const btn = event.currentTarget || document.querySelector('#tab-program button[onclick="uploadProgram()"]');
-  if (btn) { btn.disabled = true; btn.textContent = '업로드 중...'; }
+  const url = _convertDriveLink(rawUrl);
+  const btn = document.querySelector('#tab-program button[onclick="uploadProgram()"]');
+  statusEl.innerHTML = '<span style="color:var(--primary)">⏳ 등록 중...</span>';
+  if (btn) { btn.disabled = true; btn.textContent = '등록 중...'; }
 
   try {
-    const base64 = await new Promise((res, rej) => {
-      const r = new FileReader();
-      r.onload  = () => res(r.result.split(',')[1]);
-      r.onerror = () => rej(new Error('파일 읽기 실패'));
-      r.readAsDataURL(_pgSelectedFile);
-    });
-
-    const upRes = await SAMIL_API.uploadFile(
-      _pgSelectedFile.name, base64,
-      _pgSelectedFile.type || 'application/octet-stream'
-    );
-    if (!upRes.success) {
-      statusEl.innerHTML = `<span style="color:#DC2626">❌ 파일 업로드 실패: ${upRes.error||''}</span>`;
-      if (btn) { btn.disabled = false; btn.textContent = '⬆ 업로드'; }
-      return;
-    }
-
     const addRes = await SAMIL_API.addProgram({
       name,
       version: ver,
       desc,
-      filename: _pgSelectedFile.name,
-      url: upRes.url,
-      size: _pgSelectedFile.size,
+      filename,
+      url,
+      size: 0,
     });
     if (!addRes.success) {
       statusEl.innerHTML = `<span style="color:#DC2626">❌ 등록 실패: ${addRes.error||''}</span>`;
-      if (btn) { btn.disabled = false; btn.textContent = '⬆ 업로드'; }
+      if (btn) { btn.disabled = false; btn.textContent = '✅ 등록'; }
       return;
     }
 
-    statusEl.innerHTML = '<span style="color:#16A34A">✅ 업로드 완료!</span>';
-    document.getElementById('pg-name').value = '';
-    document.getElementById('pg-ver').value  = '';
-    document.getElementById('pg-desc').value = '';
-    document.getElementById('pg-file-label').textContent = '파일을 드래그하거나 클릭해서 선택';
-    document.getElementById('pg-drop').style.borderColor = 'var(--border)';
-    _pgSelectedFile = null;
-    if (btn) { btn.disabled = false; btn.textContent = '⬆ 업로드'; }
+    statusEl.innerHTML = '<span style="color:#16A34A">✅ 등록 완료!</span>';
+    document.getElementById('pg-name').value     = '';
+    document.getElementById('pg-ver').value      = '';
+    document.getElementById('pg-desc').value     = '';
+    document.getElementById('pg-filename').value = '';
+    document.getElementById('pg-url').value      = '';
+    if (btn) { btn.disabled = false; btn.textContent = '✅ 등록'; }
     setTimeout(() => { statusEl.innerHTML = ''; }, 3000);
     await loadPrograms();
   } catch(e) {
     statusEl.innerHTML = `<span style="color:#DC2626">❌ 오류: ${e.message}</span>`;
-    if (btn) { btn.disabled = false; btn.textContent = '⬆ 업로드'; }
+    if (btn) { btn.disabled = false; btn.textContent = '✅ 등록'; }
   }
 }
 
