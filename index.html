@@ -356,13 +356,28 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   DATA.jobs    = jobsRes.success    ? jobsRes.data    : SAMPLE.jobs;
   DATA.banners = bannersRes.success ? bannersRes.data : SAMPLE.banners;
 
-  // 학과별 취업현황 (getAll employ 데이터 우선)
-  if (all && all.success && all.employ && all.employ.length) {
+  // 학과별 취업현황
+  // getAll은 현재연도(2026) employ를 반환 → 데이터가 전년도(2025)에 있으면 빈 배열
+  // → 빈 경우 전년도까지 순서대로 추가 시도
+  let employData = (all && all.success && all.employ) ? all.employ : [];
+  if (!employData.length) {
+    const curYear = new Date().getFullYear();
+    // 전년도, 전전년도 순으로 데이터 탐색 (최대 2년 전까지)
+    for (let y = curYear - 1; y >= curYear - 2; y--) {
+      const r = await SAMIL_API.getEmployStats(y).catch(() => null);
+      if (r && r.success && r.data && r.data.length) {
+        employData = r.data;
+        break;
+      }
+    }
+  }
+  if (employData.length) {
     const DB_adm = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
-    DB_adm.employ = all.employ;
+    DB_adm.employ = employData;
     try { localStorage.setItem('samilAdmin', JSON.stringify(DB_adm)); } catch(_) {}
-    DATA.depts = buildDeptStats(DB_adm);
+    DATA.depts = buildDeptStats({ employ: employData });
   } else {
+    // 최후 fallback: localStorage (관리자 컴퓨터에서만 유효)
     const DB_adm = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
     DATA.depts = buildDeptStats(DB_adm);
   }
