@@ -1736,12 +1736,25 @@ function renderBanners() {
   if (!el) return;
   const list = DB.banners || [];
   if (!list.length) { el.innerHTML = '<p style="color:var(--text-sub);font-size:13px">등록된 배너 없음</p>'; return; }
-  el.innerHTML = list.map(b => {
+
+  const todayStr = today();
+  // 활성 배너 / 만료 배너 분리
+  const active  = list.filter(b => {
     const noExpiry = b.noExpiry === true || b.noExpiry === 'true';
-    const dlText   = noExpiry ? '<span style="font-size:11px;color:var(--green);margin-left:8px;font-weight:600">기간제한 없음</span>'
-                   : b.dl ? `<span style="color:var(--text-sub);font-size:11px;margin-left:8px">~${b.dl}</span>` : '';
+    return noExpiry || !b.dl || b.dl >= todayStr;
+  });
+  const expired = list.filter(b => {
+    const noExpiry = b.noExpiry === true || b.noExpiry === 'true';
+    return !noExpiry && b.dl && b.dl < todayStr;
+  });
+
+  const renderItem = (b, isExpired) => {
+    const noExpiry = b.noExpiry === true || b.noExpiry === 'true';
+    const dlText = noExpiry
+      ? '<span style="font-size:11px;color:var(--green);margin-left:8px;font-weight:600">기간제한 없음</span>'
+      : b.dl ? `<span style="font-size:11px;margin-left:8px;${isExpired ? 'color:#E53E3E;font-weight:600' : 'color:var(--text-sub)'}">~${b.dl}${isExpired ? ' (만료)' : ''}</span>` : '';
     return `
-    <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);margin-bottom:8px;background:${b.color||'#1E3A6E'}15">
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);margin-bottom:8px;background:${b.color||'#1E3A6E'}15;${isExpired ? 'opacity:0.45;filter:grayscale(40%)' : ''}">
       <div style="width:16px;height:16px;border-radius:4px;background:${b.color||'#1E3A6E'};flex-shrink:0"></div>
       <div style="flex:1">
         <strong style="font-size:13px">${b.title}</strong>${dlText}
@@ -1750,7 +1763,14 @@ function renderBanners() {
       <button class="btn btn-sm btn-ghost" onclick="editBanner('${b.id}')">수정</button>
       <button class="btn btn-sm btn-danger" onclick="delBanner('${b.id}')">삭제</button>
     </div>`;
-  }).join('');
+  };
+
+  let html = active.map(b => renderItem(b, false)).join('');
+  if (expired.length) {
+    html += `<div style="font-size:12px;color:var(--text-sub);margin:14px 0 8px;padding-top:10px;border-top:1px dashed var(--border)">⏰ 만료된 배너 — 수정으로 마감일 변경 시 홈페이지에 다시 표시됩니다</div>`;
+    html += expired.map(b => renderItem(b, true)).join('');
+  }
+  el.innerHTML = html;
 }
 
 // ══════════════════════════════════════════════

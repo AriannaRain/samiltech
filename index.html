@@ -438,7 +438,14 @@ function renderDeptTable(){
 }
 
 function renderBanners(){
-  document.getElementById('banners').innerHTML = (DATA.banners||[]).map(b=>
+  const todayStr = getTodayStr();
+  const active = (DATA.banners||[]).filter(b => {
+    const noExpiry = b.noExpiry === true || b.noExpiry === 'true';
+    if (noExpiry) return true;
+    if (!b.dl) return true;
+    return b.dl >= todayStr;  // 마감일이 오늘 이후인 것만 표시
+  });
+  document.getElementById('banners').innerHTML = active.map(b=>
     `<a class="banner-item" href="${b.url||'#'}" target="_blank" rel="noopener noreferrer" style="background:${b.color||'#1A3A6B'}">
       <div><div class="banner-title">${b.title}</div>${(b.deadline||b.dl)?`<div class="banner-date">마감 ${b.deadline||b.dl}</div>`:''}</div>
       <div class="banner-arrow">→</div></a>`).join('');
