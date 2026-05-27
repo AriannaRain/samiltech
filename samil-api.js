@@ -41,29 +41,40 @@ const SAMIL_API = (() => {
     keys.forEach(k => { try { localStorage.removeItem(_LS_PREFIX + k); } catch(_) {} });
   }
 
-  async function call(params) {
+  async function call(params, timeoutMs = 20000) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
       const res = await fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(params),
         redirect: 'follow',
+        signal: ctrl.signal,
       });
+      clearTimeout(timer);
       return await res.json();
     } catch (e) {
+      clearTimeout(timer);
       console.error('[SAMIL_API]', e);
-      return { success: false, error: e.message };
+      const msg = e.name === 'AbortError' ? '서버 응답 시간 초과 (20초)' : e.message;
+      return { success: false, error: msg, timeout: e.name === 'AbortError' };
     }
   }
 
-  async function get(params) {
+  async function get(params, timeoutMs = 15000) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
       params._t = Date.now();
       const qs  = new URLSearchParams(params).toString();
-      const res = await fetch(`${GAS_URL}?${qs}`, { redirect: 'follow', cache: 'no-store' });
+      const res = await fetch(`${GAS_URL}?${qs}`, { redirect: 'follow', cache: 'no-store', signal: ctrl.signal });
+      clearTimeout(timer);
       return await res.json();
     } catch (e) {
-      return { success: false, error: e.message };
+      clearTimeout(timer);
+      const msg = e.name === 'AbortError' ? '서버 응답 시간 초과 (15초)' : e.message;
+      return { success: false, error: msg, timeout: e.name === 'AbortError' };
     }
   }
 
@@ -318,9 +329,11 @@ const SAMIL_API = (() => {
 
   async function getEmployStats(year) {
     const k = 'employ_'+(year||new Date().getFullYear());
-    const c = _cGet(k); if (c) return c;
+    const mc = _cGet(k); if (mc) return mc;
+    const lc = _lsGet(k);
+    if (lc) { _cSet(k, lc, _TTL.getAll); return lc; }
     const r = await get({ action: 'getEmployStats', year: year || new Date().getFullYear() });
-    if (r.success) _cSet(k, r, _TTL.depts);
+    if (r.success) { _cSet(k, r, _TTL.getAll); _lsSet(k, r, _TTL.getAll); }
     return r;
   }
 

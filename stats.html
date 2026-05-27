@@ -143,7 +143,14 @@ tr:hover td{background:#f9fafb}
 
 <!-- 메인 컨텐츠 -->
 <div class="container" id="mainContent" style="display:none">
-  <div id="loadingMsg" class="loading">데이터를 불러오는 중...</div>
+  <div id="loadingMsg" style="text-align:center;padding:60px 24px">
+    <div style="font-size:32px;margin-bottom:16px">📊</div>
+    <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px" id="loadingTitle">데이터를 불러오는 중...</div>
+    <div style="font-size:13px;color:var(--text-sub);margin-bottom:20px" id="loadingDesc">처음 로드 시 서버 준비로 10~20초 소요될 수 있습니다.</div>
+    <div id="loadingRetryBtn" style="display:none">
+      <button onclick="retryLoad()" style="padding:10px 24px;background:var(--primary);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;font-family:inherit">🔄 다시 시도</button>
+    </div>
+  </div>
 
   <!-- 학과별 취업현황 테이블 -->
   <div class="card" id="deptCard" style="display:none">
@@ -209,27 +216,91 @@ let currentArcFilter = '전체';
 // ══════════════════════════════════════════════
 // 데이터 로드
 // ══════════════════════════════════════════════
+const _STATS_LS_KEY = 'samilStatsCache';
+const _STATS_LS_TTL = 10 * 60 * 1000; // 10분
+
+function _statsSaveCache(employ, reviews, years) {
+  try {
+    localStorage.setItem(_STATS_LS_KEY, JSON.stringify({ employ, reviews, years, ts: Date.now() }));
+  } catch(_) {}
+}
+
+function _statsLoadCache() {
+  try {
+    const raw = localStorage.getItem(_STATS_LS_KEY);
+    if (!raw) return null;
+    const c = JSON.parse(raw);
+    if (Date.now() - c.ts > _STATS_LS_TTL) return null;
+    return c;
+  } catch(_) { return null; }
+}
+
+function _applyData(employ, reviews, years) {
+  DB_employ  = employ  || [];
+  DB_reviews = reviews || [];
+  DB_years   = (years  || []).sort((a,b) => b - a);
+}
+
+async function retryLoad() {
+  document.getElementById('loadingRetryBtn').style.display = 'none';
+  document.getElementById('loadingTitle').textContent = '다시 불러오는 중...';
+  document.getElementById('loadingDesc').textContent = '잠시만 기다려주세요.';
+  await loadData();
+}
+
 async function loadData() {
-  const all = await SAMIL_API.getAll().catch(() => null);
-  if (all && all.success) {
-    DB_employ  = all.employ  || [];
-    DB_reviews = all.reviews || [];
-    DB_years   = (all.years  || []).sort((a,b) => b - a);
-  }
-  // localStorage 폴백
-  if (!DB_employ.length || !DB_reviews.length) {
-    const adm = JSON.parse(localStorage.getItem('samilAdmin') || '{}');
-    if (!DB_employ.length)  DB_employ  = adm.employ  || adm.employs || [];
-    if (!DB_reviews.length) DB_reviews = adm.reviews || [];
+  const loadEl   = document.getElementById('loadingMsg');
+  const titleEl  = document.getElementById('loadingTitle');
+  const descEl   = document.getElementById('loadingDesc');
+  const retryEl  = document.getElementById('loadingRetryBtn');
+  if (loadEl)  loadEl.style.display = 'block';
+  if (retryEl) retryEl.style.display = 'none';
+
+  // ① localStorage 캐시 즉시 표시
+  const cached = _statsLoadCache();
+  if (cached) {
+    _applyData(cached.employ, cached.reviews, cached.years);
+    buildYearSel();
+    renderAll();
+    if (loadEl) loadEl.style.display = 'none';
+    // 백그라운드에서 조용히 최신 데이터 갱신
+    _loadDataBackground();
+    return;
   }
 
+  // ② 캐시 없으면 서버에서 직접 로드
+  if (titleEl) titleEl.textContent = '데이터를 불러오는 중...';
+  if (descEl)  descEl.textContent  = '처음 로드 시 서버 준비로 10~20초 소요될 수 있습니다.';
+
+  const all = await SAMIL_API.getAll().catch(() => null);
+
+  if (!all || !all.success) {
+    // 실패 시: samilAdmin 폴백
+    const adm = JSON.parse(localStorage.getItem('samilAdmin') || '{}');
+    const fbEmploy  = adm.employ  || adm.employs || [];
+    const fbReviews = adm.reviews || [];
+    if (fbEmploy.length || fbReviews.length) {
+      _applyData(fbEmploy, fbReviews, []);
+      buildYearSel(); renderAll();
+      if (loadEl) loadEl.style.display = 'none';
+    } else {
+      // 완전 실패
+      if (titleEl) titleEl.textContent = '데이터를 불러올 수 없습니다';
+      if (descEl)  descEl.textContent  = (all && all.timeout)
+        ? '서버 응답 시간이 초과되었습니다. 다시 시도해주세요.'
+        : '네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+      if (retryEl) retryEl.style.display = 'block';
+    }
+    return;
+  }
+
+  _applyData(all.employ, all.reviews, all.years);
   buildYearSel();
 
-  // 연도별 employ 전체 로드 (히스토리 차트용)
+  // 연도별 추가 로드
   const years = DB_years.length
     ? DB_years
     : [...new Set(DB_employ.map(e => Number(e.year)))].sort((a,b) => b-a);
-
   const currentYear = new Date().getFullYear();
   const otherYears = years.filter(y => Number(y) !== currentYear);
   if (otherYears.length) {
@@ -246,8 +317,32 @@ async function loadData() {
     });
   }
 
-  document.getElementById('loadingMsg').style.display = 'none';
+  _statsSaveCache(DB_employ, DB_reviews, DB_years);
+  if (loadEl) loadEl.style.display = 'none';
   renderAll();
+}
+
+// 백그라운드 캐시 갱신 (캐시 hit 후 조용히 최신화)
+async function _loadDataBackground() {
+  try {
+    const all = await SAMIL_API.getAll().catch(() => null);
+    if (!all || !all.success) return;
+    const employ  = all.employ  || [];
+    const reviews = all.reviews || [];
+    const years   = (all.years  || []).sort((a,b) => b-a);
+    const currentYear = new Date().getFullYear();
+    const otherYears = years.filter(y => Number(y) !== currentYear);
+    if (otherYears.length) {
+      const extras = await Promise.all(otherYears.map(y => SAMIL_API.getEmployStats(y).catch(() => null)));
+      extras.forEach(r => {
+        if (r && r.success && r.data) r.data.forEach(e => {
+          const exists = employ.find(x => Number(x.year) === Number(e.year) && x.dept === e.dept);
+          if (!exists) employ.push(e);
+        });
+      });
+    }
+    _statsSaveCache(employ, reviews, years);
+  } catch(_) {}
 }
 
 function buildYearSel() {
