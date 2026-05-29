@@ -677,8 +677,11 @@ function handleFile(file){
       const aMap=gid(attendRows),cMap=gid(certRows),clMap=gid(clubRows),lMap=gid(leaderRows);
       const sMap={};summaryRows.forEach(r=>{sMap[String(r[1]||'')]=r;});
       setProgress(92,'데이터 조합 중...');
-      pendingStudents=basicRows.slice(1).filter(r=>r.length>2).map(r=>{
-        const dept=String(r[hIdx['학과']]||''),id=String(r[hIdx['학번']]||'');
+      const allParsed=basicRows.slice(1).filter(r=>r.length>2).map(r=>{
+        // 학과가 비어있으면 담임 학과로 보정
+        const rawDept=String(r[hIdx['학과']]||'');
+        const dept=rawDept||ME.dept;
+        const id=String(r[hIdx['학번']]||'');
         const name=String(r[hIdx['이름']]||''),gender=String(r[hIdx['성별']]||'');
         const birth=String(r[hIdx['생년월일(YYMMDD)']]||r[hIdx['생년월일']]||'');
         const teacher=String(r[hIdx['담임교사']]||'');
@@ -696,6 +699,14 @@ function handleFile(file){
                uploaded:true,certCount:certs.length,certs,attend,clubs,leaders,summary,
                middle:(mMap[id]&&mMap[id].middle)||'',middleYear:(mMap[id]&&mMap[id].middleYear)||''};
       }).filter(s=>s.name&&s.id);
+
+      // ★ 안전장치: 내 학과가 아닌 학생은 업로드 목록에서 제외
+      const skipped=allParsed.filter(s=>s.dept!==ME.dept);
+      pendingStudents=allParsed.filter(s=>s.dept===ME.dept);
+      if(skipped.length){
+        showUploadAlert('error',
+          `⚠️ 파일에 다른 학과 학생 ${skipped.length}명이 포함되어 있어 제외했습니다. (${[...new Set(skipped.map(s=>s.dept))].join(', ')})`);
+      }
       setProgress(100,'완료!');
       const tc=pendingStudents.reduce((a,s)=>a+s.certs.length,0);
       const tl=pendingStudents.reduce((a,s)=>a+s.leaders.length,0);
@@ -740,7 +751,9 @@ function confirmUpload(){
   const teacherId = ME ? ME.id : '';
   SAMIL_API.saveRecords(pendingStudents, teacherId).then(res => {
     if(res && res.success){
-      showUploadAlert('success', `✅ 저장 완료! 신규 ${res.added}명 추가, ${res.updated}명 업데이트`);
+      let msg = `✅ 저장 완료! 신규 ${res.added}명 추가, ${res.updated}명 업데이트`;
+      if(res.skipped) msg += ` (다른 학급 ${res.skipped}명 보호됨)`;
+      showUploadAlert('success', msg);
     } else {
       showUploadAlert('error', `⚠️ Sheets 저장 실패: ${(res&&res.error)||'오류'}`);
     }
