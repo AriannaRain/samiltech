@@ -336,6 +336,8 @@ function getStudents(p) {
 
   if (p.teacherId) list = list.filter(s => s.teacher === p.teacherId);
   if (p.dept)      list = list.filter(s => s.dept === p.dept);
+  if (p.grade)     list = list.filter(s => String(s.grade) === String(p.grade));
+  if (p.cls)       list = list.filter(s => String(s.cls)   === String(p.cls));
   if (p.token !== getAdminToken()) list = list.map(s => { const {birth, ...rest} = s; return rest; });
   return { success: true, data: list };
 }
@@ -481,12 +483,33 @@ function saveRecords(p) {
   if (!sh.getRange(1, 22).getValue()) sh.getRange(1, 22).setValue('출신중학교');
 
   const rows = sheetToObjects(sh);
-  let added = 0, updated = 0;
+  let added = 0, updated = 0, skipped = 0;
 
-  records.forEach(record => {
+  // 교사 업로드인 경우(not admin): 첫 레코드의 dept/grade/cls를 기준으로 다른 학급 수정 차단
+  const isTeacher = !!p.teacherId && p.token !== getAdminToken();
+  const guardDept  = isTeacher && records[0] ? String(records[0].dept  || '') : null;
+  const guardGrade = isTeacher && records[0] ? String(records[0].grade || '') : null;
+  const guardCls   = isTeacher && records[0] ? String(records[0].cls   || '') : null;
+
+  records.forEach(function(record) {
     if (!record || !record.id) return;
-    const existing = rows.find(r => String(r['학번']).trim() === String(record.id).trim());
-    const rowData  = _buildRowData(record, existing, p.teacherId);
+    const existing = rows.find(function(r) { return String(r['학번']).trim() === String(record.id).trim(); });
+
+    // ★ 안전장치: 교사 업로드 시 스프레드시트의 기존 학생이 다른 학과/학년/반이면 절대 수정 금지
+    if (isTeacher && existing) {
+      const exDept  = String(existing['학과']  || '');
+      const exGrade = String(existing['학년']  || '');
+      const exCls   = String(existing['반']    || '');
+      // 학과가 다르거나, 학과 같아도 학년·반이 다르면 스킵
+      if ((exDept && guardDept && exDept !== guardDept) ||
+          (exGrade && guardGrade && exGrade !== guardGrade) ||
+          (exCls   && guardCls   && exCls   !== guardCls)) {
+        skipped++;
+        return;
+      }
+    }
+
+    const rowData = _buildRowData(record, existing, p.teacherId);
     if (existing) {
       sh.getRange(existing['_row'], 1, 1, rowData.length).setValues([rowData]);
       sh.getRange(existing['_row'], 22).setValue(record.middle || '');
@@ -500,7 +523,7 @@ function saveRecords(p) {
       added++;
     }
   });
-  return { success: true, added, updated };
+  return { success: true, added: added, updated: updated, skipped: skipped };
 }
 
 function getMyRecord(p) {
