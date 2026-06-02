@@ -842,6 +842,25 @@ tr:last-child td{border-bottom:none}
 </div>
 
 
+
+<!-- ══════ 모달: 입사지원현황 ══════ -->
+<div class="edit-modal-overlay" id="applicantsModal" onclick="if(event.target===this)closeApplicantsModal()">
+  <div class="edit-modal" style="max-width:800px;max-height:85vh;overflow-y:auto">
+    <div class="edit-modal-header">
+      <h3>📋 입사지원현황 — <span id="apm-job-title"></span></h3>
+      <button class="edit-modal-close" onclick="closeApplicantsModal()">✕</button>
+    </div>
+    <div class="edit-modal-body" style="padding:16px 20px">
+      <div id="apm-summary" style="font-size:13px;color:var(--text-sub);margin-bottom:12px"></div>
+      <div id="apm-body">
+        <div style="text-align:center;color:var(--text-sub);padding:32px">⏳ 불러오는 중...</div>
+      </div>
+    </div>
+    <div class="edit-modal-footer">
+      <button class="btn btn-ghost" onclick="closeApplicantsModal()">닫기</button>
+    </div>
+  </div>
+</div>
 <script src="samil-api.js"></script>
 <script>
 // ══════════════════════════════════════════════
@@ -1531,6 +1550,7 @@ function renderJobs() {
     <td style="display:flex;gap:4px;flex-wrap:wrap">
       <button class="btn btn-sm btn-ghost" onclick="editJob('${j.id}')">수정</button>
       <button class="btn btn-sm btn-ghost" onclick="toggleJob('${j.id}')">${j.active?'마감':'재개'}</button>
+      <button class="btn btn-sm btn-ghost" onclick="openApplicantsModal('${j.id}','${j.co} — ${j.job}')">📋 지원자</button>
       <button class="btn btn-sm btn-danger" onclick="delJob('${j.id}')">삭제</button>
     </td></tr>`).join('')
   : '<tr><td colspan="7" style="text-align:center;color:var(--text-sub)">공고 없음</td></tr>';
@@ -2859,106 +2879,83 @@ async function deleteProgram(id) {
   else alert('삭제 실패: ' + ((res && res.error) || '오류'));
 }
 
-// ══════════════════════════════════════════════
-// 입사지원현황
-// ══════════════════════════════════════════════
-let _applyJobs = [];  // 공고 목록 캐시
 
-async function loadApplyTab() {
-  // 공고 목록 불러와서 셀렉트 채우기
-  const sel = document.getElementById('apply-job-sel');
-  if (!sel) return;
-  sel.innerHTML = '<option value="">공고를 선택하세요</option>';
-  try {
-    const res = await SAMIL_API.getJobs(false);
-    _applyJobs = (res && res.success) ? (res.data || []) : [];
-    _applyJobs.forEach(j => {
-      const opt = document.createElement('option');
-      opt.value = j.id;
-      opt.textContent = `[${j.active ? '진행중' : '마감'}] ${j.co} — ${j.job}`;
-      sel.appendChild(opt);
-    });
-  } catch(e) {
-    console.warn('공고 로드 실패', e);
-  }
-  document.getElementById('apply-list-wrap').innerHTML =
-    '<div style="text-align:center;color:var(--text-sub);padding:40px;font-size:13px">위에서 공고를 선택하면 지원자 목록이 표시됩니다.</div>';
-}
-
-async function loadApplicants() {
-  const jobId = document.getElementById('apply-job-sel').value;
-  if (!jobId) return;
-  const wrap = document.getElementById('apply-list-wrap');
-  wrap.innerHTML = '<div style="text-align:center;color:var(--text-sub);padding:32px;font-size:13px">⏳ 불러오는 중...</div>';
+// ══════════════════════════════════════════════
+// 입사지원현황 모달
+// ══════════════════════════════════════════════
+async function openApplicantsModal(jobId, jobTitle) {
+  document.getElementById("apm-job-title").textContent = jobTitle || jobId;
+  document.getElementById("apm-summary").textContent = "";
+  document.getElementById("apm-body").innerHTML =
+    '<div style="text-align:center;color:var(--text-sub);padding:32px">⏳ 불러오는 중...</div>';
+  document.getElementById("applicantsModal").classList.add("open");
   try {
     const res = await SAMIL_API.getApplicants(jobId);
     const list = (res && res.success) ? (res.data || []) : [];
+    document.getElementById("apm-summary").textContent = "총 " + list.length + "명 지원";
     if (!list.length) {
-      wrap.innerHTML = '<div style="text-align:center;color:var(--text-sub);padding:40px;font-size:13px">지원자가 없습니다.</div>';
+      document.getElementById("apm-body").innerHTML =
+        '<div style="text-align:center;color:var(--text-sub);padding:32px">지원자가 없습니다.</div>';
       return;
     }
-    document.getElementById('apply-count').textContent = `총 ${list.length}명`;
-    wrap.innerHTML = `
+    document.getElementById("apm-body").innerHTML = `
       <table style="width:100%;border-collapse:collapse;font-size:13px">
         <thead>
           <tr style="background:var(--bg);border-bottom:2px solid var(--border)">
-            <th style="padding:10px 12px;text-align:left;font-weight:600;color:var(--text-sub)">학번</th>
-            <th style="padding:10px 12px;text-align:left;font-weight:600;color:var(--text-sub)">이름</th>
-            <th style="padding:10px 12px;text-align:left;font-weight:600;color:var(--text-sub)">학과</th>
-            <th style="padding:10px 12px;text-align:left;font-weight:600;color:var(--text-sub)">학년/반</th>
-            <th style="padding:10px 12px;text-align:left;font-weight:600;color:var(--text-sub)">지원일</th>
-            <th style="padding:10px 12px;text-align:left;font-weight:600;color:var(--text-sub)">등록구분</th>
-            <th style="padding:10px 12px;text-align:center;font-weight:600;color:var(--text-sub)">관리</th>
+            <th style="padding:9px 10px;text-align:left;color:var(--text-sub)">학번</th>
+            <th style="padding:9px 10px;text-align:left;color:var(--text-sub)">이름</th>
+            <th style="padding:9px 10px;text-align:left;color:var(--text-sub)">학과</th>
+            <th style="padding:9px 10px;text-align:left;color:var(--text-sub)">학년/반</th>
+            <th style="padding:9px 10px;text-align:left;color:var(--text-sub)">지원일</th>
+            <th style="padding:9px 10px;text-align:left;color:var(--text-sub)">등록구분</th>
+            <th style="padding:9px 10px;text-align:center;color:var(--text-sub)">관리</th>
           </tr>
         </thead>
         <tbody>
           ${list.map(a => `
-            <tr style="border-bottom:1px solid var(--border)" id="apply-row-${a._row}">
-              <td style="padding:10px 12px">${a.studentId}</td>
-              <td style="padding:10px 12px;font-weight:600">${a.name}</td>
-              <td style="padding:10px 12px">${a.dept}</td>
-              <td style="padding:10px 12px">${a.grade}학년 ${a.cls}반</td>
-              <td style="padding:10px 12px;color:var(--text-sub)">${(a.date||'').substring(0,10)}</td>
-              <td style="padding:10px 12px">
+            <tr style="border-bottom:1px solid var(--border)" id="apm-row-${a._row}">
+              <td style="padding:9px 10px">${a.studentId}</td>
+              <td style="padding:9px 10px;font-weight:600">${a.name}</td>
+              <td style="padding:9px 10px">${a.dept}</td>
+              <td style="padding:9px 10px">${a.grade}학년 ${a.cls}반</td>
+              <td style="padding:9px 10px;color:var(--text-sub)">${(a.date||"").substring(0,10)}</td>
+              <td style="padding:9px 10px">
                 <span style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;
-                  background:${a.regType==='담임'?'#EFF6FF':'#F0FDF4'};
-                  color:${a.regType==='담임'?'#1D4ED8':'#15803D'}">
-                  ${a.regType||'학생'}
+                  background:${a.regType==="담임"?"#EFF6FF":"#F0FDF4"};
+                  color:${a.regType==="담임"?"#1D4ED8":"#15803D"}">
+                  ${a.regType||"학생"}
                 </span>
               </td>
-              <td style="padding:10px 12px;text-align:center">
-                <button onclick="deleteApply(${a._row},'${jobId}')"
-                  style="padding:4px 12px;background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;
-                  border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">
-                  삭제
-                </button>
+              <td style="padding:9px 10px;text-align:center">
+                <button onclick="deleteApplyRow(${a._row})" style="padding:3px 10px;background:#FEF2F2;
+                  color:#DC2626;border:1px solid #FECACA;border-radius:6px;font-size:12px;
+                  font-weight:600;cursor:pointer;font-family:inherit">삭제</button>
               </td>
-            </tr>`).join('')}
+            </tr>`).join("")}
         </tbody>
       </table>`;
   } catch(e) {
-    wrap.innerHTML = `<div style="text-align:center;color:#DC2626;padding:32px;font-size:13px">오류: ${e.message}</div>`;
+    document.getElementById("apm-body").innerHTML =
+      `<div style="color:#DC2626;padding:20px">오류: ${e.message}</div>`;
   }
 }
 
-async function deleteApply(rowNum, jobId) {
-  if (!confirm('이 지원 내역을 삭제하시겠습니까?')) return;
+function closeApplicantsModal() {
+  document.getElementById("applicantsModal").classList.remove("open");
+}
+
+async function deleteApplyRow(rowNum) {
+  if (!confirm("이 지원 내역을 삭제하시겠습니까?")) return;
   const res = await SAMIL_API.deleteApply(rowNum).catch(() => null);
   if (res && res.success) {
-    // 해당 행만 즉시 제거
-    const row = document.getElementById(`apply-row-${rowNum}`);
+    const row = document.getElementById("apm-row-" + rowNum);
     if (row) row.remove();
-    // 카운트 갱신
-    const tbody = document.querySelector('#apply-list-wrap tbody');
-    if (tbody) {
-      const cnt = tbody.querySelectorAll('tr').length;
-      document.getElementById('apply-count').textContent = `총 ${cnt}명`;
-    }
+    const remaining = document.querySelectorAll("#apm-body tbody tr").length;
+    document.getElementById("apm-summary").textContent = "총 " + remaining + "명 지원";
   } else {
-    alert('삭제 실패: ' + ((res && res.error) || '오류'));
+    alert("삭제 실패: " + ((res && res.error) || "오류"));
   }
 }
-
 </script>
 </body>
 </html>
