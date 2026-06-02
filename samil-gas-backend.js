@@ -356,7 +356,14 @@ function addStudent(p) {
 function resetStudentPw(p) {
   const sh   = getSheet(SH.STUDENTS);
   const rows = sheetToObjects(sh);
-  const row  = rows.find(r => String(r['학번']).trim() === p.id);
+  // ★ dept/grade/cls가 있으면 함께 비교
+  const row  = rows.find(r => {
+    if (String(r['학번']).trim() !== String(p.id).trim()) return false;
+    if (p.dept  && r['학과'] && String(r['학과'])  !== String(p.dept))  return false;
+    if (p.grade && r['학년'] && String(r['학년'])  !== String(p.grade)) return false;
+    if (p.cls   && r['반']   && String(r['반'])    !== String(p.cls))   return false;
+    return true;
+  });
   if (!row) return { success: false, error: '학생 없음' };
   sh.getRange(row['_row'], 8).setValue(row['생년월일']);
   return { success: true };
@@ -454,7 +461,13 @@ function saveRecord(p) {
 
   const sh       = getSheet(SH.STUDENTS);
   const rows     = sheetToObjects(sh);
-  const existing = rows.find(r => String(r['학번']).trim() === String(record.id).trim());
+  // ★ 학번+학과+학년+반 모두 일치해야 같은 학생으로 인식 (학번은 학급 내에서만 고유)
+  const existing = rows.find(r =>
+    String(r['학번']).trim() === String(record.id).trim() &&
+    String(r['학과']).trim() === String(record.dept).trim() &&
+    String(r['학년']).trim() === String(record.grade).trim() &&
+    String(r['반']).trim()   === String(record.cls).trim()
+  );
   const rowData  = _buildRowData(record, existing, p.teacherId);
 
   if (existing) {
@@ -493,7 +506,13 @@ function saveRecords(p) {
 
   records.forEach(function(record) {
     if (!record || !record.id) return;
-    const existing = rows.find(function(r) { return String(r['학번']).trim() === String(record.id).trim(); });
+    // ★ 학번+학과+학년+반 모두 일치해야 같은 학생으로 인식 (학번은 학급 내에서만 고유)
+    const existing = rows.find(function(r) {
+      return String(r['학번']).trim() === String(record.id).trim() &&
+             String(r['학과']).trim() === String(record.dept).trim() &&
+             String(r['학년']).trim() === String(record.grade).trim() &&
+             String(r['반']).trim()   === String(record.cls).trim();
+    });
 
     // ★ 안전장치: 교사 업로드 시 스프레드시트의 기존 학생이 다른 학과/학년/반이면 절대 수정 금지
     if (isTeacher && existing) {
@@ -953,7 +972,14 @@ function updateStudentEmploy(p) {
   if (!p.studentId) return { success: false, error: '학번 필요' };
   const sh   = getSheet(SH.STUDENTS);
   const rows = sheetToObjects(sh);
-  const row  = rows.find(r => String(r['학번']) === String(p.studentId));
+  // ★ dept/grade/cls가 있으면 함께 비교 (학번은 학급 내에서만 고유)
+  const row  = rows.find(r => {
+    if (String(r['학번']) !== String(p.studentId)) return false;
+    if (p.dept  && r['학과'] && String(r['학과'])  !== String(p.dept))  return false;
+    if (p.grade && r['학년'] && String(r['학년'])  !== String(p.grade)) return false;
+    if (p.cls   && r['반']   && String(r['반'])    !== String(p.cls))   return false;
+    return true;
+  });
   if (!row) return { success: false, error: '학생 없음' };
   if (p.employed !== undefined) {
     sh.getRange(row['_row'], 18).setValue(p.employed);

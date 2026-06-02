@@ -183,8 +183,8 @@ const SAMIL_API = (() => {
     return call({ action: 'addStudent', token: getAdminToken(), ...data });
   }
 
-  async function resetStudentPw(id) {
-    return call({ action: 'resetStudentPw', token: getAdminToken(), id });
+  async function resetStudentPw(id, dept, grade, cls) {
+    return call({ action: 'resetStudentPw', token: getAdminToken(), id, dept: dept||'', grade: grade||'', cls: cls||'' });
   }
 
   // ════════════════════════════════════════════
