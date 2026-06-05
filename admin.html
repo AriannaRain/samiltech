@@ -2538,7 +2538,44 @@ window.onload = function() {
 let _prSections = [];
 let _prFiles    = {};
 
+/* ── 현장실습 localStorage 캐시 ── */
+const _PR_ADMIN_CACHE_KEY = 'samilPracticeAdmin';
+const _PR_ADMIN_CACHE_TTL = 5 * 60 * 1000; // 5분
+
+function _prSaveCache() {
+  try {
+    const flat = Object.values(_prFiles).flat();
+    localStorage.setItem(_PR_ADMIN_CACHE_KEY, JSON.stringify({
+      sections: _prSections, files: flat, ts: Date.now()
+    }));
+  } catch(_) {}
+}
+
+function _prLoadCache() {
+  try {
+    const raw = localStorage.getItem(_PR_ADMIN_CACHE_KEY);
+    if (!raw) return null;
+    const c = JSON.parse(raw);
+    if (Date.now() - c.ts > _PR_ADMIN_CACHE_TTL) return null;
+    return c;
+  } catch(_) { return null; }
+}
+
+function _prApplyCache(c) {
+  _prSections = c.sections || [];
+  _prRebuildFiles(c.files || []);
+}
+
 async function loadPractice(showLoading = true) {
+  // ① 캐시 있으면 즉시 표시 → 백그라운드 갱신
+  const cached = _prLoadCache();
+  if (cached) {
+    _prApplyCache(cached);
+    renderPrSections();
+    _prRefreshBackground();
+    return;
+  }
+  // ② 캐시 없으면 로딩 표시 후 GAS 호출
   if (showLoading) {
     const el = document.getElementById('prSectionList');
     if (el) el.innerHTML = '<div class="card" style="text-align:center;color:var(--text-sub);padding:32px">⏳ 자료를 불러오는 중...</div>';
@@ -2555,7 +2592,29 @@ async function loadPractice(showLoading = true) {
       _prFiles[f.secId].push(f);
     });
   }
+  _prSaveCache();
   renderPrSections();
+}
+
+async function _prRefreshBackground() {
+  try {
+    const [secRes, fileRes] = await Promise.all([
+      SAMIL_API.getPracticeSections(),
+      SAMIL_API.getPracticeFiles(''),
+    ]);
+    if (!secRes.success) return;
+    const newSections = secRes.data || [];
+    const newFiles    = fileRes.success ? fileRes.data : [];
+    const changed =
+      JSON.stringify(newSections.map(s=>s.id)) !== JSON.stringify(_prSections.map(s=>s.id)) ||
+      newFiles.length !== Object.values(_prFiles).flat().length;
+    if (changed) {
+      _prSections = newSections;
+      _prRebuildFiles(newFiles);
+      renderPrSections();
+    }
+    _prSaveCache();
+  } catch(_) {}
 }
 
 /* 로컬 상태만 업데이트하고 즉시 재렌더 (API 완료 대기 없이 UI 즉각 반응) */
@@ -2651,9 +2710,8 @@ async function uploadPrFile(file, secId) {
     const newFile = addRes.data || { id: addRes.id||('tmpf_'+Date.now()), secId, name: file.name, url: upRes.url, order: (_prFiles[secId]||[]).length+1 };
     if (!_prFiles[secId]) _prFiles[secId] = [];
     _prFiles[secId].push(newFile);
+    _prSaveCache();
     renderPrSections();
-    // 백그라운드 동기
-    loadPractice(false);
   } catch(e) {
     alert('오류: '+e.message);
     if (pendEl) pendEl.innerHTML = '';
@@ -2673,6 +2731,7 @@ async function addPrSection() {
   // 로컬 즉시 반영 (재조회 없이)
   const newSec = res.data || { id: res.id || ('tmp_'+Date.now()), title, order: _prSections.length+1 };
   _prSections.push(newSec);
+  _prSaveCache();
   renderPrSections();
   // 백그라운드에서 최신 데이터 동기 (캐시 무효화 후 조용히)
   loadPractice(false);
@@ -2686,6 +2745,7 @@ async function editPrSection(id) {
   const newTitle = t.trim();
   // 로컬 즉시 반영
   sec.title = newTitle;
+  _prSaveCache();
   renderPrSections();
   // 백그라운드 API
   SAMIL_API.updatePracticeSection({ id, title: newTitle }).then(r => {
@@ -2698,6 +2758,7 @@ async function delPrSection(id) {
   // 로컬 즉시 반영
   _prSections = _prSections.filter(s => s.id !== id);
   delete _prFiles[id];
+  _prSaveCache();
   renderPrSections();
   // 백그라운드 API
   SAMIL_API.deletePracticeSection(id).then(r => {
@@ -2712,6 +2773,7 @@ async function movePrSection(idx, dir) {
   [arr[idx],arr[t]]=[arr[t],arr[idx]];
   // 로컬 즉시 반영
   _prSections = arr;
+  _prSaveCache();
   renderPrSections();
   // 백그라운드 API
   SAMIL_API.reorderPracticeSection(arr.map((s,i)=>({id:s.id,order:i+1}))).then(r => {
@@ -2725,6 +2787,7 @@ async function delPrFile(fileId) {
   for (const secId in _prFiles) {
     _prFiles[secId] = _prFiles[secId].filter(f => f.id !== fileId);
   }
+  _prSaveCache();
   renderPrSections();
   // 백그라운드 API
   SAMIL_API.deletePracticeFile(fileId).then(r => {
@@ -2739,6 +2802,7 @@ async function movePrFile(secId, idx, dir) {
   [files[idx],files[t]]=[files[t],files[idx]];
   // 로컬 즉시 반영
   _prFiles[secId] = files;
+  _prSaveCache();
   renderPrSections();
   // 백그라운드 API
   SAMIL_API.reorderPracticeFile(files.map((f,i)=>({id:f.id,order:i+1}))).then(r => {
