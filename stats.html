@@ -240,6 +240,8 @@ function _statsLoadCache() {
     if (!raw) return null;
     const c = JSON.parse(raw);
     if (Date.now() - c.ts > _STATS_LS_TTL) return null;
+    // reviews 없는 구버전 캐시는 무효화
+    if (!c.reviews || !c.reviews.length) return null;
     return c;
   } catch(_) { return null; }
 }
@@ -351,6 +353,12 @@ async function _loadDataBackground() {
       });
     }
     _statsSaveCache(employ, reviews, years);
+    // 이전 캐시에 reviews 없었으면 UI 갱신
+    if (reviews.length > 0 && DB_reviews.length === 0) {
+      _applyData(employ, reviews, years);
+      buildYearSel();
+      renderAll();
+    }
   } catch(_) {}
 }
 
@@ -465,8 +473,7 @@ function renderArchive(year) {
   ).join('');
 
   if (currentArcFilter !== '전체') list = list.filter(r => r.dept === currentArcFilter);
-  // 담임은 자기 학과만
-  if (ME.role === 'teacher') list = list.filter(r => r.dept === ME.dept);
+  // 담임교사도 전체 아카이브 열람 가능
 
   document.getElementById('arcSub').textContent = list.length + '건';
   document.getElementById('arcList').innerHTML = list.length
@@ -500,7 +507,6 @@ function openArc(i) {
   // 현재 렌더된 인덱스 기반
   let list = DB_reviews;
   if (currentArcFilter !== '전체') list = list.filter(r => r.dept === currentArcFilter);
-  if (ME.role === 'teacher') list = list.filter(r => r.dept === ME.dept);
   const r = list[i];
   if (!r) return;
 
