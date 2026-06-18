@@ -506,7 +506,8 @@ async function doAdminLogin() {
 }
 
 function doLogout() {
-  ['samilAdminAuth','samilTeacherAuth','samilTeacherME','samilNonHomeTeacherAuth','samilNonHomeTeacherME'].forEach(k=>sessionStorage.removeItem(k));
+  ['samilAdminAuth','samilTeacherAuth','samilTeacherME',
+   'samilNonHomeTeacherAuth','samilNonHomeTeacherME','statsMe'].forEach(k=>sessionStorage.removeItem(k));
   updateNavAuth(); render(); renderQnaSection();
 }
 

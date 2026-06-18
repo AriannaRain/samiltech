@@ -957,7 +957,9 @@ function updateNavAuth(){
   }
 }
 function doLogout(){
-  ['samilAdminAuth','samilTeacherAuth','samilTeacherME','samilStudentAuth','samilStudentME'].forEach(k=>sessionStorage.removeItem(k));
+  ['samilAdminAuth','samilTeacherAuth','samilTeacherME',
+   'samilNonHomeTeacherAuth','samilNonHomeTeacherME',
+   'samilStudentAuth','samilStudentME','statsMe'].forEach(k=>sessionStorage.removeItem(k));
   updateNavAuth();
 }
 function toggleMenu(){document.getElementById('navMenu').classList.toggle('open');}

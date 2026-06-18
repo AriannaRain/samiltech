@@ -169,8 +169,8 @@ tr:hover td{background:#f9fafb}
 
 <nav>
   <div class="nav-brand">
-    <div class="nav-logo">삼일</div>
-    <div class="nav-title">삼일공업고등학교<span>취업정보 포털</span></div>
+    <div class="nav-logo" style="font-size:10px;line-height:1.2">삼일<br>공고</div>
+    <div class="nav-title">취업정보 포털<span>SAMIL JOBS</span></div>
   </div>
   <div class="hamburger" onclick="this.classList.toggle('open');document.getElementById('navMenu').classList.toggle('open')">
     <span></span><span></span><span></span>
@@ -180,7 +180,9 @@ tr:hover td{background:#f9fafb}
     <a href="jobs.html" onclick="closeMenu()">채용공고</a>
     <a href="stats.html" class="active" onclick="closeMenu()">취업현황</a>
     <a href="practice.html" onclick="closeMenu()">현장실습</a>
-    <span id="navAuth"></span>
+    <span id="nav-auth">
+      <a href="#" class="nav-login" onclick="openLoginModal();return false">로그인</a>
+    </span>
   </div>
 </nav>
 
@@ -332,9 +334,10 @@ function showErr(msg) {
 }
 
 function logout() {
-  sessionStorage.removeItem('statsMe');
+  ['samilAdminAuth','samilTeacherAuth','samilTeacherME',
+   'samilNonHomeTeacherAuth','samilNonHomeTeacherME',
+   'samilStudentAuth','samilStudentME','statsMe'].forEach(k => sessionStorage.removeItem(k));
   ME = null;
-  document.getElementById('navAuth').innerHTML = '';
   location.reload();
 }
 
@@ -603,15 +606,8 @@ window.addEventListener('DOMContentLoaded', async () => {
       _showContent(); _renderNavAuth(); loadData();
     } catch(_) { _showLoginGate(); }
   } else {
-    const saved = sessionStorage.getItem('statsMe');
-    if (saved) {
-      try {
-        ME = JSON.parse(saved);
-        _showContent(); _renderNavAuth(); loadData();
-      } catch(_) { sessionStorage.removeItem('statsMe'); _showLoginGate(); }
-    } else {
-      _showLoginGate();
-    }
+    sessionStorage.removeItem('statsMe'); // 전역 로그아웃 후 남은 statsMe 정리
+    _showLoginGate();
   }
 
   // 학과 드롭다운 로드 (로그인 화면용)
@@ -655,17 +651,21 @@ function closeLoginModal() {
 }
 
 function _renderNavAuth() {
-  const el = document.getElementById('navAuth');
-  if (!el || !ME) return;
+  const el = document.getElementById('nav-auth');
+  if (!el) return;
+  if (!ME) {
+    el.innerHTML = `<a href="#" class="nav-login" onclick="openLoginModal();return false">로그인</a>`;
+    return;
+  }
   if (ME.role === 'admin') {
     el.innerHTML =
-      `<a href="admin.html" class="nav-login nav-login-green">관리자 페이지</a>` +
-      `<a href="#" onclick="logout();return false" class="btn-logout">로그아웃</a>`;
+      `<a href="admin.html" class="nav-login" style="background:#38A169!important">관리자 페이지</a>` +
+      `<a href="#" onclick="logout();return false" style="color:rgba(255,255,255,.7);font-size:13px;padding:7px 10px">로그아웃</a>`;
   } else {
-    const label = (ME.name || '담임') + ' 선생님';
+    const label = (ME.name || '담임') + '선생님';
     el.innerHTML =
-      `<a href="teacher.html" class="nav-login nav-login-green">${label}</a>` +
-      `<a href="#" onclick="logout();return false" class="btn-logout">로그아웃</a>`;
+      `<a href="teacher.html" class="nav-login" style="background:#38A169!important">${label}</a>` +
+      `<a href="#" onclick="logout();return false" style="color:rgba(255,255,255,.7);font-size:13px;padding:7px 10px">로그아웃</a>`;
   }
 }
 

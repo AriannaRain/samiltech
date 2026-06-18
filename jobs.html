@@ -813,98 +813,22 @@ function tryAdmin(){
 
 function updateNavAuth(){
   const el=document.getElementById('nav-auth');
-  const isAdmin   = sessionStorage.getItem('samilAdminAuth')==='1';
-  const isTeacher = !!sessionStorage.getItem('samilTeacherAuth');
-  const isStudent = !!sessionStorage.getItem('samilStudentAuth');
-  if(isAdmin){
-    el.innerHTML=
-      `<a href="admin.html" class="nav-login" style="background:#16A34A!important">관리자 페이지</a>`+
-      `<a href="#" onclick="openChangeAdminPw();return false" style="color:rgba(255,255,255,.7);font-size:13px;padding:7px 10px">🔑 비번변경</a>`+
-      `<a href="#" onclick="doLogout();return false" style="color:rgba(255,255,255,.7);font-size:13px;padding:7px 10px">로그아웃</a>`;
-  } else if(isTeacher){
-    const t=JSON.parse(sessionStorage.getItem('samilTeacherME')||'{}');
-    el.innerHTML=
-      `<a href="teacher.html" class="nav-login" style="background:#16A34A!important">${t.name||'담임'} 선생님</a>`+
-      `<a href="#" onclick="doLogout();return false" style="color:rgba(255,255,255,.7);font-size:13px;padding:7px 10px">로그아웃</a>`;
-  } else if(isStudent){
-    const s=JSON.parse(sessionStorage.getItem('samilStudentME')||'{}');
-    el.innerHTML=
-      `<a href="student.html" class="nav-login" style="background:#16A34A!important">${s.name||'학생'}님</a>`+
+  let href='',label='';
+  if(sessionStorage.getItem('samilAdminAuth')==='1'){ href='admin.html'; label='관리자 페이지'; }
+  else if(sessionStorage.getItem('samilTeacherAuth')){ const t=JSON.parse(sessionStorage.getItem('samilTeacherME')||'{}'); href='teacher.html'; label=(t.name||'담임')+'선생님'; }
+  else if(sessionStorage.getItem('samilStudentAuth')){ const s=JSON.parse(sessionStorage.getItem('samilStudentME')||'{}'); href='student.html'; label=(s.name||'학생')+'님'; }
+  if(href){
+    el.innerHTML=`<a href="${href}" class="nav-login" style="background:#38A169!important">${label}</a>`+
       `<a href="#" onclick="doLogout();return false" style="color:rgba(255,255,255,.7);font-size:13px;padding:7px 10px">로그아웃</a>`;
   } else {
     el.innerHTML=`<a href="#" class="nav-login" onclick="openLogin();closeMenu();return false">로그인</a>`;
   }
 }
 
-/* ── 관리자 비밀번호 변경 모달 ── */
-function openChangeAdminPw(){
-  let modal=document.getElementById('jobsChangePwModal');
-  if(!modal){
-    modal=document.createElement('div');
-    modal.id='jobsChangePwModal';
-    modal.style.cssText='display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;align-items:center;justify-content:center;padding:16px';
-    modal.innerHTML=`
-      <div style="background:#fff;border-radius:16px;width:100%;max-width:360px;box-shadow:0 8px 40px rgba(0,0,0,.22);overflow:hidden;font-family:Noto Sans KR,sans-serif">
-        <div style="padding:18px 20px 14px;border-bottom:1px solid #DDE3EE;display:flex;justify-content:space-between;align-items:center">
-          <h3 style="margin:0;font-size:17px;font-weight:700">🔑 관리자 비밀번호 변경</h3>
-          <button onclick="closeChangeAdminPw()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#5A6A7E;line-height:1">✕</button>
-        </div>
-        <div style="padding:20px">
-          <div style="margin-bottom:13px"><label style="display:block;font-size:13px;font-weight:500;margin-bottom:5px">현재 비밀번호</label>
-            <input id="cpw-cur" type="password" placeholder="현재 비밀번호 입력" style="width:100%;padding:10px 12px;border:1.5px solid #DDE3EE;border-radius:8px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box"></div>
-          <div style="margin-bottom:13px"><label style="display:block;font-size:13px;font-weight:500;margin-bottom:5px">새 비밀번호</label>
-            <input id="cpw-new" type="password" placeholder="새 비밀번호 (6자 이상)" style="width:100%;padding:10px 12px;border:1.5px solid #DDE3EE;border-radius:8px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box"></div>
-          <div style="margin-bottom:13px"><label style="display:block;font-size:13px;font-weight:500;margin-bottom:5px">새 비밀번호 확인</label>
-            <input id="cpw-cfm" type="password" placeholder="새 비밀번호 다시 입력" style="width:100%;padding:10px 12px;border:1.5px solid #DDE3EE;border-radius:8px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box"
-              onkeydown="if(event.key==='Enter')submitChangeAdminPw()"></div>
-          <div id="cpw-err" style="color:#DC2626;font-size:13px;min-height:18px;margin-bottom:8px"></div>
-          <button id="cpw-btn" onclick="submitChangeAdminPw()" style="width:100%;padding:12px;background:#1A3A6B;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">비밀번호 변경</button>
-          <div id="cpw-ok" style="display:none;text-align:center;color:#16A34A;font-size:14px;font-weight:600;padding:10px 0">✅ 비밀번호가 성공적으로 변경되었습니다.</div>
-        </div>
-      </div>`;
-    document.body.appendChild(modal);
-  }
-  ['cpw-cur','cpw-new','cpw-cfm'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-  document.getElementById('cpw-err').textContent='';
-  document.getElementById('cpw-ok').style.display='none';
-  document.getElementById('cpw-btn').style.display='';
-  modal.style.display='flex';
-}
-
-function closeChangeAdminPw(){
-  const m=document.getElementById('jobsChangePwModal'); if(m) m.style.display='none';
-}
-
-async function submitChangeAdminPw(){
-  const cur=(document.getElementById('cpw-cur')||{}).value||'';
-  const nw =(document.getElementById('cpw-new')||{}).value||'';
-  const cfm=(document.getElementById('cpw-cfm')||{}).value||'';
-  const err=document.getElementById('cpw-err');
-  const btn=document.getElementById('cpw-btn');
-  err.textContent='';
-  if(!cur){err.textContent='현재 비밀번호를 입력하세요.';return;}
-  if(!nw){err.textContent='새 비밀번호를 입력하세요.';return;}
-  if(nw.length<6){err.textContent='비밀번호는 6자 이상이어야 합니다.';return;}
-  if(nw!==cfm){err.textContent='새 비밀번호가 일치하지 않습니다.';return;}
-  if(cur===nw){err.textContent='현재 비밀번호와 동일합니다.';return;}
-  btn.disabled=true; btn.textContent='변경 중...';
-  try{
-    const res=await SAMIL_API.changeAdminPw(cur,nw);
-    if(res&&res.success){
-      sessionStorage.setItem('samilAdminToken',nw);
-      btn.style.display='none';
-      document.getElementById('cpw-ok').style.display='';
-      setTimeout(closeChangeAdminPw,2000);
-    } else {
-      err.textContent=res?.error||'현재 비밀번호가 맞지 않거나 오류가 발생했습니다.';
-      btn.disabled=false; btn.textContent='비밀번호 변경';
-      const c=document.getElementById('cpw-cur'); if(c) c.value='';
-    }
-  }catch(e){err.textContent='오류가 발생했습니다. 다시 시도해주세요.'; btn.disabled=false; btn.textContent='비밀번호 변경';}
-}
-
 function doLogout(){
-  ['samilAdminAuth','samilAdminToken','samilTeacherAuth','samilTeacherME','samilStudentAuth','samilStudentME','statsMe'].forEach(k=>sessionStorage.removeItem(k));
+  ['samilAdminAuth','samilTeacherAuth','samilTeacherME',
+   'samilNonHomeTeacherAuth','samilNonHomeTeacherME',
+   'samilStudentAuth','samilStudentME','statsMe'].forEach(k=>sessionStorage.removeItem(k));
   updateNavAuth();
   // 아카이브 탭이면 로그인 게이트로 복귀
   if(document.getElementById('panel-archive').style.display!=='none'){ ARCHIVE_DATA=[]; initArchiveTab(); }
