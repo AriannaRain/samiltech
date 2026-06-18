@@ -643,11 +643,13 @@ async function submitAnswer(qId) {
   if (!ta || !ta.value.trim()) { alert('답변 내용을 입력하세요'); return; }
   const btn = ta.nextElementSibling;
   btn.disabled = true; btn.textContent = '등록 중...';
+  let myName = '교사';
+  try { myName = getMyName(); } catch(_) {}
   try {
-    const r = await SAMIL_API.addQnAAnswer({ parentId: qId, content: ta.value.trim(), author: getMyName() });
-    if (r.success) { ta.value = ''; await loadQnAs(); toggleQna(qId); }
+    const r = await SAMIL_API.addQnAAnswer({ parentId: qId, content: ta.value.trim(), author: myName });
+    if (r.success) { ta.value = ''; await loadQnAs(); _qnaOpenId = qId; renderQnas(); }
     else { alert(r.error || '등록 실패'); btn.disabled = false; btn.textContent = '답변 등록'; }
-  } catch(e) { alert('오류 발생'); btn.disabled = false; btn.textContent = '답변 등록'; }
+  } catch(e) { console.error('submitAnswer error:', e); alert('오류: ' + (e.message||String(e))); btn.disabled = false; btn.textContent = '답변 등록'; }
 }
 
 async function qnaDelete(id, parentId, e) {
@@ -698,6 +700,11 @@ async function submitQna() {
   if (!title || !content) { alert('제목과 내용을 입력하세요'); return; }
   const btn = document.getElementById('qf-submit');
   btn.disabled = true; btn.textContent = '등록 중...';
+
+  // ① 이름 안전 취득
+  let myName = '교사';
+  try { myName = getMyName(); } catch(e0) { console.warn('getMyName 오류:', e0); }
+
   try {
     let fileUrl = '', fileName = '';
     if (_qnaFileData) {
@@ -705,10 +712,26 @@ async function submitQna() {
       if (fr.success) { fileUrl = fr.url; fileName = fr.name; }
       else { alert('파일 업로드 실패: ' + (fr.error||'')); btn.disabled = false; btn.textContent = '등록하기'; return; }
     }
-    const r = await SAMIL_API.addQnA({ title, content, author: getMyName(), fileUrl, fileName });
-    if (r.success) { closeQnaModal(); await loadQnAs(); }
-    else { alert(r.error || '등록 실패'); }
-  } catch(e) { console.error('submitQna error:', e); alert('오류: ' + (e.message || '알 수 없는 오류')); }
+    // ② API 호출
+    let r;
+    try {
+      r = await SAMIL_API.addQnA({ title, content, author: myName, fileUrl, fileName });
+    } catch(eApi) {
+      console.error('addQnA API 오류:', eApi);
+      alert('API 오류: ' + (eApi.message || String(eApi)));
+      btn.disabled = false; btn.textContent = '등록하기';
+      return;
+    }
+    if (r.success) {
+      closeQnaModal();
+      try { await loadQnAs(); } catch(eLoad) { console.warn('loadQnAs 오류:', eLoad); }
+    } else {
+      alert(r.error || '등록 실패');
+    }
+  } catch(e) {
+    console.error('submitQna 전체 오류:', e);
+    alert('오류: ' + (e.message || String(e)));
+  }
   btn.disabled = false; btn.textContent = '등록하기';
 }
 
