@@ -310,14 +310,14 @@ function buildStats(DB){
   const employs=DB.employ||DB.employs||[];
   const latestYear=employs.length?Math.max(...employs.map(e=>e.year)):null;
   const yearData=latestYear?employs.filter(e=>e.year==latestYear):[];
-  const totalGrad=yearData.reduce((a,e)=>a+(e.grad||0),0)||312;
-  const totalEmp =yearData.reduce((a,e)=>a+(e.emp||0),0)||244;
+  const totalGrad=yearData.reduce((a,e)=>a+(e.grad||0),0);
+  const totalEmp =yearData.reduce((a,e)=>a+(e.emp||0),0);
   return {
-    grad:totalGrad+'명',
-    rate:totalGrad?Math.round(totalEmp/totalGrad*100)+'%':'78%',
-    active:active||'8개',
-    closing:closing||'3개',
-    done:done||'24개'
+    grad   : totalGrad ? totalGrad+'명' : '—',
+    rate   : totalGrad ? Math.round(totalEmp/totalGrad*100)+'%' : '—',
+    active : active+'개',
+    closing: closing+'개',
+    done   : done+'개'
   };
 }
 
@@ -368,24 +368,25 @@ let DATA = {jobs:[],banners:[],depts:[],stats:{},statsMap:{}};
 
 function updateStatsDisplay(){
   const s = DATA.stats;
-  if(s.grad)    document.getElementById('s-grad').textContent  = s.grad;
-  if(s.rate)    document.getElementById('s-rate').textContent  = s.rate;
-  if(s.active)  document.getElementById('s-active').textContent= s.active;
-  if(s.closing) document.getElementById('s-close').textContent = s.closing;
-  if(s.done)    document.getElementById('s-done').textContent  = s.done||'—';
+  const set = (id, v) => { if(v != null) document.getElementById(id).textContent = v; };
+  set('s-grad',  s.grad   || '—');
+  set('s-rate',  s.rate   || '—');
+  set('s-active',s.active || '—');
+  set('s-close', s.closing|| '—');
+  set('s-done',  s.done   || '—');
 }
 
 window.addEventListener('DOMContentLoaded', async ()=>{
   if (typeof SAMIL_API.ping === 'function') SAMIL_API.ping();
   updateNavAuth();
 
-  // ── 캐시 우선 즉시 렌더 ──
+  // ── ① samilJobsCache 즉시 렌더 (실제 데이터가 있을 때만) ──
   let hasCachedData = false;
   const cached = localStorage.getItem('samilJobsCache');
   if(cached){
     try{
       const cd = JSON.parse(cached);
-      if(cd && cd.jobs){
+      if(cd && cd.jobs && cd.jobs.length){   // 빈 배열은 캐시로 인정하지 않음
         DATA.jobs    = cd.jobs;
         DATA.banners = cd.banners || [];
         DATA.stats   = cd.stats   || {};
@@ -397,7 +398,28 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     }catch(_){}
   }
 
-  // ── 학과별 취업현황: samilAdmin.employ 에서 즉시 렌더 ──
+  // ── ② samilJobsCache 없거나 비었으면 samilAdmin 에서 즉시 렌더 ──
+  if(!hasCachedData){
+    try{
+      const DB_adm = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
+      const adminJobs = DB_adm.jobs || [];
+      if(adminJobs.length){
+        DATA.jobs    = adminJobs;
+        DATA.banners = (DB_adm.banners || []).filter(b=>{
+          if(b.noExpiry===true||b.noExpiry==='true') return true;
+          const dl=b.deadline||b.dl||''; if(!dl) return true;
+          return dl.substring(0,10)>=getTodayStr();
+        });
+        DATA.stats   = buildStats(DB_adm);
+        hasCachedData = true;
+        renderJobs();
+        renderBanners();
+        updateStatsDisplay();
+      }
+    }catch(_){}
+  }
+
+  // ── ③ 학과별 취업현황: samilAdmin.employ 에서 즉시 렌더 ──
   try{
     const DB_local = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
     const deptsLocal = buildDeptStats(DB_local);
@@ -460,9 +482,12 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     const dl=(j.dl||'').substring(0,10);
     return (dl < todayStr2 || !j.active) && dl.startsWith(thisYear);
   }).length;
+  // GAS latest 우선, 없으면 samilAdmin에서 계산한 현재 DATA.stats 값 사용 (절대 "—" 캐시 금지)
+  const DB_for_stats = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
+  const localStats = buildStats(DB_for_stats);
   DATA.stats = {
-    grad    : st.grad  ? st.grad+'명'  : (hasCachedData && DATA.stats && DATA.stats.grad  ? DATA.stats.grad  : SAMPLE.stats.grad),
-    rate    : st.rate  ? st.rate+'%'   : (hasCachedData && DATA.stats && DATA.stats.rate  ? DATA.stats.rate  : SAMPLE.stats.rate),
+    grad    : st.grad  ? st.grad+'명'  : (DATA.stats.grad  && DATA.stats.grad  !== '—' ? DATA.stats.grad  : localStats.grad),
+    rate    : st.rate  ? st.rate+'%'   : (DATA.stats.rate  && DATA.stats.rate  !== '—' ? DATA.stats.rate  : localStats.rate),
     active  : DATA.jobs.filter(j=>{ const dl=(j.dl||'').substring(0,10); return j.active && dl >= todayStr2; }).length+'개',
     closing : closing+'개',
     done    : done+'개',
@@ -482,7 +507,15 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   }
 
   // ── GAS 성공 시에만 캐시 저장 ──
-  try{ localStorage.setItem('samilJobsCache', JSON.stringify({jobs:DATA.jobs,banners:DATA.banners,stats:DATA.stats})); }catch(_){}
+  // 캐시 저장 시 만료 배너 제외 (캐시에서 만료 배너 재출력 방지)
+  const todayForCache = getTodayStr();
+  const bannersForCache = DATA.banners.filter(b => {
+    if (b.noExpiry === true || b.noExpiry === 'true') return true;
+    const dl = b.deadline || b.dl || '';
+    if (!dl) return true;
+    return dl.substring(0,10) >= todayForCache;
+  });
+  try{ localStorage.setItem('samilJobsCache', JSON.stringify({jobs:DATA.jobs,banners:bannersForCache,stats:DATA.stats})); }catch(_){}
 
   renderJobs();
   renderBanners();
@@ -507,6 +540,7 @@ function renderDeptTable(){
 function renderBanners(){
   const todayStr = getTodayStr();
   const active = (DATA.banners||[]).filter(b => {
+    if (b.noExpiry === true || b.noExpiry === 'true') return true;  // 기간제한 없음
     const dl = b.deadline || b.dl || '';
     if (!dl) return true;           // 마감일 없음 = 항상 표시
     return dl.substring(0,10) >= todayStr;  // 오늘 포함, 마감일 지난 것 제외
