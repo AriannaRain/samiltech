@@ -441,6 +441,65 @@ const SAMIL_API = (() => {
   }
 
   // ════════════════════════════════════════════
+  // 현장실습 Q&A
+  // ════════════════════════════════════════════
+  function _qnaAuth() {
+    // 교사 인증 정보: sessionStorage에서 읽어 전달
+    const teacherId = sessionStorage.getItem('samilTeacherAuth') || sessionStorage.getItem('samilNonHomeTeacherAuth') || '';
+    const studentId = sessionStorage.getItem('samilStudentAuth') || '';
+    return { teacherId, studentId };
+  }
+
+  async function getQnAs(category) {
+    const auth = _qnaAuth();
+    const isAdm = sessionStorage.getItem('samilAdminAuth') === '1';
+    const p = { action: 'getQnAs', ...auth };
+    if (isAdm) p.token = ADMIN_TOKEN;
+    if (category) p.category = category;
+    return call(p);
+  }
+
+  async function addQnA(data) {
+    _cDel('qna');
+    const auth  = _qnaAuth();
+    const isAdm = sessionStorage.getItem('samilAdminAuth') === '1';
+    let me = {};
+    try { me = JSON.parse(sessionStorage.getItem('samilTeacherME') || sessionStorage.getItem('samilNonHomeTeacherME') || '{}'); } catch(_) {}
+    const p = { action: 'addQnA', ...auth, author: me.name || (isAdm ? '관리자' : '교사'), ...data };
+    if (isAdm) p.token = ADMIN_TOKEN;
+    return call(p);
+  }
+
+  async function addQnAAnswer(data) {
+    _cDel('qna');
+    const auth  = _qnaAuth();
+    const isAdm = sessionStorage.getItem('samilAdminAuth') === '1';
+    let me = {};
+    try { me = JSON.parse(sessionStorage.getItem('samilTeacherME') || sessionStorage.getItem('samilNonHomeTeacherME') || sessionStorage.getItem('samilStudentME') || '{}'); } catch(_) {}
+    const p = { action: 'addQnAAnswer', ...auth, author: me.name || (isAdm ? '관리자' : auth.teacherId ? '교사' : '학생'), ...data };
+    if (isAdm) p.token = ADMIN_TOKEN;
+    return call(p);
+  }
+
+  async function deleteQnA(id) {
+    _cDel('qna');
+    return call({ action: 'deleteQnA', token: ADMIN_TOKEN, id });
+  }
+
+  async function markAnswered(id) {
+    _cDel('qna');
+    return call({ action: 'markAnswered', token: ADMIN_TOKEN, id });
+  }
+
+  async function uploadQnAFile(name, base64, mimeType) {
+    const auth  = _qnaAuth();
+    const isAdm = sessionStorage.getItem('samilAdminAuth') === '1';
+    const p = { action: 'uploadQnAFile', ...auth, name, base64, mimeType: mimeType || 'application/octet-stream' };
+    if (isAdm) p.token = ADMIN_TOKEN;
+    return call(p);
+  }
+
+  // ════════════════════════════════════════════
   // 시트 초기화
   // ════════════════════════════════════════════
   async function initSheets() {
@@ -470,6 +529,7 @@ const SAMIL_API = (() => {
     uploadFile,
     getPracticeSections, addPracticeSection, updatePracticeSection, deletePracticeSection, reorderPracticeSection,
     getPracticeFiles, addPracticeFile, updatePracticeFile, deletePracticeFile, reorderPracticeFile,
+    getQnAs, addQnA, addQnAAnswer, deleteQnA, markAnswered, uploadQnAFile,
     initSheets,
   };
 })();

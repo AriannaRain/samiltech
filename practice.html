@@ -318,7 +318,9 @@ function isAdmin() {
   return sessionStorage.getItem('samilAdminAuth') === '1';
 }
 function getMyName() {
-  const me = JSON.parse(sessionStorage.getItem('samilTeacherME') || sessionStorage.getItem('samilNonHomeTeacherME') || '{}');
+  let me = {};
+  try { me = JSON.parse(sessionStorage.getItem('samilTeacherME') || sessionStorage.getItem('samilNonHomeTeacherME') || '{}'); } catch(_) {}
+  if (sessionStorage.getItem('samilAdminAuth') === '1') return me.name || '관리자';
   return me.name || '교사';
 }
 
@@ -706,7 +708,7 @@ async function submitQna() {
     const r = await SAMIL_API.addQnA({ title, content, author: getMyName(), fileUrl, fileName });
     if (r.success) { closeQnaModal(); await loadQnAs(); }
     else { alert(r.error || '등록 실패'); }
-  } catch(e) { alert('오류 발생'); }
+  } catch(e) { console.error('submitQna error:', e); alert('오류: ' + (e.message || '알 수 없는 오류')); }
   btn.disabled = false; btn.textContent = '등록하기';
 }
 
