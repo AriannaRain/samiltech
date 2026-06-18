@@ -88,7 +88,6 @@ tr:hover td{background:#fafbfd}
 .badge-blue{background:#EBF4FF;color:var(--primary)}
 .badge-gray{background:var(--bg);color:var(--text-sub)}
 .badge-orange{background:#FFF3E0;color:var(--accent)}
-.badge-red{background:#FFF5F5;color:var(--red)}
 
 /* 업로드 영역 */
 .upload-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:32px;text-align:center;cursor:pointer;transition:.2s;background:var(--bg)}
@@ -286,18 +285,37 @@ tr:hover td{background:#fafbfd}
   <div class="login-box">
     <div class="login-logo">
       <div class="mark">👨‍🏫</div>
-      <h2>담임교사 로그인</h2>
+      <h2>교사 로그인</h2>
       <p>삼일공업고등학교 취업정보 포털</p>
     </div>
-    <div class="form-group"><label>학과</label><select id="l-dept" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit"><option value="">학과 선택</option></select></div>
-    <div style="display:flex;gap:8px">
-      <div class="form-group" style="flex:1"><label>학년</label><select id="l-grade" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"><option value="">학년</option><option>1</option><option>2</option><option>3</option></select></div>
-      <div class="form-group" style="flex:1"><label>반</label><select id="l-cls" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"><option value="">반</option><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
+    <!-- 담임 / 비담임 탭 -->
+    <div style="display:flex;gap:4px;background:#f4f6fa;padding:4px;border-radius:10px;margin-bottom:18px">
+      <button id="loginTabHome" onclick="switchLoginTab('home')"
+        style="flex:1;padding:8px;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;background:#fff;color:#1A3A6B;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.1);transition:.2s">
+        🏠 담임교사
+      </button>
+      <button id="loginTabNonHome" onclick="switchLoginTab('nonHome')"
+        style="flex:1;padding:8px;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;background:none;color:#5A6A7E;font-weight:500;transition:.2s">
+        👤 비담임교사
+      </button>
     </div>
-    <div class="form-group"><label>이름</label><input id="l-name" placeholder="홍길동" onkeydown="if(event.key==='Enter')tryLogin()"></div>
-    <div class="form-group"><label>비밀번호</label><input type="password" id="l-pw" placeholder="비밀번호" onkeydown="if(event.key==='Enter')tryLogin()"></div>
+    <!-- 담임교사 입력 필드 -->
+    <div id="loginFieldsHome">
+      <div class="form-group"><label>학과</label><select id="l-dept" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit"><option value="">학과 선택</option></select></div>
+      <div style="display:flex;gap:8px">
+        <div class="form-group" style="flex:1"><label>학년</label><select id="l-grade" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"><option value="">학년</option><option>1</option><option>2</option><option>3</option></select></div>
+        <div class="form-group" style="flex:1"><label>반</label><select id="l-cls" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"><option value="">반</option><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
+      </div>
+      <div class="form-group"><label>이름</label><input id="l-name" placeholder="홍길동" onkeydown="if(event.key==='Enter')tryLogin()"></div>
+      <div class="form-group"><label>비밀번호</label><input type="password" id="l-pw" placeholder="비밀번호" onkeydown="if(event.key==='Enter')tryLogin()"></div>
+    </div>
+    <!-- 비담임교사 입력 필드 -->
+    <div id="loginFieldsNonHome" style="display:none">
+      <div class="form-group"><label>이름</label><input id="nh-name" placeholder="홍길동" onkeydown="if(event.key==='Enter')tryLogin()"></div>
+      <div class="form-group"><label>비밀번호</label><input type="password" id="nh-pw" placeholder="비밀번호" onkeydown="if(event.key==='Enter')tryLogin()"></div>
+    </div>
     <button class="btn-login" onclick="tryLogin()">로그인</button>
-    <div class="login-hint">💡 아이디/비밀번호는 관리자에게 문의하세요<br>아이디 형식: 학과코드_학년반 (예: 전자_104)</div>
+    <div class="login-hint">💡 계정 정보는 관리자에게 문의하세요</div>
   </div>
 </div>
 
@@ -362,15 +380,24 @@ tr:hover td{background:#fafbfd}
     <!-- 생기부 업로드 -->
     <div class="tab-panel" id="tab-upload">
       <div class="page-header"><h1>생활기록부 Excel 업로드</h1><p>추출기로 생성한 Excel 파일을 업로드하면 학생 계정이 자동 생성됩니다.</p></div>
-      <!-- 프로그램 다운로드 -->
-      <div class="card" style="margin-bottom:16px">
-        <div class="card-title" style="display:flex;align-items:center;gap:8px">
-          <span>💾 프로그램 다운로드</span>
-          <span style="font-size:11px;color:var(--text-sub);font-weight:400">관리자가 등록한 프로그램을 다운로드하세요</span>
+      <!-- 비담임교사 전용: 업로드 대상 학반 선택 -->
+      <div class="card" id="nhUploadClassCard" style="display:none">
+        <div class="card-title">📋 업로드 대상 학반 선택 <span style="font-size:12px;color:var(--text-sub);font-weight:400">(비담임교사 — 업로드할 반을 먼저 선택하세요)</span></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <div class="form-group" style="margin:0"><label>학과</label>
+            <select id="nh-upload-dept" style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none"></select>
+          </div>
+          <div class="form-group" style="margin:0"><label>학년</label>
+            <select id="nh-upload-grade" style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none">
+              <option value="1">1학년</option><option value="2">2학년</option><option value="3">3학년</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0"><label>반</label>
+            <input id="nh-upload-cls" type="number" min="1" max="9" value="1" placeholder="1"
+              style="width:70px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none">
+          </div>
         </div>
-        <div id="tc-program-list"><div style="text-align:center;color:var(--text-sub);padding:24px;font-size:13px">⏳ 불러오는 중...</div></div>
       </div>
-
       <div class="card">
         <div class="card-title">파일 업로드</div>
         <div class="alert alert-info">✅ 업로드 가능 파일: 생활기록부 추출기(samil_record_extractor.exe)로 생성한 <strong>.xlsx</strong> 파일</div>
@@ -556,7 +583,6 @@ tr:hover td{background:#fafbfd}
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="samil-api.js"></script>
 <script>
 // ── 상태 ──
 let DB = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
@@ -566,23 +592,52 @@ let pendingStudents = []; // 업로드 미리보기 대기
 
 function saveDB(){ localStorage.setItem('samilAdmin', JSON.stringify(DB)); }
 
+// ── 로그인 탭 전환 ──
+let _loginTab = 'home';
+function switchLoginTab(tab) {
+  _loginTab = tab;
+  const isHome = tab === 'home';
+  document.getElementById('loginFieldsHome').style.display    = isHome ? '' : 'none';
+  document.getElementById('loginFieldsNonHome').style.display = isHome ? 'none' : '';
+  const btnHome    = document.getElementById('loginTabHome');
+  const btnNonHome = document.getElementById('loginTabNonHome');
+  if (btnHome) {
+    btnHome.style.background   = isHome ? '#fff' : 'none';
+    btnHome.style.color        = isHome ? '#1A3A6B' : '#5A6A7E';
+    btnHome.style.fontWeight   = isHome ? '700' : '500';
+    btnHome.style.boxShadow    = isHome ? '0 1px 4px rgba(0,0,0,.1)' : 'none';
+  }
+  if (btnNonHome) {
+    btnNonHome.style.background = isHome ? 'none' : '#fff';
+    btnNonHome.style.color      = isHome ? '#5A6A7E' : '#1A3A6B';
+    btnNonHome.style.fontWeight = isHome ? '500' : '700';
+    btnNonHome.style.boxShadow  = isHome ? 'none' : '0 1px 4px rgba(0,0,0,.1)';
+  }
+}
+
 // ── 로그인 ──
 async function tryLogin(){
-  const dept  = document.getElementById('l-dept').value;
-  const grade = document.getElementById('l-grade').value;
-  const cls   = document.getElementById('l-cls').value;
-  const name  = document.getElementById('l-name').value.trim();
-  const pw    = document.getElementById('l-pw').value;
-  if(!dept||!grade||!cls||!name||!pw){ alert('모든 항목을 입력하세요'); return; }
-
-  const btn = document.querySelector('#loginScreen .btn-submit, #loginScreen button');
+  const btn = document.querySelector('#loginScreen .btn-login');
   if(btn){ btn.textContent='확인중…'; btn.disabled=true; }
 
-  const res = await SAMIL_API.loginTeacher(dept, grade, cls, name, pw);
+  let res;
+  if (_loginTab === 'nonHome') {
+    const name = document.getElementById('nh-name').value.trim();
+    const pw   = document.getElementById('nh-pw').value;
+    if (!name || !pw) { alert('이름과 비밀번호를 입력하세요'); if(btn){btn.textContent='로그인';btn.disabled=false;} return; }
+    res = await SAMIL_API.loginNonHomeTeacher(name, pw);
+  } else {
+    const dept  = document.getElementById('l-dept').value;
+    const grade = document.getElementById('l-grade').value;
+    const cls   = document.getElementById('l-cls').value;
+    const name  = document.getElementById('l-name').value.trim();
+    const pw    = document.getElementById('l-pw').value;
+    if(!dept||!grade||!cls||!name||!pw){ alert('모든 항목을 입력하세요'); if(btn){btn.textContent='로그인';btn.disabled=false;} return; }
+    res = await SAMIL_API.loginTeacher(dept, grade, cls, name, pw);
+  }
 
   if(btn){ btn.textContent='로그인'; btn.disabled=false; }
-
-  if(!res.success){ alert(res.error||'담임 계정 정보가 맞지 않습니다.'); return; }
+  if(!res.success){ alert(res.error||'계정 정보가 맞지 않습니다.'); return; }
 
   ME = res.teacher;
   sessionStorage.setItem('samilTeacherAuth', ME.id);
@@ -590,8 +645,12 @@ async function tryLogin(){
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('topNav').style.display='flex';
   document.getElementById('appLayout').style.display='flex';
-  document.getElementById('navTeacherInfo').innerHTML =
-    `<strong>${ME.name}</strong> 선생님 | ${ME.dept} ${ME.grade}학년 ${ME.cls}반`;
+  if (ME.isNonHome) {
+    document.getElementById('navTeacherInfo').innerHTML = `<strong>${ME.name}</strong> 선생님 | 비담임교사`;
+  } else {
+    document.getElementById('navTeacherInfo').innerHTML =
+      `<strong>${ME.name}</strong> 선생님 | ${ME.dept} ${ME.grade}학년 ${ME.cls}반`;
+  }
   await loadTeacherData();
   init();
 }
@@ -607,12 +666,18 @@ function logout(){
 function init(){
   const myStudents = getMyStudents();
   // 대시보드
-  document.getElementById('dashTitle').textContent = `${ME.dept} ${ME.grade}학년 ${ME.cls}반 현황`;
-  document.getElementById('dashSub').textContent   = `${ME.year}학년도`;
+  if (ME.isNonHome) {
+    document.getElementById('dashTitle').textContent = '전체 학생 현황';
+    document.getElementById('dashSub').textContent   = `${ME.year}학년도 | 비담임교사`;
+    document.getElementById('studentSubTitle').textContent = `전체 | 총 ${myStudents.length}명`;
+  } else {
+    document.getElementById('dashTitle').textContent = `${ME.dept} ${ME.grade}학년 ${ME.cls}반 현황`;
+    document.getElementById('dashSub').textContent   = `${ME.year}학년도`;
+    document.getElementById('studentSubTitle').textContent = `${ME.dept} ${ME.grade}학년 ${ME.cls}반 | 총 ${myStudents.length}명`;
+  }
   document.getElementById('d-total').textContent   = myStudents.length;
   document.getElementById('d-uploaded').textContent= myStudents.filter(s=>s.uploaded).length;
   document.getElementById('d-jobs').textContent    = (DB.jobs||[]).filter(j=>j.active).length;
-  document.getElementById('studentSubTitle').textContent = `${ME.dept} ${ME.grade}학년 ${ME.cls}반 | 총 ${myStudents.length}명`;
   _selId=null;
 
   // 최근 학생
@@ -622,11 +687,23 @@ function init(){
     <td><span class="badge ${s.uploaded?'badge-green':'badge-gray'}">${s.uploaded?'등록됨':'미등록'}</span></td></tr>
   `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-sub)">업로드된 학생이 없습니다</td></tr>';
 
+  // 비담임교사: 학반 선택 카드 표시 + 학과 드롭다운 채우기
+  const nhCard = document.getElementById('nhUploadClassCard');
+  if (nhCard) nhCard.style.display = ME.isNonHome ? '' : 'none';
+  if (ME.isNonHome) {
+    const nhDeptSel = document.getElementById('nh-upload-dept');
+    if (nhDeptSel) {
+      const depts = (DB.depts || []).map(d => d.name || d);
+      nhDeptSel.innerHTML = depts.map(d => `<option value="${d}">${d}</option>`).join('') || '<option value="">학과없음</option>';
+    }
+  }
+
   renderStudentList();
   renderJobs();
 }
 
 function getMyStudents(){
+  if (ME && ME.isNonHome) return DB.students || [];
   return (DB.students||[]).filter(s=>
     s.dept===ME.dept && s.grade===String(ME.grade) && s.cls===String(ME.cls)
   );
@@ -677,11 +754,8 @@ function handleFile(file){
       const aMap=gid(attendRows),cMap=gid(certRows),clMap=gid(clubRows),lMap=gid(leaderRows);
       const sMap={};summaryRows.forEach(r=>{sMap[String(r[1]||'')]=r;});
       setProgress(92,'데이터 조합 중...');
-      const allParsed=basicRows.slice(1).filter(r=>r.length>2).map(r=>{
-        // 학과가 비어있으면 담임 학과로 보정
-        const rawDept=String(r[hIdx['학과']]||'');
-        const dept=rawDept||ME.dept;
-        const id=String(r[hIdx['학번']]||'');
+      pendingStudents=basicRows.slice(1).filter(r=>r.length>2).map(r=>{
+        const dept=String(r[hIdx['학과']]||''),id=String(r[hIdx['학번']]||'');
         const name=String(r[hIdx['이름']]||''),gender=String(r[hIdx['성별']]||'');
         const birth=String(r[hIdx['생년월일(YYMMDD)']]||r[hIdx['생년월일']]||'');
         const teacher=String(r[hIdx['담임교사']]||'');
@@ -699,14 +773,6 @@ function handleFile(file){
                uploaded:true,certCount:certs.length,certs,attend,clubs,leaders,summary,
                middle:(mMap[id]&&mMap[id].middle)||'',middleYear:(mMap[id]&&mMap[id].middleYear)||''};
       }).filter(s=>s.name&&s.id);
-
-      // ★ 안전장치: 내 학과가 아닌 학생은 업로드 목록에서 제외
-      const skipped=allParsed.filter(s=>s.dept!==ME.dept);
-      pendingStudents=allParsed.filter(s=>s.dept===ME.dept);
-      if(skipped.length){
-        showUploadAlert('error',
-          `⚠️ 파일에 다른 학과 학생 ${skipped.length}명이 포함되어 있어 제외했습니다. (${[...new Set(skipped.map(s=>s.dept))].join(', ')})`);
-      }
       setProgress(100,'완료!');
       const tc=pendingStudents.reduce((a,s)=>a+s.certs.length,0);
       const tl=pendingStudents.reduce((a,s)=>a+s.leaders.length,0);
@@ -748,12 +814,17 @@ function confirmUpload(){
 
   // ── Sheets 저장 (배치 1회) ──
   showUploadAlert('success',`⏳ Sheets에 저장 중… (${pendingStudents.length}명)`);
-  const teacherId = ME ? ME.id : '';
+  // 비담임교사는 선택한 학반의 담임ID를 teacherId로 사용
+  let teacherId = ME ? ME.id : '';
+  if (ME && ME.isNonHome) {
+    const nhDept  = document.getElementById('nh-upload-dept')?.value || '';
+    const nhGrade = document.getElementById('nh-upload-grade')?.value || '';
+    const nhCls   = document.getElementById('nh-upload-cls')?.value || '';
+    teacherId = `${ME.year}${nhDept}${nhGrade}${nhCls}`;
+  }
   SAMIL_API.saveRecords(pendingStudents, teacherId).then(res => {
     if(res && res.success){
-      let msg = `✅ 저장 완료! 신규 ${res.added}명 추가, ${res.updated}명 업데이트`;
-      if(res.skipped) msg += ` (다른 학급 ${res.skipped}명 보호됨)`;
-      showUploadAlert('success', msg);
+      showUploadAlert('success', `✅ 저장 완료! 신규 ${res.added}명 추가, ${res.updated}명 업데이트`);
     } else {
       showUploadAlert('error', `⚠️ Sheets 저장 실패: ${(res&&res.error)||'오류'}`);
     }
@@ -1078,9 +1149,14 @@ async function changePw(){
   if(nw.length<4){ al.innerHTML='<div class="alert alert-error">4자 이상 입력하세요.</div>'; return; }
   if(nw!==cf){ al.innerHTML='<div class="alert alert-error">새 비밀번호가 일치하지 않습니다.</div>'; return; }
   al.innerHTML='<div class="alert alert-info">확인 중...</div>';
-  const res = await SAMIL_API.changeTeacherPw({
-    dept:ME.dept, grade:ME.grade, cls:ME.cls, name:ME.name, year:ME.year, pw:cur, newPw:nw
-  });
+  let res;
+  if (ME.isNonHome) {
+    res = await SAMIL_API.changeNonHomeTeacherPw({ id: ME.id, name: ME.name, pw: cur, newPw: nw });
+  } else {
+    res = await SAMIL_API.changeTeacherPw({
+      dept:ME.dept, grade:ME.grade, cls:ME.cls, name:ME.name, year:ME.year, pw:cur, newPw:nw
+    });
+  }
   if(!res.success){ al.innerHTML=`<div class="alert alert-error">${res.error||'오류'}</div>`; return; }
   ME.pw=nw;
   sessionStorage.setItem('samilTeacherME', JSON.stringify(ME));
@@ -1089,66 +1165,12 @@ async function changePw(){
 }
 
 // ── 탭 ──
-// ── 프로그램 다운로드 (담임용) ──
-async function loadTcPrograms() {
-  const listEl = document.getElementById('tc-program-list');
-  if (!listEl) return;
-
-  // 이미 로드됐으면 스킵 (새로고침 버튼으로만 재로드)
-  if (listEl.dataset.loaded === '1') return;
-
-  listEl.innerHTML = '<div style="text-align:center;color:var(--text-sub);padding:24px;font-size:13px">⏳ 불러오는 중...</div>';
-
-  const res = await SAMIL_API.getPrograms().catch(() => null);
-  const programs = (res && res.success) ? (res.list || res.data || []) : [];
-
-  if (!programs.length) {
-    listEl.innerHTML = `
-      <div style="text-align:center;padding:20px;color:var(--text-sub);font-size:13px">
-        <div style="font-size:24px;margin-bottom:8px">📭</div>
-        등록된 프로그램이 없습니다.
-      </div>`;
-    listEl.dataset.loaded = '1';
-    return;
-  }
-
-  listEl.innerHTML = `
-    <div style="display:grid;gap:10px">
-      ${programs.map(p => {
-        const mb   = p.size ? (p.size/1048576).toFixed(1)+' MB' : '';
-        const date = (p.date||'').substring(0,10);
-        return `<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg);border-radius:10px;border:1px solid var(--border)">
-          <div style="font-size:26px;flex-shrink:0">💾</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:14px;font-weight:700;margin-bottom:2px">
-              ${p.name}${p.version ? ' <span style="font-size:11px;color:var(--primary);background:#EBF4FF;padding:1px 7px;border-radius:10px">'+p.version+'</span>' : ''}
-            </div>
-            ${p.desc ? `<div style="font-size:12px;color:var(--text-sub);margin-bottom:2px">${p.desc}</div>` : ''}
-            <div style="font-size:11px;color:var(--text-sub)">${p.filename||''}${mb?' · '+mb:''}${date?' · 등록일 '+date:''}</div>
-          </div>
-          <a href="${p.url}" target="_blank"
-            style="display:flex;align-items:center;gap:5px;padding:8px 18px;background:var(--primary);color:#fff;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;flex-shrink:0;white-space:nowrap">
-            ⬇ 다운로드
-          </a>
-        </div>`;
-      }).join('')}
-    </div>
-    <div style="text-align:right;margin-top:8px">
-      <button onclick="document.getElementById('tc-program-list').dataset.loaded='0';loadTcPrograms()"
-        style="font-size:11px;color:var(--text-sub);background:none;border:none;cursor:pointer;padding:4px 8px">
-        🔄 목록 새로고침
-      </button>
-    </div>`;
-  listEl.dataset.loaded = '1';
-}
-
 function showTab(id,el){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
   el.classList.add('active');
   if(id==='recommend') initRecommendTab();
-  if(id==='upload') loadTcPrograms();
 }
 
 
@@ -1352,8 +1374,9 @@ window.addEventListener('DOMContentLoaded', async ()=>{
         document.getElementById('loginScreen').style.display='none';
         document.getElementById('topNav').style.display='flex';
         document.getElementById('appLayout').style.display='flex';
-        document.getElementById('navTeacherInfo').innerHTML =
-          `<strong>${ME.name}</strong> 선생님 | ${ME.dept} ${ME.grade}학년 ${ME.cls}반`;
+        document.getElementById('navTeacherInfo').innerHTML = ME.isNonHome
+          ? `<strong>${ME.name}</strong> 선생님 | 비담임교사`
+          : `<strong>${ME.name}</strong> 선생님 | ${ME.dept} ${ME.grade}학년 ${ME.cls}반`;
         await loadTeacherData();
         init();
         return;
@@ -1406,5 +1429,6 @@ async function loadTeacherData(){
 // 클릭 외부 모달 닫기
 document.getElementById('pwModal').addEventListener('click',function(e){ if(e.target===this) closePwModal(); });
 </script>
+<script src="samil-api.js"></script>
 </body>
 </html>

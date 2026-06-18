@@ -15,34 +15,7 @@
 body{font-family:'Pretendard','Apple SD Gothic Neo',sans-serif;font-size:14px;background:var(--bg);color:var(--text)}
 a{text-decoration:none;color:inherit}
 
-/* ── 로그인 게이트 오버레이 ── */
-#admin-gate{
-  position:fixed;inset:0;z-index:9999;
-  background:linear-gradient(135deg,#1E3A6E 0%,#2B52A3 100%);
-  display:flex;align-items:center;justify-content:center;
-}
-#admin-gate.hidden{display:none}
-.gate-box{
-  background:#fff;border-radius:20px;padding:40px 36px;
-  width:100%;max-width:380px;box-shadow:0 24px 60px rgba(0,0,0,.35);
-}
-.gate-logo{text-align:center;margin-bottom:28px}
-.gate-logo h1{font-size:17px;font-weight:800;color:var(--primary);margin-bottom:4px}
-.gate-logo p{font-size:12px;color:var(--text-sub)}
-.gate-label{font-size:13px;font-weight:600;color:var(--text);display:block;margin-bottom:6px}
-.gate-input{
-  width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;
-  font-size:14px;font-family:inherit;outline:none;transition:.2s;box-sizing:border-box;
-}
-.gate-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(30,58,110,.12)}
-.gate-btn{
-  width:100%;margin-top:20px;padding:13px;background:var(--primary);color:#fff;
-  border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;
-  font-family:inherit;transition:.2s;
-}
-.gate-btn:hover{background:var(--primary-light)}
-.gate-btn:disabled{opacity:.6;cursor:not-allowed}
-.gate-err{margin-top:12px;font-size:13px;color:#DC2626;text-align:center;min-height:20px}
+/* ── 로그인 오버레이 ── */
 /* ── 레이아웃 ── */
 #app{display:block}
 .sidebar{width:var(--sidebar-w);background:var(--primary);position:fixed;top:0;left:0;bottom:0;display:flex;flex-direction:column;z-index:100;overflow-y:auto}
@@ -181,22 +154,6 @@ tr:last-child td{border-bottom:none}
 </head>
 <body>
 
-<!-- ══════════════════════ 로그인 게이트 ══════════════════════ -->
-<div id="admin-gate">
-  <div class="gate-box">
-    <div class="gate-logo">
-      <div style="font-size:40px;margin-bottom:10px">🏫</div>
-      <h1>삼일공업고등학교<br>취업포털 관리자</h1>
-      <p>관리자 전용 페이지입니다. 비밀번호를 입력해주세요.</p>
-    </div>
-    <label class="gate-label" for="gate-pw">관리자 비밀번호</label>
-    <input id="gate-pw" type="password" class="gate-input" placeholder="비밀번호 입력"
-      onkeydown="if(event.key==='Enter')adminGateLogin()">
-    <button class="gate-btn" onclick="adminGateLogin()" id="gate-btn">🔐 로그인</button>
-    <div class="gate-err" id="gate-err"></div>
-  </div>
-</div>
-
 <!-- ══════════════════════ 앱 ══════════════════════ -->
 <div id="app">
 
@@ -224,12 +181,10 @@ tr:last-child td{border-bottom:none}
     <div class="nav-item" onclick="showTab('employ')"><span class="nav-icon">💼</span>취업현황</div>
     <div class="nav-item" onclick="showTab('stats')"><span class="nav-icon">📈</span>취업통계</div>
     <div class="nav-item" onclick="showTab('practice')"><span class="nav-icon">🏭</span>현장실습자료</div>
-    <div class="nav-item" onclick="showTab('program')"><span class="nav-icon">💾</span>프로그램 관리</div>
-    <div class="nav-item" onclick="openAdmission()"><span class="nav-icon">📝</span>입사지원 현황</div>
   </nav>
   <div class="sidebar-footer">
     <a href="index.html" style="display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.6);padding:8px 0;font-size:12px;text-decoration:none;margin-bottom:6px" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">🏠 홈페이지로 이동</a>
-    <a href="#" onclick="adminGateLogout();return false" style="display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.4);padding:4px 0;font-size:12px;text-decoration:none" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.4)'">🚪 로그아웃</a>
+    <a href="index.html" onclick="localStorage.removeItem('samilAdmin_session')" style="display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.4);padding:4px 0;font-size:12px;text-decoration:none" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.4)'">🚪 로그아웃</a>
     <div style="margin-top:10px;color:rgba(255,255,255,.25);font-size:11px">삼일공업고등학교 특성화취창업지원부</div>
   </div>
 </div>
@@ -315,6 +270,22 @@ tr:last-child td{border-bottom:none}
       <div class="tbl-wrap"><table>
         <thead><tr><th>학과</th><th>학년</th><th>반</th><th>교사명</th><th>비밀번호</th><th>관리</th></tr></thead>
         <tbody id="teacherList"></tbody>
+      </table></div>
+    </div>
+
+    <!-- 비담임교사 계정 -->
+    <div class="card">
+      <div class="card-title"><span id="ntcYear">—</span>년 비담임교사 계정 <span style="font-size:12px;color:var(--text-sub);font-weight:400">(학반 배정 없는 교사 — 담임교사 페이지에 이름+비밀번호로 로그인)</span></div>
+      <div class="form-row">
+        <div class="form-group"><label>교사명</label><input id="ntcName" placeholder="홍길동"></div>
+        <div class="form-group"><label>비밀번호</label><input id="ntcPw" placeholder="초기 비밀번호"></div>
+        <div style="display:flex;align-items:flex-end;padding-bottom:1px">
+          <button class="btn btn-accent" onclick="addNonHomeTeacher()">+ 추가</button>
+        </div>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>교사명</th><th>비밀번호</th><th>관리</th></tr></thead>
+        <tbody id="nonHomeTeacherList"></tbody>
       </table></div>
     </div>
   </div>
@@ -537,65 +508,6 @@ tr:last-child td{border-bottom:none}
     </div>
     <div id="prSectionList"></div>
   </div>
-
-    <!-- ── 프로그램 관리 ── -->
-    <div class="tab-panel" id="tab-program">
-      <div class="page-header"><h1>💾 프로그램 관리</h1><p>담임교사에게 배포할 프로그램을 업로드·관리합니다.</p></div>
-
-      <!-- 프로그램 추가 -->
-      <div class="card" style="margin-bottom:20px">
-        <div class="card-title">새 프로그램 등록</div>
-
-        <!-- 안내 배너 -->
-        <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#1D4ED8;line-height:1.6">
-          <strong>📌 등록 방법</strong><br>
-          ① 파일을 <strong>구글 드라이브</strong>에 업로드 → ② 링크 공유 설정을 <strong>"링크가 있는 모든 사용자"</strong>로 변경 → ③ 아래에 링크 붙여넣기
-        </div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-          <div>
-            <label style="font-size:13px;font-weight:600;display:block;margin-bottom:5px">프로그램명 <span style="color:#DC2626">*</span></label>
-            <input id="pg-name" type="text" placeholder="예: 생활기록부데이터추출기"
-              style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box">
-          </div>
-          <div>
-            <label style="font-size:13px;font-weight:600;display:block;margin-bottom:5px">버전</label>
-            <input id="pg-ver" type="text" placeholder="예: V05"
-              style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box">
-          </div>
-        </div>
-        <div style="margin-bottom:12px">
-          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:5px">설명</label>
-          <input id="pg-desc" type="text" placeholder="예: 학급학생 생기부 데이터 추출(출결,교과성적,자격증,동아리활동,임원활동,성적요약,출신중학교 추출 등)"
-            style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box">
-        </div>
-        <div style="margin-bottom:12px">
-          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:5px">파일명 <span style="color:#DC2626">*</span></label>
-          <input id="pg-filename" type="text" placeholder="예: samil_record_extractor_V05.exe"
-            style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box">
-        </div>
-        <div style="margin-bottom:14px">
-          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:5px">구글 드라이브 다운로드 링크 <span style="color:#DC2626">*</span></label>
-          <input id="pg-url" type="url" placeholder="https://drive.google.com/file/d/..."
-            style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box">
-          <div style="font-size:12px;color:var(--text-sub);margin-top:4px">구글 드라이브에서 파일 우클릭 → 공유 → "링크가 있는 모든 사용자"로 변경 후 링크 복사</div>
-        </div>
-        <div id="pg-upload-status" style="min-height:20px;font-size:13px;margin-bottom:10px"></div>
-        <button onclick="uploadProgram()"
-          style="padding:10px 28px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">
-          ✅ 등록
-        </button>
-      </div>
-
-      <!-- 등록된 프로그램 목록 -->
-      <div class="card">
-        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
-          <span>등록된 프로그램</span>
-          <button onclick="loadPrograms()" style="padding:5px 14px;border:1.5px solid var(--border);border-radius:6px;background:#fff;font-size:12px;cursor:pointer;font-family:inherit">🔄 새로고침</button>
-        </div>
-        <div id="pg-list"><div style="text-align:center;color:var(--text-sub);padding:32px;font-size:13px">⏳ 불러오는 중...</div></div>
-      </div>
-    </div>
 
 </div><!-- /main -->
 </div><!-- /app -->
@@ -863,7 +775,8 @@ DB.banners = [];
 let currentYear = DB.year;
 
 function getYearData(y) {
-  if (!DB.yearData[y]) DB.yearData[y] = { classes: [], teachers: [] };
+  if (!DB.yearData[y]) DB.yearData[y] = { classes: [], teachers: [], nonHomeTeachers: [] };
+  if (!DB.yearData[y].nonHomeTeachers) DB.yearData[y].nonHomeTeachers = [];
   return DB.yearData[y];
 }
 function save() {
@@ -947,7 +860,6 @@ function showTab(id) {
   const match = navItems.find(n => n.getAttribute('onclick')?.includes(`'${id}'`));
   if (match) match.classList.add('active');
   if (id === 'practice') loadPractice();
-  if (id === 'program')  loadPrograms();
 }
 
 async function initYearSelect() {
@@ -1001,8 +913,9 @@ async function setYear(y) {
   DB.banners = [];
   DB.jobs    = [];
   if (DB.yearData && DB.yearData[currentYear]) {
-    DB.yearData[currentYear].teachers = [];
-    DB.yearData[currentYear].classes  = [];
+    DB.yearData[currentYear].teachers        = [];
+    DB.yearData[currentYear].classes         = [];
+    DB.yearData[currentYear].nonHomeTeachers = [];
   }
   renderAll(); // 빈 상태로 먼저 렌더 (save 하지 않음)
 
@@ -1028,12 +941,14 @@ async function setYear(y) {
       if (bannersRes.success) DB.banners = bannersRes.data || [];
       if (jobsRes.success)    DB.jobs    = jobsRes.data    || [];
     }
-    const [tRes, cRes] = await Promise.all([
+    const [tRes, cRes, ntRes] = await Promise.all([
       SAMIL_API.getTeachers({ year: currentYear }),
       SAMIL_API.getClasses({ year: currentYear }),
+      SAMIL_API.getNonHomeTeachers({ year: currentYear }),
     ]);
-    if (tRes.success) getYearData(currentYear).teachers = tRes.data;
-    if (cRes.success) getYearData(currentYear).classes  = cRes.data;
+    if (tRes.success)  getYearData(currentYear).teachers        = tRes.data;
+    if (cRes.success)  getYearData(currentYear).classes         = cRes.data;
+    if (ntRes.success) getYearData(currentYear).nonHomeTeachers = ntRes.data;
     save();
   } catch(e) { console.warn('Year data load:', e); }
   showLoading(false);
@@ -1072,13 +987,15 @@ async function loadFromSheets() {
       if (statsRes.success)   DB.statsHistory = statsRes.data   || [];
       if (employRes.success && employRes.data && employRes.data.length) DB.employ = employRes.data;
     }
-    // 담임/반구조
-    const [teachersRes, classesRes] = await Promise.all([
+    // 담임/반구조/비담임
+    const [teachersRes, classesRes, ntRes2] = await Promise.all([
       SAMIL_API.getTeachers({ year: currentYear }),
       SAMIL_API.getClasses({ year: currentYear }),
+      SAMIL_API.getNonHomeTeachers({ year: currentYear }),
     ]);
-    if (teachersRes.success) getYearData(currentYear).teachers = teachersRes.data;
-    if (classesRes.success)  getYearData(currentYear).classes  = classesRes.data;
+    if (teachersRes.success) getYearData(currentYear).teachers        = teachersRes.data;
+    if (classesRes.success)  getYearData(currentYear).classes         = classesRes.data;
+    if (ntRes2.success)      getYearData(currentYear).nonHomeTeachers = ntRes2.data;
     save(); renderAll();
     showSyncResult(`✅ ${currentYear}년 데이터 동기화 완료`);
   } catch(e) {
@@ -1092,8 +1009,8 @@ async function loadFromSheets() {
 // ══════════════════════════════════════════════
 function renderAll() {
   const yr = currentYear;
-  document.getElementById('clsYear').textContent = yr + '년';
-  document.getElementById('tcYear').textContent  = yr + '년';
+  document.getElementById('clsYear').textContent = yr;
+  document.getElementById('tcYear').textContent  = yr;
   document.getElementById('dash-year').textContent = yr;
   const deptLabel = document.getElementById('deptYearLabel');
   if (deptLabel) deptLabel.textContent = `(${yr}년)`;
@@ -1101,6 +1018,7 @@ function renderAll() {
   renderDepts();
   loadStudentCounts().then(() => renderClasses());
   renderTeachers();
+  renderNonHomeTeachers();
   renderJobs();
   renderBanners();
   renderEmploy();
@@ -1335,6 +1253,71 @@ async function saveAutoTeacher(i) {
   save(); renderTeachers();
   const res = await SAMIL_API.addTeacher({ dept: t.dept, grade: t.grade, cls: t.cls, name, pw, year: currentYear });
   showSyncResult(res.success ? `✅ ${t.dept} ${t.grade}학년 ${t.cls}반 담임 저장 완료` : `오류: ${res.error}`, !res.success);
+}
+
+// ══════════════════════════════════════════════
+// 비담임교사
+// ══════════════════════════════════════════════
+async function addNonHomeTeacher() {
+  const name = document.getElementById('ntcName').value.trim();
+  const pw   = document.getElementById('ntcPw').value.trim();
+  if (!name || !pw) { alert('이름과 비밀번호를 입력하세요'); return; }
+  const yd = getYearData(currentYear);
+  if (yd.nonHomeTeachers.find(t => t.name === name))
+    { alert('동일한 이름의 비담임교사가 이미 존재합니다'); return; }
+  const id = currentYear + '_' + Date.now();
+  yd.nonHomeTeachers.push({ id, name, pw, year: currentYear });
+  save(); renderNonHomeTeachers();
+  document.getElementById('ntcName').value = '';
+  document.getElementById('ntcPw').value   = '';
+  try {
+    const res = await SAMIL_API.addNonHomeTeacher({ id, name, pw, year: currentYear });
+    showSyncResult(res.success ? `✅ ${name} 선생님 비담임 계정 추가 완료` : `오류: ${res.error}`, !res.success);
+  } catch(e) {}
+}
+
+async function editNonHomeTeacher(i) {
+  const yd = getYearData(currentYear);
+  const t  = yd.nonHomeTeachers[i];
+  if (!t) return;
+  const newName = prompt(`이름 수정 (현재: ${t.name}):`, t.name);
+  if (newName === null) return;
+  const newPw = prompt(`비밀번호 수정 (현재: ${t.pw}):`, t.pw);
+  if (newPw === null) return;
+  if (!newName.trim() || !newPw.trim()) { alert('이름과 비밀번호를 입력하세요'); return; }
+  if (!confirm(`${newName.trim()} 선생님\n비밀번호: ${newPw.trim()}\n\n수정하시겠습니까?`)) return;
+  yd.nonHomeTeachers[i] = { ...t, name: newName.trim(), pw: newPw.trim() };
+  save(); renderNonHomeTeachers();
+  const res = await SAMIL_API.updateNonHomeTeacher({ id: t.id, name: newName.trim(), pw: newPw.trim(), year: t.year || currentYear });
+  showSyncResult(res.success ? `비담임 수정 완료: ${newName.trim()}` : `오류: ${res.error}`, !res.success);
+}
+
+async function delNonHomeTeacher(i) {
+  const yd = getYearData(currentYear);
+  const t  = yd.nonHomeTeachers[i];
+  if (!t || !confirm(`${t.name} 선생님 비담임 계정을 삭제하시겠습니까?`)) return;
+  yd.nonHomeTeachers.splice(i, 1);
+  save(); renderNonHomeTeachers();
+  try { await SAMIL_API.deleteNonHomeTeacher({ id: t.id, year: t.year || currentYear }); } catch(e) {}
+}
+
+function renderNonHomeTeachers() {
+  const el = document.getElementById('nonHomeTeacherList');
+  if (!el) return;
+  const yr   = currentYear;
+  const list = getYearData(yr).nonHomeTeachers || [];
+  const ntcYrEl = document.getElementById('ntcYear');
+  if (ntcYrEl) ntcYrEl.textContent = yr;
+  el.innerHTML = list.length
+    ? list.map((t, i) => `<tr>
+        <td><strong>${t.name}</strong></td>
+        <td style="font-family:monospace">${'*'.repeat((t.pw || '').length || 4)}</td>
+        <td style="display:flex;gap:4px">
+          <button class="btn btn-sm" style="background:#2563eb;color:#fff" onclick="editNonHomeTeacher(${i})">수정</button>
+          <button class="btn btn-sm btn-danger" onclick="delNonHomeTeacher(${i})">삭제</button>
+        </td>
+      </tr>`).join('')
+    : '<tr><td colspan="3" style="text-align:center;color:var(--text-sub)">없음</td></tr>';
 }
 
 // ══════════════════════════════════════════════
@@ -1737,25 +1720,12 @@ function renderBanners() {
   if (!el) return;
   const list = DB.banners || [];
   if (!list.length) { el.innerHTML = '<p style="color:var(--text-sub);font-size:13px">등록된 배너 없음</p>'; return; }
-
-  const todayStr = today();
-  // 활성 배너 / 만료 배너 분리
-  const active  = list.filter(b => {
+  el.innerHTML = list.map(b => {
     const noExpiry = b.noExpiry === true || b.noExpiry === 'true';
-    return noExpiry || !b.dl || b.dl >= todayStr;
-  });
-  const expired = list.filter(b => {
-    const noExpiry = b.noExpiry === true || b.noExpiry === 'true';
-    return !noExpiry && b.dl && b.dl < todayStr;
-  });
-
-  const renderItem = (b, isExpired) => {
-    const noExpiry = b.noExpiry === true || b.noExpiry === 'true';
-    const dlText = noExpiry
-      ? '<span style="font-size:11px;color:var(--green);margin-left:8px;font-weight:600">기간제한 없음</span>'
-      : b.dl ? `<span style="font-size:11px;margin-left:8px;${isExpired ? 'color:#E53E3E;font-weight:600' : 'color:var(--text-sub)'}">~${b.dl}${isExpired ? ' (만료)' : ''}</span>` : '';
+    const dlText   = noExpiry ? '<span style="font-size:11px;color:var(--green);margin-left:8px;font-weight:600">기간제한 없음</span>'
+                   : b.dl ? `<span style="color:var(--text-sub);font-size:11px;margin-left:8px">~${b.dl}</span>` : '';
     return `
-    <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);margin-bottom:8px;background:${b.color||'#1E3A6E'}15;${isExpired ? 'opacity:0.45;filter:grayscale(40%)' : ''}">
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);margin-bottom:8px;background:${b.color||'#1E3A6E'}15">
       <div style="width:16px;height:16px;border-radius:4px;background:${b.color||'#1E3A6E'};flex-shrink:0"></div>
       <div style="flex:1">
         <strong style="font-size:13px">${b.title}</strong>${dlText}
@@ -1764,14 +1734,7 @@ function renderBanners() {
       <button class="btn btn-sm btn-ghost" onclick="editBanner('${b.id}')">수정</button>
       <button class="btn btn-sm btn-danger" onclick="delBanner('${b.id}')">삭제</button>
     </div>`;
-  };
-
-  let html = active.map(b => renderItem(b, false)).join('');
-  if (expired.length) {
-    html += `<div style="font-size:12px;color:var(--text-sub);margin:14px 0 8px;padding-top:10px;border-top:1px dashed var(--border)">⏰ 만료된 배너 — 수정으로 마감일 변경 시 홈페이지에 다시 표시됩니다</div>`;
-    html += expired.map(b => renderItem(b, true)).join('');
-  }
-  el.innerHTML = html;
+  }).join('');
 }
 
 // ══════════════════════════════════════════════
@@ -1822,11 +1785,7 @@ async function selectClass(dept, grade, num, el) {
   try {
     const res = await SAMIL_API.getStudents({ dept, grade: String(grade), cls: String(num), adminMode: true });
     if (!res.success) throw new Error(res.error || '로드 실패');
-    // GAS가 학과 전체를 반환하는 경우에 대비해 학년·반 추가 필터링
-    const filtered = (res.data || []).filter(s =>
-      String(s.grade) === String(grade) && String(s.cls) === String(num)
-    );
-    renderStudentPanel(filtered);
+    renderStudentPanel(res.data);
   } catch(e) {
     document.getElementById('studentPanelContent').innerHTML =
       `<p style="text-align:center;padding:48px 0;color:var(--red)">로드 실패: ${e.message}</p>`;
@@ -2475,62 +2434,7 @@ async function delStat(year) {
   } catch(e) { alert('삭제 실패'); }
 }
 
-// ══════════════════════════════════════════════
-// 관리자 인증 게이트
-// ══════════════════════════════════════════════
-async function adminGateLogin() {
-  const pw    = document.getElementById('gate-pw').value.trim();
-  const errEl = document.getElementById('gate-err');
-  const btn   = document.getElementById('gate-btn');
-  if (!pw) { errEl.textContent = '비밀번호를 입력해주세요.'; return; }
-
-  errEl.textContent = '';
-  btn.disabled = true;
-  btn.textContent = '확인 중...';
-
-  try {
-    const res = await SAMIL_API.verifyAdminPw(pw);
-    if (res && res.success) {
-      // 인증 성공 → sessionStorage에 저장 후 게이트 해제
-      sessionStorage.setItem('samilAdminAuth', '1');
-      sessionStorage.setItem('samilAdminToken', res.token || '');
-      document.getElementById('admin-gate').classList.add('hidden');
-      await init();
-    } else {
-      errEl.textContent = '❌ 비밀번호가 틀렸습니다.';
-      document.getElementById('gate-pw').value = '';
-      document.getElementById('gate-pw').focus();
-    }
-  } catch(e) {
-    errEl.textContent = '⚠️ 서버 연결 오류. 잠시 후 다시 시도해주세요.';
-  }
-  btn.disabled = false;
-  btn.textContent = '🔐 로그인';
-}
-
-function adminGateLogout() {
-  sessionStorage.removeItem('samilAdminAuth');
-  sessionStorage.removeItem('samilAdminToken');
-  sessionStorage.removeItem('statsMe');
-  // 게이트 다시 표시
-  document.getElementById('gate-pw').value = '';
-  document.getElementById('gate-err').textContent = '';
-  document.getElementById('admin-gate').classList.remove('hidden');
-}
-
-window.onload = function() {
-  // 이미 로그인된 세션이면 바로 init, 아니면 게이트 표시
-  if (sessionStorage.getItem('samilAdminAuth') === '1') {
-    document.getElementById('admin-gate').classList.add('hidden');
-    init();
-  } else {
-    // 게이트 표시 (기본 상태) - 입력창에 포커스
-    setTimeout(() => {
-      const pw = document.getElementById('gate-pw');
-      if (pw) pw.focus();
-    }, 100);
-  }
-};
+window.onload = init;
 
 // ══════════════════════════════════════════════
 // 현장실습 자료실
@@ -2538,48 +2442,7 @@ window.onload = function() {
 let _prSections = [];
 let _prFiles    = {};
 
-/* ── 현장실습 localStorage 캐시 ── */
-const _PR_ADMIN_CACHE_KEY = 'samilPracticeAdmin';
-const _PR_ADMIN_CACHE_TTL = 5 * 60 * 1000; // 5분
-
-function _prSaveCache() {
-  try {
-    const flat = Object.values(_prFiles).flat();
-    localStorage.setItem(_PR_ADMIN_CACHE_KEY, JSON.stringify({
-      sections: _prSections, files: flat, ts: Date.now()
-    }));
-  } catch(_) {}
-}
-
-function _prLoadCache() {
-  try {
-    const raw = localStorage.getItem(_PR_ADMIN_CACHE_KEY);
-    if (!raw) return null;
-    const c = JSON.parse(raw);
-    if (Date.now() - c.ts > _PR_ADMIN_CACHE_TTL) return null;
-    return c;
-  } catch(_) { return null; }
-}
-
-function _prApplyCache(c) {
-  _prSections = c.sections || [];
-  _prRebuildFiles(c.files || []);
-}
-
-async function loadPractice(showLoading = true) {
-  // ① 캐시 있으면 즉시 표시 → 백그라운드 갱신
-  const cached = _prLoadCache();
-  if (cached) {
-    _prApplyCache(cached);
-    renderPrSections();
-    _prRefreshBackground();
-    return;
-  }
-  // ② 캐시 없으면 로딩 표시 후 GAS 호출
-  if (showLoading) {
-    const el = document.getElementById('prSectionList');
-    if (el) el.innerHTML = '<div class="card" style="text-align:center;color:var(--text-sub);padding:32px">⏳ 자료를 불러오는 중...</div>';
-  }
+async function loadPractice() {
   const [secRes, fileRes] = await Promise.all([
     SAMIL_API.getPracticeSections(),
     SAMIL_API.getPracticeFiles(''),
@@ -2592,38 +2455,7 @@ async function loadPractice(showLoading = true) {
       _prFiles[f.secId].push(f);
     });
   }
-  _prSaveCache();
   renderPrSections();
-}
-
-async function _prRefreshBackground() {
-  try {
-    const [secRes, fileRes] = await Promise.all([
-      SAMIL_API.getPracticeSections(),
-      SAMIL_API.getPracticeFiles(''),
-    ]);
-    if (!secRes.success) return;
-    const newSections = secRes.data || [];
-    const newFiles    = fileRes.success ? fileRes.data : [];
-    const changed =
-      JSON.stringify(newSections.map(s=>s.id)) !== JSON.stringify(_prSections.map(s=>s.id)) ||
-      newFiles.length !== Object.values(_prFiles).flat().length;
-    if (changed) {
-      _prSections = newSections;
-      _prRebuildFiles(newFiles);
-      renderPrSections();
-    }
-    _prSaveCache();
-  } catch(_) {}
-}
-
-/* 로컬 상태만 업데이트하고 즉시 재렌더 (API 완료 대기 없이 UI 즉각 반응) */
-function _prRebuildFiles(flatList) {
-  _prFiles = {};
-  flatList.forEach(f => {
-    if (!_prFiles[f.secId]) _prFiles[f.secId] = [];
-    _prFiles[f.secId].push(f);
-  });
 }
 
 function prFileIcon(name) {
@@ -2706,12 +2538,7 @@ async function uploadPrFile(file, secId) {
     if (!addRes.success) { alert('저장 실패'); if(pendEl) pendEl.innerHTML=''; return; }
     if (pendEl) pendEl.innerHTML = `<div class="pr-pending" style="background:#F0FFF4">✅ ${file.name} 업로드 완료</div>`;
     setTimeout(() => { if(pendEl) pendEl.innerHTML=''; }, 2000);
-    // 로컬 즉시 추가 (재조회 없이)
-    const newFile = addRes.data || { id: addRes.id||('tmpf_'+Date.now()), secId, name: file.name, url: upRes.url, order: (_prFiles[secId]||[]).length+1 };
-    if (!_prFiles[secId]) _prFiles[secId] = [];
-    _prFiles[secId].push(newFile);
-    _prSaveCache();
-    renderPrSections();
+    await loadPractice();
   } catch(e) {
     alert('오류: '+e.message);
     if (pendEl) pendEl.innerHTML = '';
@@ -2721,20 +2548,10 @@ async function uploadPrFile(file, secId) {
 async function addPrSection() {
   const title = document.getElementById('pr-sec-title').value.trim();
   if (!title) { alert('단계명을 입력하세요'); return; }
-  const btn = document.querySelector('#tab-practice .btn[onclick="addPrSection()"]') ||
-              document.querySelector('button[onclick="addPrSection()"]');
-  if (btn) { btn.disabled = true; btn.textContent = '추가 중...'; }
   const res = await SAMIL_API.addPracticeSection({ title });
-  if (btn) { btn.disabled = false; btn.textContent = '+ 단계 추가'; }
   if (!res.success) { alert(res.error||'오류'); return; }
   document.getElementById('pr-sec-title').value = '';
-  // 로컬 즉시 반영 (재조회 없이)
-  const newSec = res.data || { id: res.id || ('tmp_'+Date.now()), title, order: _prSections.length+1 };
-  _prSections.push(newSec);
-  _prSaveCache();
-  renderPrSections();
-  // 백그라운드에서 최신 데이터 동기 (캐시 무효화 후 조용히)
-  loadPractice(false);
+  await loadPractice();
 }
 
 async function editPrSection(id) {
@@ -2742,28 +2559,14 @@ async function editPrSection(id) {
   if (!sec) return;
   const t = prompt('단계명 수정:', sec.title);
   if (!t||t.trim()===sec.title) return;
-  const newTitle = t.trim();
-  // 로컬 즉시 반영
-  sec.title = newTitle;
-  _prSaveCache();
-  renderPrSections();
-  // 백그라운드 API
-  SAMIL_API.updatePracticeSection({ id, title: newTitle }).then(r => {
-    if (!r.success) { alert(r.error||'수정 오류'); loadPractice(false); }
-  });
+  await SAMIL_API.updatePracticeSection({ id, title: t.trim() });
+  await loadPractice();
 }
 
 async function delPrSection(id) {
   if (!confirm('이 단계와 하위 파일을 모두 삭제하시겠습니까?')) return;
-  // 로컬 즉시 반영
-  _prSections = _prSections.filter(s => s.id !== id);
-  delete _prFiles[id];
-  _prSaveCache();
-  renderPrSections();
-  // 백그라운드 API
-  SAMIL_API.deletePracticeSection(id).then(r => {
-    if (!r.success) { alert(r.error||'삭제 오류'); loadPractice(false); }
-  });
+  await SAMIL_API.deletePracticeSection(id);
+  await loadPractice();
 }
 
 async function movePrSection(idx, dir) {
@@ -2771,28 +2574,14 @@ async function movePrSection(idx, dir) {
   const t = idx+dir;
   if (t<0||t>=arr.length) return;
   [arr[idx],arr[t]]=[arr[t],arr[idx]];
-  // 로컬 즉시 반영
-  _prSections = arr;
-  _prSaveCache();
-  renderPrSections();
-  // 백그라운드 API
-  SAMIL_API.reorderPracticeSection(arr.map((s,i)=>({id:s.id,order:i+1}))).then(r => {
-    if (!r.success) { loadPractice(false); }
-  });
+  await SAMIL_API.reorderPracticeSection(arr.map((s,i)=>({id:s.id,order:i+1})));
+  await loadPractice();
 }
 
 async function delPrFile(fileId) {
   if (!confirm('파일을 삭제하시겠습니까?')) return;
-  // 로컬 즉시 반영
-  for (const secId in _prFiles) {
-    _prFiles[secId] = _prFiles[secId].filter(f => f.id !== fileId);
-  }
-  _prSaveCache();
-  renderPrSections();
-  // 백그라운드 API
-  SAMIL_API.deletePracticeFile(fileId).then(r => {
-    if (!r.success) { alert(r.error||'삭제 오류'); loadPractice(false); }
-  });
+  await SAMIL_API.deletePracticeFile(fileId);
+  await loadPractice();
 }
 
 async function movePrFile(secId, idx, dir) {
@@ -2800,125 +2589,8 @@ async function movePrFile(secId, idx, dir) {
   const t = idx+dir;
   if (t<0||t>=files.length) return;
   [files[idx],files[t]]=[files[t],files[idx]];
-  // 로컬 즉시 반영
-  _prFiles[secId] = files;
-  _prSaveCache();
-  renderPrSections();
-  // 백그라운드 API
-  SAMIL_API.reorderPracticeFile(files.map((f,i)=>({id:f.id,order:i+1}))).then(r => {
-    if (!r.success) { loadPractice(false); }
-  });
-}
-
-// ══════════════════════════════════════════════
-// 프로그램 관리
-// ══════════════════════════════════════════════
-
-// 구글 드라이브 공유 링크 → 직접 다운로드 링크로 변환
-function _convertDriveLink(url) {
-  if (!url) return url;
-  // https://drive.google.com/file/d/FILE_ID/view?... 형태 처리
-  const m = url.match(/\/file\/d\/([^/]+)/);
-  if (m) return `https://drive.google.com/uc?export=download&id=${m[1]}`;
-  // https://drive.google.com/open?id=FILE_ID 형태 처리
-  const m2 = url.match(/[?&]id=([^&]+)/);
-  if (m2) return `https://drive.google.com/uc?export=download&id=${m2[1]}`;
-  return url; // 변환 불필요한 링크는 그대로
-}
-
-async function uploadProgram() {
-  const name     = document.getElementById('pg-name').value.trim();
-  const ver      = document.getElementById('pg-ver').value.trim();
-  const desc     = document.getElementById('pg-desc').value.trim();
-  const filename = document.getElementById('pg-filename').value.trim();
-  const rawUrl   = document.getElementById('pg-url').value.trim();
-  const statusEl = document.getElementById('pg-upload-status');
-
-  if (!name)     { alert('프로그램명을 입력하세요'); return; }
-  if (!filename) { alert('파일명을 입력하세요'); return; }
-  if (!rawUrl)   { alert('구글 드라이브 링크를 입력하세요'); return; }
-  if (!rawUrl.includes('drive.google.com')) {
-    alert('구글 드라이브 링크를 입력해주세요\n예: https://drive.google.com/file/d/...');
-    return;
-  }
-
-  const url = _convertDriveLink(rawUrl);
-  const btn = document.querySelector('#tab-program button[onclick="uploadProgram()"]');
-  statusEl.innerHTML = '<span style="color:var(--primary)">⏳ 등록 중...</span>';
-  if (btn) { btn.disabled = true; btn.textContent = '등록 중...'; }
-
-  try {
-    const addRes = await SAMIL_API.addProgram({
-      name,
-      version: ver,
-      desc,
-      filename,
-      url,
-      size: 0,
-    });
-    if (!addRes.success) {
-      statusEl.innerHTML = `<span style="color:#DC2626">❌ 등록 실패: ${addRes.error||''}</span>`;
-      if (btn) { btn.disabled = false; btn.textContent = '✅ 등록'; }
-      return;
-    }
-
-    statusEl.innerHTML = '<span style="color:#16A34A">✅ 등록 완료!</span>';
-    document.getElementById('pg-name').value     = '';
-    document.getElementById('pg-ver').value      = '';
-    document.getElementById('pg-desc').value     = '';
-    document.getElementById('pg-filename').value = '';
-    document.getElementById('pg-url').value      = '';
-    if (btn) { btn.disabled = false; btn.textContent = '✅ 등록'; }
-    setTimeout(() => { statusEl.innerHTML = ''; }, 3000);
-    await loadPrograms();
-  } catch(e) {
-    statusEl.innerHTML = `<span style="color:#DC2626">❌ 오류: ${e.message}</span>`;
-    if (btn) { btn.disabled = false; btn.textContent = '✅ 등록'; }
-  }
-}
-
-async function loadPrograms() {
-  const listEl = document.getElementById('pg-list');
-  if (!listEl) return;
-  listEl.innerHTML = '<div style="text-align:center;color:var(--text-sub);padding:32px;font-size:13px">⏳ 불러오는 중...</div>';
-  const res = await SAMIL_API.getPrograms().catch(() => null);
-  const programs = (res && res.success) ? (res.list || res.data || []) : [];
-  if (!programs.length) {
-    listEl.innerHTML = '<div style="text-align:center;color:var(--text-sub);padding:32px;font-size:13px">등록된 프로그램이 없습니다.</div>';
-    return;
-  }
-  listEl.innerHTML = programs.map(p => {
-    const mb   = p.size ? (p.size / 1048576).toFixed(1) + ' MB' : '';
-    const date = (p.date || '').substring(0, 10);
-    return `<div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border)">
-      <div style="font-size:28px;flex-shrink:0">💾</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:15px;font-weight:700;margin-bottom:2px">
-          ${p.name}${p.version ? ' <span style="font-size:12px;color:var(--primary-light);font-weight:500">'+p.version+'</span>' : ''}
-        </div>
-        ${p.desc ? `<div style="font-size:12px;color:var(--text-sub);margin-bottom:3px">${p.desc}</div>` : ''}
-        <div style="font-size:11px;color:var(--text-sub)">${p.filename || ''}${mb ? ' · '+mb : ''}${date ? ' · '+date : ''}</div>
-      </div>
-      <a href="${p.url}" target="_blank"
-        style="padding:7px 16px;background:var(--primary);color:#fff;border-radius:7px;font-size:13px;font-weight:600;text-decoration:none;flex-shrink:0">
-        ⬇ 다운로드
-      </a>
-      <button onclick="deleteProgram('${p.id}')"
-        style="padding:7px 14px;background:#FEF2F2;color:#DC2626;border:1.5px solid #FECACA;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;flex-shrink:0">
-        🗑 삭제
-      </button>
-    </div>`;
-  }).join('');
-}
-
-async function deleteProgram(id) {
-  if (!confirm('이 프로그램을 삭제하시겠습니까?')) return;
-  const res = await SAMIL_API.deleteProgram(id);
-  if (res && res.success) {
-    await loadPrograms();
-  } else {
-    alert(res?.error || '삭제 실패');
-  }
+  await SAMIL_API.reorderPracticeFile(files.map((f,i)=>({id:f.id,order:i+1})));
+  await loadPractice();
 }
 
 // Enter로 모달 저장
@@ -2928,32 +2600,6 @@ document.getElementById('sem-company').addEventListener('keydown', e => {
 document.getElementById('sad-school').addEventListener('keydown', e => {
   if (e.key === 'Enter') saveStudentEmployStatus('advance');
 });
-</script>
-
-<!-- ══ 입사지원현황 모달 (기존 코드와 무관) ══ -->
-<div id="admission-modal" style="display:none;position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.65);align-items:center;justify-content:center;">
-  <div style="width:98vw;height:96vh;background:#f4f6fa;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,.45);">
-    <div style="background:#1a2744;color:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
-      <span style="font-weight:700;font-size:15px;">📝 입사지원 현황 관리</span>
-      <button onclick="closeAdmission()" style="background:none;border:none;color:rgba(255,255,255,.7);font-size:24px;cursor:pointer;line-height:1;">×</button>
-    </div>
-    <iframe id="admission-iframe" src="" style="flex:1;border:none;width:100%;" allow="fullscreen"></iframe>
-  </div>
-</div>
-<script>
-var ADMISSION_URL='https://script.google.com/macros/s/AKfycbzCgFeIBKYjwftoYnYs0ihmpUrt4Pfa-tH9CX4k-JI3spAoXfaKKqQRSUMe8EPLZkJP/exec';
-function openAdmission(){
-  var m=document.getElementById('admission-modal');
-  var f=document.getElementById('admission-iframe');
-  if(!f.src||f.src===window.location.href) f.src=ADMISSION_URL;
-  m.style.display='flex';
-  document.body.style.overflow='hidden';
-}
-function closeAdmission(){
-  document.getElementById('admission-modal').style.display='none';
-  document.body.style.overflow='';
-}
-document.addEventListener('keydown',function(e){if(e.key==='Escape')closeAdmission();});
 </script>
 </body>
 </html>
