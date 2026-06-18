@@ -44,9 +44,14 @@ nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:var(--pri
 .login-gate-btn{padding:12px 32px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
 /* 자료실 */
 .section-block{margin-bottom:24px}
-.section-divider{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.section-divider{display:flex;align-items:center;gap:14px;margin-bottom:14px;cursor:pointer;user-select:none}
+.section-divider:hover .section-divider-title{background:var(--primary-light)}
 .section-divider-line{flex:1;height:2px;background:var(--primary)}
-.section-divider-title{background:var(--primary);color:#fff;padding:6px 18px;border-radius:20px;font-size:14px;font-weight:700;white-space:nowrap}
+.section-divider-title{background:var(--primary);color:#fff;padding:6px 18px;border-radius:20px;font-size:14px;font-weight:700;white-space:nowrap;display:flex;align-items:center;gap:8px;transition:.15s}
+.section-divider-arrow{font-size:11px;transition:transform .25s}
+.section-block.collapsed .section-divider-arrow{transform:rotate(-90deg)}
+.section-block.collapsed .file-list{display:none}
+.section-block.collapsed .empty-section{display:none}
 .file-list{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden}
 .file-item{display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--border);transition:.15s}
 .file-item:last-child{border-bottom:none}
@@ -63,9 +68,111 @@ nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:var(--pri
 .empty-title{font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px}
 .empty-sub{font-size:13px;color:var(--text-sub);line-height:1.7}
 .loading{text-align:center;padding:48px;color:var(--text-sub);font-size:14px}
-/* 로그인 모달 CSS → samil-login.js */
+/* 로그인 모달 */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:16px;max-width:400px;width:100%;overflow:hidden}
+.modal-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-sub)}
+.modal-body{padding:20px}
+.login-tab{display:flex;gap:4px;margin-bottom:18px;background:var(--bg);padding:4px;border-radius:10px}
+.login-tab button{flex:1;padding:8px;border:none;background:none;border-radius:8px;font-size:13px;cursor:pointer;color:var(--text-sub);font-family:inherit}
+.login-tab button.active{background:#fff;color:var(--primary);box-shadow:var(--shadow)}
+.form-group{margin-bottom:13px}
+.form-group label{display:block;font-size:13px;font-weight:500;margin-bottom:5px}
+.form-group input,.form-group select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none}
+.form-group input:focus,.form-group select:focus{border-color:var(--primary-light)}
+.btn-submit{width:100%;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
 footer{background:var(--primary);color:rgba(255,255,255,.65);text-align:center;padding:20px;font-size:12px;margin-top:48px}
 footer strong{color:#fff}
+/* ── Q&A 게시판 ── */
+.qna-section{margin-top:28px}
+/* 게시판 헤더 */
+.qna-board-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:0;flex-wrap:wrap;gap:10px}
+.qna-board-title{font-size:17px;font-weight:700;color:var(--text)}
+.qna-tab-group{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#fff}
+.qna-tab{padding:8px 18px;border:none;background:none;font-size:13px;font-family:inherit;cursor:pointer;color:var(--text-sub);border-right:1px solid var(--border)}
+.qna-tab:last-child{border-right:none}
+.qna-tab.active{background:var(--primary);color:#fff;font-weight:700}
+.qna-write-btn{padding:9px 18px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px}
+.qna-write-btn:hover{background:var(--primary-light)}
+/* 테이블 */
+.qna-board-table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-top:10px;box-shadow:var(--shadow)}
+.qna-board-table thead tr{background:var(--primary);color:#fff}
+.qna-board-table th{padding:11px 12px;font-size:13px;font-weight:600;text-align:center;white-space:nowrap}
+.qna-board-table th.col-title{text-align:left}
+.qna-board-table td{padding:12px 12px;font-size:13px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle}
+.qna-board-table td.col-title{text-align:left;max-width:0}
+.qna-board-table tbody tr.qna-row{cursor:pointer;transition:.12s}
+.qna-board-table tbody tr.qna-row:hover td{background:#F7F9FC}
+.qna-board-table tbody tr.qna-row.open td{background:#EFF3FB}
+.qna-board-table tbody tr:last-child td{border-bottom:none}
+.col-num{width:52px;color:var(--text-sub)}
+.col-status{width:80px}
+.col-ans{width:50px}
+.col-author{width:70px;color:var(--text-sub)}
+.col-date{width:72px;color:var(--text-sub)}
+/* 제목 셀 */
+.qna-title-cell{display:flex;align-items:center;gap:8px;min-width:0}
+.qna-title-text{font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.qna-file-icon{color:var(--text-sub);font-size:13px;flex-shrink:0}
+.qna-ans-count{display:inline-block;background:#EBF8FF;color:#2B6CB0;font-size:11px;font-weight:700;padding:1px 7px;border-radius:10px;flex-shrink:0}
+/* 상태 배지 */
+.badge-wait{display:inline-block;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;background:#FFF3E0;color:#E65100;border:1px solid #FFB74D}
+.badge-done{display:inline-block;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;background:#E8F5E9;color:#2E7D32;border:1px solid #81C784}
+/* 상세 펼침 행 */
+.qna-detail-row td{padding:0;border-bottom:1px solid var(--border)}
+.qna-detail-row:last-child td{border-bottom:none}
+.qna-detail-box{padding:20px 24px;background:#F8FAFF;border-top:2px solid var(--primary)}
+.qna-detail-meta{font-size:12px;color:var(--text-sub);margin-bottom:12px;display:flex;gap:16px;flex-wrap:wrap}
+.qna-detail-content{font-size:14px;line-height:1.85;color:var(--text);white-space:pre-wrap;word-break:break-word;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.qna-detail-file{margin-top:10px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.qna-detail-file a{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--primary);text-decoration:none}
+.qna-detail-file a:hover{text-decoration:underline}
+.qna-admin-bar{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}
+.qna-admin-btn{padding:5px 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;cursor:pointer;background:#fff;font-family:inherit;color:var(--text-sub)}
+.qna-admin-btn:hover{background:var(--bg)}
+.qna-admin-btn.danger{border-color:#FC8181;color:#C53030}
+.qna-admin-btn.success{border-color:#68D391;color:#276749}
+/* 답변 */
+.qna-answers-wrap{margin-top:14px;display:flex;flex-direction:column;gap:10px}
+.qna-answer-item{background:#fff;border-radius:8px;padding:14px 18px;border-left:3px solid var(--primary-light);box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.qna-answer-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.qna-answer-author{font-size:12px;font-weight:700;color:var(--primary)}
+.qna-answer-date{font-size:11px;color:var(--text-sub)}
+.qna-answer-content{font-size:13px;line-height:1.75;color:var(--text);white-space:pre-wrap;word-break:break-word}
+.qna-answer-file{margin-top:8px}
+.qna-answer-file a{font-size:12px;color:var(--primary);text-decoration:none}
+.qna-answer-file a:hover{text-decoration:underline}
+/* 답변 입력 폼 */
+.qna-reply-form{margin-top:16px;padding:16px;background:#fff;border-radius:8px;border:1px solid var(--border)}
+.qna-reply-form label{display:block;font-size:12px;font-weight:700;color:var(--primary);margin-bottom:8px}
+.qna-reply-form textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;min-height:70px;outline:none;box-sizing:border-box}
+.qna-reply-form textarea:focus{border-color:var(--primary-light)}
+.qna-reply-actions{display:flex;justify-content:flex-end;margin-top:8px}
+.qna-reply-submit{padding:8px 20px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.qna-board-empty{text-align:center;padding:40px 0;color:var(--text-sub);font-size:14px}
+.qna-board-loading{text-align:center;padding:32px 0;color:var(--text-sub);font-size:13px}
+/* 자료실 구분 */
+.file-section-divider{display:flex;align-items:center;gap:0;margin:40px 0 0;border-top:3px solid var(--primary)}
+.file-section-label{background:var(--primary);color:#fff;padding:8px 24px;font-size:14px;font-weight:700;border-radius:0 0 10px 0;display:inline-block}
+/* Q&A 작성 모달 */
+.qna-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:3000;align-items:center;justify-content:center;padding:16px}
+.qna-modal-overlay.open{display:flex}
+.qna-modal{background:#fff;border-radius:16px;width:100%;max-width:520px;overflow:hidden;max-height:90vh;overflow-y:auto}
+.qna-modal-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:1}
+.qna-modal-title{font-size:16px;font-weight:700}
+.qna-modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-sub)}
+.qna-modal-body{padding:20px;display:flex;flex-direction:column;gap:14px}
+.qna-form-group label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+.qna-form-group input,.qna-form-group textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box}
+.qna-form-group input:focus,.qna-form-group textarea:focus{border-color:var(--primary-light)}
+.qna-form-group textarea{resize:vertical;min-height:110px}
+.qna-file-label{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:1.5px dashed var(--border);border-radius:8px;cursor:pointer;font-size:13px;color:var(--text-sub);transition:.15s}
+.qna-file-label:hover{border-color:var(--primary-light);color:var(--primary)}
+.qna-file-name{font-size:12px;color:var(--primary);margin-top:6px}
+.qna-modal-submit{padding:12px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;width:100%}
+.qna-modal-submit:disabled{opacity:.6;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -89,39 +196,140 @@ footer strong{color:#fff}
 
 <div class="page-hero">
   <div class="page-hero-inner">
-    <h1>🏭 현장실습 자료실</h1>
-    <p>현장실습 단계별 필요 서류와 자료를 다운로드할 수 있습니다.</p>
+    <h1>🏭 현장실습</h1>
+    <p>Q&amp;A 질문 및 단계별 자료를 확인하세요.</p>
   </div>
 </div>
 
-<div class="container">
+<!-- Q&A 게시판 섹션 (상단) -->
+<div class="container qna-section" id="qnaSection" style="display:none">
+  <!-- 헤더 행: 제목 + 탭 + 글쓰기 -->
+  <div class="qna-board-top">
+    <div class="qna-board-title">💬 현장실습 Q&amp;A</div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div class="qna-tab-group">
+        <button class="qna-tab active" onclick="setQnaTab('all',this)">전체질문</button>
+        <button class="qna-tab" onclick="setQnaTab('wait',this)">진행중 Q&amp;A</button>
+        <button class="qna-tab" onclick="setQnaTab('done',this)">완료된 Q&amp;A</button>
+      </div>
+      <button class="qna-write-btn" id="qnaWriteBtn" onclick="openQnaForm()" style="display:none">✏️ 글쓰기</button>
+    </div>
+  </div>
+  <!-- 게시판 테이블 -->
+  <table class="qna-board-table" id="qnaBoardTable">
+    <thead>
+      <tr>
+        <th class="col-num">번호</th>
+        <th class="col-status">상태</th>
+        <th class="col-title">제목</th>
+        <th class="col-ans">답변</th>
+        <th class="col-author">작성자</th>
+        <th class="col-date">날짜</th>
+      </tr>
+    </thead>
+    <tbody id="qnaList"><tr><td colspan="6" class="qna-board-loading">Q&amp;A를 불러오는 중...</td></tr></tbody>
+  </table>
+</div>
+
+<!-- 자료실 구분선 + 자료실 섹션 -->
+<div class="container" id="fileSection" style="display:none">
+  <div class="file-section-divider">
+    <div class="file-section-label">📂 현장실습 자료실</div>
+  </div>
   <div id="mainContent"></div>
+</div>
+
+<!-- 비로그인 시 단일 게이트 -->
+<div class="container" id="gateContent"></div>
+
+<!-- Q&A 작성 모달 -->
+<div class="qna-modal-overlay" id="qnaModal" onclick="if(event.target===this)closeQnaModal()">
+  <div class="qna-modal">
+    <div class="qna-modal-header">
+      <div class="qna-modal-title">💬 질문 작성</div>
+      <button class="qna-modal-close" onclick="closeQnaModal()">✕</button>
+    </div>
+    <div class="qna-modal-body">
+      <div class="qna-form-group">
+        <label>제목</label>
+        <input id="qf-title" placeholder="질문 제목을 입력하세요">
+      </div>
+      <div class="qna-form-group">
+        <label>내용</label>
+        <textarea id="qf-content" placeholder="질문 내용을 상세히 입력하세요"></textarea>
+      </div>
+      <div class="qna-form-group">
+        <label>📎 파일 첨부 (선택)</label>
+        <label class="qna-file-label" for="qf-file">📎 파일 선택</label>
+        <input type="file" id="qf-file" style="display:none" onchange="onQnaFileSelect(this)">
+        <div class="qna-file-name" id="qf-file-name"></div>
+      </div>
+      <button class="qna-modal-submit" id="qf-submit" onclick="submitQna()">등록하기</button>
+    </div>
+  </div>
 </div>
 
 <footer><strong>삼일공업고등학교</strong> 특성화취창업지원부 | 경기도 수원시</footer>
 
 <!-- 로그인 모달 -->
-<script>
-/* ── 캐시 상수 ── */
-const _PRACTICE_CACHE_KEY = 'samilPracticeCache';
-const _PRACTICE_CACHE_TTL = 5 * 60 * 1000; // 5분
+<div class="modal-overlay" id="loginModal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div style="font-size:17px;font-weight:700">로그인</div>
+      <button class="modal-close" onclick="document.getElementById('loginModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="login-tab">
+        <button class="active" onclick="switchTab('tc',this)">담임교사</button>
+        <button onclick="switchTab('ad',this)">관리자</button>
+      </div>
+      <div id="tab-tc">
+        <div class="form-group"><label>학과</label><select id="l-dept"><option value="">선택</option></select></div>
+        <div style="display:flex;gap:8px">
+          <div class="form-group" style="flex:1"><label>학년</label><select id="l-grade" onchange="updateCls()"><option value="">학년</option><option>1</option><option>2</option><option>3</option></select></div>
+          <div class="form-group" style="flex:1"><label>반</label><select id="l-cls"><option value="">반</option></select></div>
+        </div>
+        <div class="form-group"><label>이름</label><input id="l-name" placeholder="홍길동" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        <div class="form-group"><label>비밀번호</label><input type="password" id="l-pw" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        <button class="btn-submit" onclick="doLogin()">로그인</button>
+      </div>
+      <div id="tab-ad" style="display:none">
+        <div class="form-group"><label>관리자 비밀번호</label><input type="password" id="a-pw" onkeydown="if(event.key==='Enter')doAdminLogin()"></div>
+        <button class="btn-submit" onclick="doAdminLogin()">로그인</button>
+      </div>
+    </div>
+  </div>
+</div>
 
-/* ── 파일 아이콘 헬퍼 ── */
-function getFileIcon(name) {
-  if (!name) return '📄';
-  const ext = (name.split('.').pop() || '').toLowerCase();
-  const map = {
-    pdf: '📕', doc: '📝', docx: '📝', xls: '📊', xlsx: '📊',
-    ppt: '📑', pptx: '📑', hwp: '📄', hwpx: '📄',
-    zip: '🗜', jpg: '🖼', jpeg: '🖼', png: '🖼', gif: '🖼',
-    mp4: '🎬', avi: '🎬', mov: '🎬', txt: '📃',
-  };
-  return map[ext] || '📄';
+<script>
+let _classes = [];
+
+function isLoggedIn() {
+  return sessionStorage.getItem('samilAdminAuth') === '1'
+    || !!sessionStorage.getItem('samilTeacherAuth')
+    || !!sessionStorage.getItem('samilNonHomeTeacherAuth');
+}
+function isTeacher() {
+  return sessionStorage.getItem('samilAdminAuth') === '1'
+    || !!sessionStorage.getItem('samilTeacherAuth')
+    || !!sessionStorage.getItem('samilNonHomeTeacherAuth');
+}
+function isAdmin() {
+  return sessionStorage.getItem('samilAdminAuth') === '1';
+}
+function getMyName() {
+  const me = JSON.parse(sessionStorage.getItem('samilTeacherME') || sessionStorage.getItem('samilNonHomeTeacherME') || '{}');
+  return me.name || '교사';
 }
 
-/* ── 햄버거 메뉴 ── */
-function toggleMenu() { document.getElementById('navMenu').classList.toggle('open'); }
-function closeMenu()  { document.getElementById('navMenu').classList.remove('open'); }
+function getFileIcon(name) {
+  if (!name) return '📄';
+  const ext = (name.split('.').pop()||'').toLowerCase();
+  return {hwp:'📝',docx:'📝',doc:'📝',xlsx:'📊',xls:'📊',pdf:'📕',pptx:'📊',zip:'📦',jpg:'🖼',png:'🖼'}[ext] || '📄';
+}
+
+const _PRACTICE_CACHE_KEY = 'samilPracticeCache';
+const _PRACTICE_CACHE_TTL = 10 * 60 * 1000; // 10분
 
 function _saveCache(sections, allFiles) {
   try {
@@ -161,10 +369,10 @@ function _renderContent(sections, allFiles) {
         <a class="file-download" href="${f.url}" target="_blank">⬇ 다운로드</a>
       </div>`).join('')
     : `<div class="empty-section">탑재된 자료가 없습니다.</div>`;
-    return `<div class="section-block">
-      <div class="section-divider">
+    return `<div class="section-block" id="secBlock_${sec.id}">
+      <div class="section-divider" onclick="toggleSecBlock('${sec.id}')">
         <div class="section-divider-line"></div>
-        <div class="section-divider-title">${sec.title}</div>
+        <div class="section-divider-title">${sec.title} <span class="section-divider-arrow">▼</span></div>
         <div class="section-divider-line"></div>
       </div>
       <div class="file-list">${fileHtml}</div>
@@ -172,49 +380,59 @@ function _renderContent(sections, allFiles) {
   }).join('');
 }
 
+function toggleSecBlock(secId) {
+  const el = document.getElementById('secBlock_' + secId);
+  if (el) el.classList.toggle('collapsed');
+}
+
+function toggleQnaSection() {
+  const sec = document.getElementById('qnaSection');
+  if (sec) sec.classList.toggle('collapsed');
+}
+
 async function render() {
-  const el = document.getElementById('mainContent');
   updateNavAuth();
 
-  if (sessionStorage.getItem('samilAdminAuth') !== '1' && !sessionStorage.getItem('samilTeacherAuth')) {
-    el.innerHTML = `<div class="login-gate">
+  const gate    = document.getElementById('gateContent');
+  const fileSec = document.getElementById('fileSection');
+  const mainEl  = document.getElementById('mainContent');
+
+  if (!isLoggedIn()) {
+    gate.innerHTML = `<div class="login-gate">
       <h3>🔐 로그인이 필요합니다</h3>
-      <p>현장실습 자료실은 담임교사 또는 관리자 로그인 후 이용할 수 있습니다.<br>자료 다운로드는 로그인 후 진행해주세요.</p>
+      <p>현장실습 자료실 및 Q&A는 담임교사 또는 관리자 로그인 후 이용할 수 있습니다.</p>
       <button class="login-gate-btn" onclick="openLogin()">로그인하기</button>
     </div>`;
+    fileSec.style.display = 'none';
     return;
   }
+
+  gate.innerHTML = '';
+  fileSec.style.display = '';
 
   // ① 캐시 즉시 표시
   const cached = _loadCache();
   if (cached) {
     _renderContent(cached.sections, cached.allFiles);
   } else {
-    el.innerHTML = '<div class="loading">자료를 불러오는 중...</div>';
+    mainEl.innerHTML = '<div class="loading">자료를 불러오는 중...</div>';
   }
 
-  // ② 백그라운드 최신 데이터 fetch (10초 타임아웃)
-  const _timeout = ms => new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms));
+  // ② 백그라운드 최신 데이터 fetch
   let sections = [], allFiles = [];
   try {
-    const [secRes, fileRes] = await Promise.race([
-      Promise.all([
-        SAMIL_API.getPracticeSections(),
-        SAMIL_API.getPracticeFiles(''),
-      ]),
-      _timeout(8000)
+    const [secRes, fileRes] = await Promise.all([
+      SAMIL_API.getPracticeSections(),
+      SAMIL_API.getPracticeFiles(''),
     ]);
     sections = secRes.success ? secRes.data : (cached?.sections || []);
     allFiles = fileRes.success ? fileRes.data : (cached?.allFiles || []);
   } catch(e) {
     if (!cached) {
-      const msg = e.message === 'timeout'
-        ? '서버 응답이 지연되고 있습니다.<br>잠시 후 다시 시도해주세요.'
-        : '네트워크 오류가 발생했습니다.<br>잠시 후 다시 시도해주세요.';
-      el.innerHTML = `<div class="empty-notice">
+      mainEl.innerHTML = `<div class="empty-notice">
         <div class="empty-icon">📂</div>
         <div class="empty-title">자료를 불러올 수 없습니다</div>
-        <div class="empty-sub">${msg}</div>
+        <div class="empty-sub">네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.</div>
         <button onclick="render()" style="margin-top:16px;padding:9px 20px;background:var(--primary);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit">다시 시도</button>
       </div>`;
     }
@@ -222,35 +440,283 @@ async function render() {
   }
 
   _saveCache(sections, allFiles);
-  try { _renderContent(sections, allFiles); }
-  catch(renderErr) {
-    console.error('[practice] 렌더링 오류:', renderErr);
-    document.getElementById('mainContent').innerHTML =
-      '<div class="empty-notice"><div class="empty-icon">⚠️</div>' +
-      '<div class="empty-title">표시 오류가 발생했습니다</div>' +
-      '<div class="empty-sub">페이지를 새로고침하거나 관리자에게 문의하세요.</div>' +
-      '<button onclick="location.reload()" style="margin-top:16px;padding:9px 20px;background:var(--primary);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit">새로고침</button></div>';
-  }
+  _renderContent(sections, allFiles);
 }
 
 // ── 로그인 ──
+function openLogin() { document.getElementById('loginModal').classList.add('open'); loadDepts(); }
+function closeModal(e) { if (e.target.id==='loginModal') document.getElementById('loginModal').classList.remove('open'); }
+
+function switchTab(tab, btn) {
+  ['tc','ad'].forEach(t => document.getElementById('tab-'+t).style.display = t===tab?'block':'none');
+  document.querySelectorAll('.login-tab button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+async function loadDepts() {
+  const sel = document.getElementById('l-dept');
+  if (sel.options.length > 1) return;
+  try {
+    const res = await SAMIL_API.getDepts();
+    (res.data||[]).forEach(d => { const o=document.createElement('option'); o.value=o.textContent=d.name||d; sel.appendChild(o); });
+    const cRes = await SAMIL_API.getClasses({ year: new Date().getFullYear() });
+    _classes = cRes.success ? cRes.data : [];
+  } catch(_) {}
+}
+
+function updateCls() {
+  const dept  = document.getElementById('l-dept').value;
+  const grade = document.getElementById('l-grade').value;
+  const sel   = document.getElementById('l-cls');
+  sel.innerHTML = '<option value="">반</option>';
+  if (!dept||!grade) return;
+  const nums = _classes.filter(c=>c.dept===dept&&String(c.grade)===String(grade)).map(c=>Number(c.num||c.cls)).filter(n=>!isNaN(n)).sort((a,b)=>a-b);
+  nums.forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
+}
+
+async function doLogin() {
+  const dept=document.getElementById('l-dept').value;
+  const grade=document.getElementById('l-grade').value;
+  const cls=document.getElementById('l-cls').value;
+  const name=document.getElementById('l-name').value.trim();
+  const pw=document.getElementById('l-pw').value;
+  if(!dept||!grade||!cls||!name||!pw){alert('모든 항목을 입력하세요');return;}
+  const btn=document.querySelector('#tab-tc .btn-submit');
+  btn.textContent='확인중…';btn.disabled=true;
+  const res=await SAMIL_API.loginTeacher(dept,grade,cls,name,pw);
+  btn.textContent='로그인';btn.disabled=false;
+  if(res.success){
+    sessionStorage.setItem('samilTeacherAuth',res.teacher.id);
+    sessionStorage.setItem('samilTeacherME',JSON.stringify(res.teacher));
+    document.getElementById('loginModal').classList.remove('open');
+    render(); renderQnaSection(); loadQnAs();
+  } else { document.getElementById('l-pw').value=''; alert(res.error||'로그인 실패'); }
+}
+
+async function doAdminLogin() {
+  const pw=document.getElementById('a-pw').value;
+  const res=await SAMIL_API.verifyAdminPw(pw);
+  if(res.success){
+    sessionStorage.setItem('samilAdminAuth','1');
+    document.getElementById('loginModal').classList.remove('open');
+    render(); renderQnaSection(); loadQnAs();
+  } else { document.getElementById('a-pw').value=''; alert('비밀번호가 맞지 않습니다'); }
+}
+
+function doLogout() {
+  ['samilAdminAuth','samilTeacherAuth','samilTeacherME','samilNonHomeTeacherAuth','samilNonHomeTeacherME'].forEach(k=>sessionStorage.removeItem(k));
+  updateNavAuth(); render(); renderQnaSection();
+}
+
+function updateNavAuth() {
+  const el=document.getElementById('nav-auth');
+  if(sessionStorage.getItem('samilAdminAuth')==='1'){
+    el.innerHTML=`<a href="admin.html" class="nav-login" style="background:#38A169!important">관리자 페이지</a><a href="#" onclick="doLogout();return false" style="color:rgba(255,255,255,.7);font-size:13px;padding:7px 10px">로그아웃</a>`;
+  } else if(sessionStorage.getItem('samilTeacherAuth')){
+    const t=JSON.parse(sessionStorage.getItem('samilTeacherME')||'{}');
+    el.innerHTML=`<span style="color:rgba(255,255,255,.8);font-size:13px;padding:7px 10px">${t.name||'담임'}선생님</span><a href="#" onclick="doLogout();return false" style="color:rgba(255,255,255,.7);font-size:13px;padding:7px 10px">로그아웃</a>`;
+  } else {
+    el.innerHTML=`<a href="#" class="nav-login" onclick="openLogin();closeMenu();return false">로그인</a>`;
+  }
+}
+
+function toggleMenu(){ document.getElementById('navMenu').classList.toggle('open'); }
 function closeMenu(){ document.getElementById('navMenu').classList.remove('open'); }
 
+// ── Q&A 게시판 ──────────────────────────────────
+let _qnaAll      = [];   // 전체 원본 데이터
+let _qnaTab      = 'all'; // 현재 탭: all | wait | done
+let _qnaFileData = null;  // 첨부 파일 {name, base64, mimeType}
+let _qnaOpenId   = null;  // 현재 열린 행 id
+
+function renderQnaSection() {
+  const sec      = document.getElementById('qnaSection');
+  const writeBtn = document.getElementById('qnaWriteBtn');
+  const fileSec  = document.getElementById('fileSection');
+  if (!isLoggedIn()) {
+    sec.style.display     = 'none';
+    if (fileSec) fileSec.style.display = 'none';
+    return;
+  }
+  sec.style.display = '';
+  if (fileSec) fileSec.style.display = '';
+  if (writeBtn) writeBtn.style.display = isTeacher() ? '' : 'none';
+}
+
+async function loadQnAs() {
+  if (!isLoggedIn()) return;
+  document.getElementById('qnaList').innerHTML = '<tr><td colspan="6" class="qna-board-loading">Q&amp;A를 불러오는 중...</td></tr>';
+  try {
+    const r = await SAMIL_API.getQnAs();
+    _qnaAll = r.success ? (r.data || []) : [];
+  } catch(_) { _qnaAll = []; }
+  renderQnas();
+}
+
+function setQnaTab(tab, btn) {
+  _qnaTab = tab;
+  _qnaOpenId = null;
+  document.querySelectorAll('.qna-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderQnas();
+}
+
+function renderQnas() {
+  const questions = _qnaAll.filter(d => d.type === 'question');
+  let filtered = questions;
+  if (_qnaTab === 'wait') filtered = questions.filter(q => q.status !== '답변완료' && !_qnaAll.some(d=>d.type==='answer'&&d.parentId===q.id));
+  if (_qnaTab === 'done') filtered = questions.filter(q => q.status === '답변완료' || _qnaAll.some(d=>d.type==='answer'&&d.parentId===q.id));
+
+  const tbody = document.getElementById('qnaList');
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="qna-board-empty">등록된 Q&amp;A가 없습니다.</td></tr>`;
+    return;
+  }
+  filtered.sort((a,b) => (b.date||'').localeCompare(a.date||''));
+  let rows = '';
+  filtered.forEach((q, idx) => {
+    const answers = _qnaAll.filter(d => d.type === 'answer' && d.parentId === q.id);
+    const answered = q.status === '답변완료' || answers.length > 0;
+    const badge = answered
+      ? '<span class="badge-done">답변완료</span>'
+      : '<span class="badge-wait">진행중</span>';
+    const fileIcon = q.fileUrl ? '<span class="qna-file-icon" title="첨부파일 있음">📎</span>' : '';
+    const ansCnt = answers.length ? `<span class="qna-ans-count">${answers.length}</span>` : '';
+    const dateStr = (q.date||'').substring(0,10).replace(/-/g,'.').substring(2);
+    rows += `<tr class="qna-row${_qnaOpenId===q.id?' open':''}" onclick="toggleQna('${q.id}')">
+      <td class="col-num">${filtered.length - idx}</td>
+      <td class="col-status">${badge}</td>
+      <td class="col-title"><div class="qna-title-cell">${fileIcon}<span class="qna-title-text">${escHtml(q.title||q.content||'')}</span>${ansCnt}</div></td>
+      <td class="col-ans" style="color:var(--text-sub)">${answers.length}</td>
+      <td class="col-author">${escHtml(q.author||'')}</td>
+      <td class="col-date">${dateStr}</td>
+    </tr>`;
+    // 펼침 상세 행
+    if (_qnaOpenId === q.id) {
+      const adminBar = isAdmin() ? `<div class="qna-admin-bar">
+        ${!answered ? `<button class="qna-admin-btn success" onclick="qnaMarkAnswered('${q.id}',event)">✅ 답변완료 처리</button>` : ''}
+        <button class="qna-admin-btn danger" onclick="qnaDelete('${q.id}','',event)">🗑 질문 삭제</button>
+      </div>` : '';
+      const fileRow = q.fileUrl ? `<div class="qna-detail-file">📎 <a href="${q.fileUrl}" target="_blank">${escHtml(q.fileName||'첨부파일')}</a></div>` : '';
+      const ansHtml = answers.map(a => {
+        const aAdminBtn = isAdmin() ? `<button class="qna-admin-btn danger" onclick="qnaDelete('${a.id}','${q.id}',event)" style="font-size:11px;padding:3px 8px">🗑 삭제</button>` : '';
+        const aFile = a.fileUrl ? `<div class="qna-answer-file">📎 <a href="${a.fileUrl}" target="_blank">${escHtml(a.fileName||'첨부파일')}</a></div>` : '';
+        return `<div class="qna-answer-item">
+          <div class="qna-answer-top">
+            <span class="qna-answer-author">💬 ${escHtml(a.author||'교사')}</span>
+            <div style="display:flex;align-items:center;gap:8px"><span class="qna-answer-date">${(a.date||'').substring(0,10)}</span>${aAdminBtn}</div>
+          </div>
+          <div class="qna-answer-content">${escHtml(a.content||'')}</div>
+          ${aFile}
+        </div>`;
+      }).join('');
+      const replyForm = isLoggedIn() ? `<div class="qna-reply-form">
+        <label>✏️ 답변 작성</label>
+        <textarea id="ansText_${q.id}" placeholder="답변 내용을 입력하세요..."></textarea>
+        <div class="qna-reply-actions"><button class="qna-reply-submit" onclick="submitAnswer('${q.id}')">답변 등록</button></div>
+      </div>` : '';
+      rows += `<tr class="qna-detail-row"><td colspan="6"><div class="qna-detail-box">
+        <div class="qna-detail-meta"><span>작성자: ${escHtml(q.author||'')}</span><span>날짜: ${(q.date||'').substring(0,10)}</span></div>
+        <div class="qna-detail-content">${escHtml(q.content||'')}</div>
+        ${fileRow}${adminBar}
+        <div class="qna-answers-wrap">${ansHtml}</div>
+        ${replyForm}
+      </div></td></tr>`;
+    }
+  });
+  tbody.innerHTML = rows;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toggleQna(id) {
+  _qnaOpenId = (_qnaOpenId === id) ? null : id;
+  renderQnas();
+}
+
+async function submitAnswer(qId) {
+  const ta = document.getElementById('ansText_'+qId);
+  if (!ta || !ta.value.trim()) { alert('답변 내용을 입력하세요'); return; }
+  const btn = ta.nextElementSibling;
+  btn.disabled = true; btn.textContent = '등록 중...';
+  try {
+    const r = await SAMIL_API.addQnAAnswer({ parentId: qId, content: ta.value.trim(), author: getMyName() });
+    if (r.success) { ta.value = ''; await loadQnAs(); toggleQna(qId); }
+    else { alert(r.error || '등록 실패'); btn.disabled = false; btn.textContent = '답변 등록'; }
+  } catch(e) { alert('오류 발생'); btn.disabled = false; btn.textContent = '답변 등록'; }
+}
+
+async function qnaDelete(id, parentId, e) {
+  e.stopPropagation();
+  if (!confirm('삭제하시겠습니까?')) return;
+  const r = await SAMIL_API.deleteQnA(id);
+  if (r.success) await loadQnAs();
+  else alert(r.error || '삭제 실패');
+}
+
+async function qnaMarkAnswered(id, e) {
+  e.stopPropagation();
+  const r = await SAMIL_API.markAnswered(id);
+  if (r.success) await loadQnAs();
+  else alert(r.error || '처리 실패');
+}
+
+// Q&A 작성 모달
+function openQnaForm() {
+  if (!isTeacher()) { alert('교사 로그인 후 이용할 수 있습니다'); return; }
+  document.getElementById('qnaModal').classList.add('open');
+}
+function closeQnaModal() {
+  document.getElementById('qnaModal').classList.remove('open');
+  _qnaFileData = null;
+  document.getElementById('qf-file-name').textContent = '';
+  document.getElementById('qf-title').value = '';
+  document.getElementById('qf-content').value = '';
+  document.getElementById('qf-file').value = '';
+}
+
+function onQnaFileSelect(input) {
+  const file = input.files[0];
+  if (!file) { _qnaFileData = null; document.getElementById('qf-file-name').textContent = ''; return; }
+  if (file.size > 10 * 1024 * 1024) { alert('10MB 이하 파일만 첨부 가능합니다'); input.value = ''; return; }
+  document.getElementById('qf-file-name').textContent = '📎 ' + file.name;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const b64 = ev.target.result.split(',')[1];
+    _qnaFileData = { name: file.name, base64: b64, mimeType: file.type || 'application/octet-stream' };
+  };
+  reader.readAsDataURL(file);
+}
+
+async function submitQna() {
+  const title   = document.getElementById('qf-title').value.trim();
+  const content = document.getElementById('qf-content').value.trim();
+  if (!title || !content) { alert('제목과 내용을 입력하세요'); return; }
+  const btn = document.getElementById('qf-submit');
+  btn.disabled = true; btn.textContent = '등록 중...';
+  try {
+    let fileUrl = '', fileName = '';
+    if (_qnaFileData) {
+      const fr = await SAMIL_API.uploadQnAFile(_qnaFileData.name, _qnaFileData.base64, _qnaFileData.mimeType);
+      if (fr.success) { fileUrl = fr.url; fileName = fr.name; }
+      else { alert('파일 업로드 실패: ' + (fr.error||'')); btn.disabled = false; btn.textContent = '등록하기'; return; }
+    }
+    const r = await SAMIL_API.addQnA({ title, content, author: getMyName(), fileUrl, fileName });
+    if (r.success) { closeQnaModal(); await loadQnAs(); }
+    else { alert(r.error || '등록 실패'); }
+  } catch(e) { alert('오류 발생'); }
+  btn.disabled = false; btn.textContent = '등록하기';
+}
+
 window.addEventListener('DOMContentLoaded', () => {
-  if (typeof SAMIL_API !== 'undefined' && typeof SAMIL_API.ping === "function") SAMIL_API.ping();
-  render();
+  if (typeof SAMIL_API.ping === "function") SAMIL_API.ping();
+  renderQnaSection(); // 섹션 가시성 먼저
+  render();           // 자료실 내용 로드
+  if (isLoggedIn()) loadQnAs();
 });
 </script>
-<script>
-// ★ samil-login.js 로드 전에 config 먼저 선언
-window.SAMIL_LOGIN_CONFIG = {
-  tabs: ['teacher', 'admin'],
-  navAuthId: 'nav-auth',
-  onSuccess: function() { render(); },
-  onLogout:  function() { render(); },
-};
-</script>
 <script src="samil-api.js"></script>
-<script src="samil-login.js"></script>
 </body>
 </html>
