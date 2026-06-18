@@ -397,6 +397,16 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     }catch(_){}
   }
 
+  // ── 학과별 취업현황: samilAdmin.employ 에서 즉시 렌더 ──
+  try{
+    const DB_local = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
+    const deptsLocal = buildDeptStats(DB_local);
+    if(deptsLocal && deptsLocal.length){
+      DATA.depts = deptsLocal;
+      renderDeptTable();
+    }
+  }catch(_){}
+
   // ── GAS에서 데이터 로드 (getAll 1회) ──
   const all = await SAMIL_API.getAll(new Date().getFullYear()).catch(() => null);
 
