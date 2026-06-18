@@ -366,6 +366,15 @@ function getFilteredJobs(){
 }
 let DATA = {jobs:[],banners:[],depts:[],stats:{},statsMap:{}};
 
+function updateStatsDisplay(){
+  const s = DATA.stats;
+  if(s.grad)    document.getElementById('s-grad').textContent  = s.grad;
+  if(s.rate)    document.getElementById('s-rate').textContent  = s.rate;
+  if(s.active)  document.getElementById('s-active').textContent= s.active;
+  if(s.closing) document.getElementById('s-close').textContent = s.closing;
+  if(s.done)    document.getElementById('s-done').textContent  = s.done||'—';
+}
+
 window.addEventListener('DOMContentLoaded', async ()=>{
   if (typeof SAMIL_API.ping === 'function') SAMIL_API.ping();
   updateNavAuth();
@@ -377,6 +386,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
       DATA.jobs = cd.jobs||[]; DATA.banners = cd.banners||[]; DATA.stats = cd.stats||DATA.stats;
       renderJobs();
       renderBanners();
+      updateStatsDisplay();   // ← 캐시된 통계 즉시 표시
     }catch(_){}
   }
 
@@ -439,7 +449,10 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     const name = d.name||d.dept;
     const o=document.createElement('option'); o.value=name; o.textContent=name; selS.appendChild(o);
   });
-  DATA.depts = depts.map(d=>({dept:d.name||d.dept,g:0,e:0,a:0}));
+  // 드롭다운 전용 — 취업 통계가 이미 로드된 경우 DATA.depts 덮어쓰지 않음
+  if (!DATA.depts || !DATA.depts.length || DATA.depts.every(d=>d.g===0&&d.e===0&&d.a===0)) {
+    DATA.depts = depts.map(d=>({dept:d.name||d.dept,g:0,e:0,a:0}));
+  }
   renderDeptTable();
 
   // ── 캐시 저장 및 재렌더 ──
@@ -447,11 +460,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   renderJobs();
 
   // 통계 표시
-  document.getElementById('s-grad').textContent = DATA.stats.grad;
-  document.getElementById('s-rate').textContent = DATA.stats.rate;
-  document.getElementById('s-active').textContent = DATA.stats.active;
-  document.getElementById('s-close').textContent = DATA.stats.closing;
-  document.getElementById('s-done').textContent = DATA.stats.done||'—';
+  updateStatsDisplay();
 
   renderBanners();
   renderJobs();
