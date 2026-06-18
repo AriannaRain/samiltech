@@ -378,38 +378,55 @@ function updateStatsDisplay(){
 window.addEventListener('DOMContentLoaded', async ()=>{
   if (typeof SAMIL_API.ping === 'function') SAMIL_API.ping();
   updateNavAuth();
+
   // ── 캐시 우선 즉시 렌더 ──
+  let hasCachedData = false;
   const cached = localStorage.getItem('samilJobsCache');
   if(cached){
     try{
       const cd = JSON.parse(cached);
-      DATA.jobs = cd.jobs||[]; DATA.banners = cd.banners||[]; DATA.stats = cd.stats||DATA.stats;
-      renderJobs();
-      renderBanners();
-      updateStatsDisplay();   // ← 캐시된 통계 즉시 표시
+      if(cd && cd.jobs){
+        DATA.jobs    = cd.jobs;
+        DATA.banners = cd.banners || [];
+        DATA.stats   = cd.stats   || {};
+        hasCachedData = true;
+        renderJobs();
+        renderBanners();
+        updateStatsDisplay();
+      }
     }catch(_){}
   }
 
-  // ── Sheets에서 데이터 로드 (getAll 1회 호출로 cold start 최소화) ──
+  // ── GAS에서 데이터 로드 (getAll 1회) ──
   const all = await SAMIL_API.getAll(new Date().getFullYear()).catch(() => null);
-  const jobsRes     = all && all.success ? { success: true, data: all.jobs    || [] } : {};
-  const bannersRes  = all && all.success ? { success: true, data: all.banners || [] } : {};
-  const statsRes    = all && all.success ? { success: true, latest: all.latest, data: all.stats } : {};
-  const deptsRes    = all && all.success ? { success: true, data: all.depts   || [] } : {};
-  const jobStatsRes = all && all.success ? { success: true, ...all.jobStats } : {};
-  const classesRes  = all && all.success ? { success: true, data: all.classes || [] } : {};
-  DATA.classes = (classesRes.success && classesRes.data) ? classesRes.data : [];
-  if(jobStatsRes.success){
-    const {interest={}, apply={}} = jobStatsRes;
+
+  // GAS 실패 시 → 캐시 유지, 덮어쓰기 없음
+  if (!all || !all.success) {
+    if (!hasCachedData) {
+      // 캐시도 없고 GAS도 실패 → SAMPLE 표시
+      DATA.stats = {...SAMPLE.stats};
+      updateStatsDisplay();
+      renderJobs();
+      renderBanners();
+    }
+    return;  // localStorage 덮어쓰지 않음
+  }
+
+  // ── GAS 성공 ──
+  const jobStatsRes = all.jobStats || {};
+  DATA.classes = all.classes || [];
+  if(jobStatsRes){
+    const interest = jobStatsRes.interest || {};
+    const apply    = jobStatsRes.apply    || {};
     const allIds = new Set([...Object.keys(interest), ...Object.keys(apply)]);
     allIds.forEach(id => { DATA.statsMap[id] = { interest: interest[id]||0, apply: apply[id]||0 }; });
   }
 
-  DATA.jobs    = jobsRes.success    ? jobsRes.data    : SAMPLE.jobs;
-  DATA.banners = bannersRes.success ? bannersRes.data : SAMPLE.banners;
+  DATA.jobs    = (all.jobs    && all.jobs.length)    ? all.jobs    : (hasCachedData ? DATA.jobs    : SAMPLE.jobs);
+  DATA.banners = (all.banners && all.banners.length) ? all.banners : (hasCachedData ? DATA.banners : SAMPLE.banners);
 
-  // 학과별 취업현황 (getAll employ 데이터 우선)
-  if (all && all.success && all.employ && all.employ.length) {
+  // 학과별 취업현황
+  if (all.employ && all.employ.length) {
     const DB_adm = JSON.parse(localStorage.getItem('samilAdmin')||'{}');
     DB_adm.employ = all.employ;
     try { localStorage.setItem('samilAdmin', JSON.stringify(DB_adm)); } catch(_) {}
@@ -420,53 +437,47 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   }
   renderDeptTable();
 
-  // 통계
-  const st = statsRes.success && statsRes.latest ? statsRes.latest : {};
-  const today2 = new Date();
+  // 통계 계산
+  const st = (all.latest) ? all.latest : {};
+  const today2   = new Date();
   const todayStr2 = getTodayStr();
-  const thisYear = today2.getFullYear();
+  const thisYear  = today2.getFullYear();
   const closing = DATA.jobs.filter(j=>{
     const diff=Math.ceil((new Date(j.dl)-today2)/86400000);
     return diff>=0&&diff<=7;
   }).length;
   const done = DATA.jobs.filter(j=>{
     const dl=(j.dl||'').substring(0,10);
-    const expired = dl < todayStr2;
-    return (expired || !j.active) && dl.startsWith(thisYear);
+    return (dl < todayStr2 || !j.active) && dl.startsWith(thisYear);
   }).length;
   DATA.stats = {
-    grad    : st.grad     ? st.grad+'명'    : SAMPLE.stats.grad,
-    rate    : st.rate     ? st.rate+'%'     : SAMPLE.stats.rate,
+    grad    : st.grad  ? st.grad+'명'  : (hasCachedData && DATA.stats && DATA.stats.grad  ? DATA.stats.grad  : SAMPLE.stats.grad),
+    rate    : st.rate  ? st.rate+'%'   : (hasCachedData && DATA.stats && DATA.stats.rate  ? DATA.stats.rate  : SAMPLE.stats.rate),
     active  : DATA.jobs.filter(j=>{ const dl=(j.dl||'').substring(0,10); return j.active && dl >= todayStr2; }).length+'개',
     closing : closing+'개',
     done    : done+'개',
   };
 
-  // 학과 드롭다운 (항상 실행)
-  const depts = deptsRes.success && deptsRes.data && deptsRes.data.length ? deptsRes.data : SAMPLE.depts;
+  // 학과 드롭다운
+  const depts = (all.depts && all.depts.length) ? all.depts : SAMPLE.depts;
   const selS = document.getElementById('l-dept');
-  depts.forEach(d=>{
-    const name = d.name||d.dept;
-    const o=document.createElement('option'); o.value=name; o.textContent=name; selS.appendChild(o);
-  });
-  // 드롭다운 전용 — 취업 통계가 이미 로드된 경우 DATA.depts 덮어쓰지 않음
+  if(selS.options.length <= 1){
+    depts.forEach(d=>{
+      const name = d.name||d.dept;
+      const o=document.createElement('option'); o.value=name; o.textContent=name; selS.appendChild(o);
+    });
+  }
   if (!DATA.depts || !DATA.depts.length || DATA.depts.every(d=>d.g===0&&d.e===0&&d.a===0)) {
     DATA.depts = depts.map(d=>({dept:d.name||d.dept,g:0,e:0,a:0}));
   }
-  renderDeptTable();
 
-  // ── 캐시 저장 및 재렌더 ──
+  // ── GAS 성공 시에만 캐시 저장 ──
   try{ localStorage.setItem('samilJobsCache', JSON.stringify({jobs:DATA.jobs,banners:DATA.banners,stats:DATA.stats})); }catch(_){}
+
   renderJobs();
-
-  // 통계 표시
-  updateStatsDisplay();
-
   renderBanners();
-  renderJobs();
-
-  // 취업현황 테이블
   renderDeptTable();
+  updateStatsDisplay();
 });
 
 function renderDeptTable(){
