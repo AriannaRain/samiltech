@@ -35,7 +35,20 @@ nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:var(--pri
 .nav-login-green{background:var(--green) !important;color:#fff !important}
 .btn-logout{background:none;border:none;color:rgba(255,255,255,.7);padding:7px 10px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit}
 .btn-logout:hover{color:#fff}
-/* 로그인 모달 CSS → samil-login.js */
+/* 로그인 모달 */
+.login-card{background:#fff;border-radius:16px;padding:36px;width:360px;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.login-card h2{font-size:20px;font-weight:700;color:var(--primary);margin-bottom:6px}
+.login-card p{font-size:13px;color:var(--text-sub);margin-bottom:24px}
+.login-tab{display:flex;gap:4px;margin-bottom:20px;background:var(--bg);padding:4px;border-radius:10px}
+.login-tab button{flex:1;padding:8px;border:none;background:none;border-radius:8px;font-size:13px;cursor:pointer;color:var(--text-sub);font-family:inherit}
+.login-tab button.active{background:#fff;color:var(--primary);font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:12px;font-weight:600;color:var(--text-sub);margin-bottom:6px}
+.form-group input,.form-group select{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none}
+.form-group input:focus,.form-group select:focus{border-color:var(--primary-light)}
+.btn-login{width:100%;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px}
+.btn-login:hover{background:var(--primary-light)}
+.login-err{color:var(--red);font-size:13px;margin-top:10px;display:none}
 /* 메인 */
 .page-hero{background:var(--primary);padding:32px 24px 28px;color:#fff;text-align:center}
 .page-hero h1{font-size:24px;font-weight:700;margin-bottom:4px}
@@ -98,12 +111,53 @@ tr:hover td{background:#f9fafb}
 .login-gate-btn{padding:12px 32px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
 .login-gate-btn:hover{background:var(--primary-light)}
 .loading{text-align:center;padding:60px;color:var(--text-sub);font-size:14px}
-.gate-hero{background:var(--primary);padding:28px 32px;color:#fff}
-.gate-hero h1{font-size:22px;font-weight:700;margin-bottom:6px}
-.gate-hero p{font-size:13px;opacity:.75}
+/* 입사지원현황 iframe 모달 */
+.iframe-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:3000;align-items:center;justify-content:center;padding:12px}
+.iframe-modal-overlay.open{display:flex}
+.iframe-modal{background:#fff;border-radius:14px;width:100%;max-width:1100px;height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 12px 48px rgba(0,0,0,.3)}
+.iframe-modal-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--primary);border-radius:14px 14px 0 0;flex-shrink:0}
+.iframe-modal-header h3{font-size:16px;font-weight:700;color:#fff}
+.iframe-modal-close{background:rgba(255,255,255,.2);border:none;color:#fff;width:30px;height:30px;border-radius:6px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+.iframe-modal-close:hover{background:rgba(255,255,255,.35)}
+.iframe-modal iframe{flex:1;border:none;width:100%;height:100%}
+.btn-apply-status{padding:7px 16px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
+.btn-apply-status:hover{background:#c9630a}
 </style>
 </head>
 <body>
+
+<!-- 로그인 모달 (기본 숨김) -->
+<div class="modal-overlay" id="loginOverlay" onclick="if(event.target===this)closeLoginModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center;padding:16px">
+  <div class="login-card">
+    <h2>📊 취업현황</h2>
+    <p>담임교사 또는 관리자 계정으로 로그인하세요</p>
+    <div class="login-tab">
+      <button class="active" onclick="switchTab('tc',this)">담임교사</button>
+      <button onclick="switchTab('ad',this)">관리자</button>
+    </div>
+    <!-- 담임 로그인 -->
+    <div id="lt-tc">
+      <div class="form-group"><label>학과</label><select id="l-dept"><option value="">선택</option></select></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label>학년</label>
+          <select id="l-grade"><option value="">선택</option><option>1</option><option>2</option><option>3</option></select>
+        </div>
+        <div class="form-group"><label>반</label>
+          <select id="l-cls"><option value="">선택</option><option>1</option><option>2</option><option>3</option><option>4</option></select>
+        </div>
+      </div>
+      <div class="form-group"><label>이름</label><input id="l-name" placeholder="홍길동"></div>
+      <div class="form-group"><label>비밀번호</label><input id="l-pw" type="password"></div>
+      <button class="btn-login" onclick="loginTeacher()">로그인</button>
+    </div>
+    <!-- 관리자 로그인 -->
+    <div id="lt-ad" style="display:none">
+      <div class="form-group"><label>관리자 비밀번호</label><input id="l-apw" type="password" onkeydown="if(event.key==='Enter')loginAdmin()"></div>
+      <button class="btn-login" onclick="loginAdmin()">로그인</button>
+    </div>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
 
 <nav>
   <div class="nav-brand">
@@ -118,7 +172,7 @@ tr:hover td{background:#f9fafb}
     <a href="jobs.html" onclick="closeMenu()">채용공고</a>
     <a href="stats.html" class="active" onclick="closeMenu()">취업현황</a>
     <a href="practice.html" onclick="closeMenu()">현장실습</a>
-    <span id="nav-auth"></span>
+    <span id="navAuth"></span>
   </div>
 </nav>
 
@@ -139,27 +193,12 @@ tr:hover td{background:#f9fafb}
 <div class="year-bar" id="yearBar" style="display:none">
   <label>조회 연도</label>
   <select id="yearSel" onchange="renderAll()"></select>
+  <button class="btn-apply-status" onclick="openApplyStatusModal()">📋 입사지원현황 보기</button>
 </div>
 
 <!-- 메인 컨텐츠 -->
 <div class="container" id="mainContent" style="display:none">
-  <div id="loadingMsg" style="text-align:center;padding:60px 24px">
-    <div style="font-size:32px;margin-bottom:16px">📊</div>
-    <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px" id="loadingTitle">데이터를 불러오는 중...</div>
-    <div style="font-size:13px;color:var(--text-sub);margin-bottom:20px" id="loadingDesc">처음 로드 시 서버 준비로 10~20초 소요될 수 있습니다.</div>
-    <div id="loadingRetryBtn" style="display:none">
-      <button onclick="retryLoad()" style="padding:10px 24px;background:var(--primary);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;font-family:inherit">🔄 다시 시도</button>
-    </div>
-  </div>
-
-  <!-- 데이터 없음 안내 -->
-  <div id="statsEmptyNotice" style="display:none;text-align:center;padding:48px 24px">
-    <div style="font-size:40px;margin-bottom:12px">📋</div>
-    <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px">등록된 취업현황 데이터가 없습니다</div>
-    <div style="font-size:13px;color:var(--text-sub);line-height:1.7">
-      관리자 페이지 → 취업현황 메뉴에서<br>해당 연도의 학과별 취업현황을 입력해주세요.
-    </div>
-  </div>
+  <div id="loadingMsg" class="loading">데이터를 불러오는 중...</div>
 
   <!-- 학과별 취업현황 테이블 -->
   <div class="card" id="deptCard" style="display:none">
@@ -195,6 +234,17 @@ tr:hover td{background:#f9fafb}
   </div>
 </div>
 
+<!-- 입사지원현황 iframe 모달 -->
+<div class="iframe-modal-overlay" id="applyStatusOverlay" onclick="if(event.target===this)closeApplyStatusModal()">
+  <div class="iframe-modal">
+    <div class="iframe-modal-header">
+      <h3>📋 입사지원현황</h3>
+      <button class="iframe-modal-close" onclick="closeApplyStatusModal()">✕</button>
+    </div>
+    <iframe id="applyStatusFrame" src="" allowfullscreen></iframe>
+  </div>
+</div>
+
 <!-- 아카이브 상세 모달 -->
 <div class="modal-overlay" id="arcModal" onclick="if(event.target===this)closeModal()">
   <div class="modal">
@@ -206,15 +256,7 @@ tr:hover td{background:#f9fafb}
   </div>
 </div>
 
-<script>
-window.SAMIL_LOGIN_CONFIG = {
-  tabs: ['teacher', 'admin'],
-  navAuthId: 'nav-auth',
-  onSuccess: function() { location.reload(); },
-};
-</script>
 <script src="samil-api.js"></script>
-<script src="samil-login.js"></script>
 <script>
 let ME = null;
 let DB_employ = [];   // [{year,dept,grad,emp,adv}]
@@ -223,95 +265,85 @@ let DB_years   = [];
 let currentArcFilter = '전체';
 
 // ══════════════════════════════════════════════
+// 로그인
+// ══════════════════════════════════════════════
+function switchTab(id, btn) {
+  document.querySelectorAll('.login-tab button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('lt-tc').style.display = id === 'tc' ? '' : 'none';
+  document.getElementById('lt-ad').style.display = id === 'ad' ? '' : 'none';
+  document.getElementById('loginErr').style.display = 'none';
+}
+
+async function loginTeacher() {
+  const dept  = document.getElementById('l-dept').value;
+  const grade = document.getElementById('l-grade').value;
+  const cls   = document.getElementById('l-cls').value;
+  const name  = document.getElementById('l-name').value.trim();
+  const pw    = document.getElementById('l-pw').value;
+  if (!dept || !grade || !cls || !name || !pw) { showErr('모든 항목을 입력하세요'); return; }
+  const res = await SAMIL_API.loginTeacher(dept, grade, cls, name, pw);
+  if (!res.success) { showErr(res.error || '로그인 실패'); return; }
+  ME = { ...res.teacher, role: 'teacher' };
+  sessionStorage.setItem('statsMe', JSON.stringify(ME));
+  afterLogin();
+}
+
+async function loginAdmin() {
+  const pw = document.getElementById('l-apw').value;
+  if (!pw) { showErr('비밀번호를 입력하세요'); return; }
+  const res = await SAMIL_API.verifyAdminPw(pw);
+  if (!res.success) { showErr('비밀번호가 맞지 않습니다'); return; }
+  ME = { role: 'admin', name: '관리자' };
+  sessionStorage.setItem('statsMe', JSON.stringify(ME));
+  afterLogin();
+}
+
+function showErr(msg) {
+  const el = document.getElementById('loginErr');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+function logout() {
+  sessionStorage.removeItem('statsMe');
+  ME = null;
+  document.getElementById('navAuth').innerHTML = '';
+  location.reload();
+}
+
+function afterLogin() {
+  sessionStorage.setItem('statsMe', JSON.stringify(ME));
+  closeLoginModal();
+  _showContent();
+  _renderNavAuth();
+  loadData();
+}
+
+// ══════════════════════════════════════════════
 // 데이터 로드
 // ══════════════════════════════════════════════
-const _STATS_LS_KEY = 'samilStatsCache';
-const _STATS_LS_TTL = 10 * 60 * 1000; // 10분
-
-function _statsSaveCache(employ, reviews, years) {
-  try {
-    localStorage.setItem(_STATS_LS_KEY, JSON.stringify({ employ, reviews, years, ts: Date.now() }));
-  } catch(_) {}
-}
-
-function _statsLoadCache() {
-  try {
-    const raw = localStorage.getItem(_STATS_LS_KEY);
-    if (!raw) return null;
-    const c = JSON.parse(raw);
-    if (Date.now() - c.ts > _STATS_LS_TTL) return null;
-    // reviews 없는 구버전 캐시는 무효화
-    if (!c.reviews || !c.reviews.length) return null;
-    return c;
-  } catch(_) { return null; }
-}
-
-function _applyData(employ, reviews, years) {
-  DB_employ  = employ  || [];
-  DB_reviews = reviews || [];
-  DB_years   = (years  || []).sort((a,b) => b - a);
-}
-
-async function retryLoad() {
-  document.getElementById('loadingRetryBtn').style.display = 'none';
-  document.getElementById('loadingTitle').textContent = '다시 불러오는 중...';
-  document.getElementById('loadingDesc').textContent = '잠시만 기다려주세요.';
-  await loadData();
-}
-
 async function loadData() {
-  const loadEl   = document.getElementById('loadingMsg');
-  const titleEl  = document.getElementById('loadingTitle');
-  const descEl   = document.getElementById('loadingDesc');
-  const retryEl  = document.getElementById('loadingRetryBtn');
-  if (loadEl)  loadEl.style.display = 'block';
-  if (retryEl) retryEl.style.display = 'none';
-
-  // ① localStorage 캐시 즉시 표시
-  const cached = _statsLoadCache();
-  if (cached) {
-    _applyData(cached.employ, cached.reviews, cached.years);
-    buildYearSel();
-    if (loadEl) loadEl.style.display = 'none';
-    renderAll();
-    // 백그라운드에서 조용히 최신 데이터 갱신
-    _loadDataBackground();
-    return;
-  }
-
-  // ② 캐시 없으면 서버에서 직접 로드
-  if (titleEl) titleEl.textContent = '데이터를 불러오는 중...';
-  if (descEl)  descEl.textContent  = '처음 로드 시 서버 준비로 10~20초 소요될 수 있습니다.';
-
   const all = await SAMIL_API.getAll().catch(() => null);
-
-  if (!all || !all.success) {
-    // 실패 시: samilAdmin 폴백
+  if (all && all.success) {
+    DB_employ  = all.employ  || [];
+    DB_reviews = all.reviews || [];
+    DB_years   = (all.years  || []).sort((a,b) => b - a);
+  }
+  // localStorage 폴백
+  if (!DB_employ.length || !DB_reviews.length) {
     const adm = JSON.parse(localStorage.getItem('samilAdmin') || '{}');
-    const fbEmploy  = adm.employ  || adm.employs || [];
-    const fbReviews = adm.reviews || [];
-    if (fbEmploy.length || fbReviews.length) {
-      _applyData(fbEmploy, fbReviews, []);
-      buildYearSel(); renderAll();
-      if (loadEl) loadEl.style.display = 'none';
-    } else {
-      // 완전 실패
-      if (titleEl) titleEl.textContent = '데이터를 불러올 수 없습니다';
-      if (descEl)  descEl.textContent  = (all && all.timeout)
-        ? '서버 응답 시간이 초과되었습니다. 다시 시도해주세요.'
-        : '네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
-      if (retryEl) retryEl.style.display = 'block';
-    }
-    return;
+    if (!DB_employ.length)  DB_employ  = adm.employ  || adm.employs || [];
+    if (!DB_reviews.length) DB_reviews = adm.reviews || [];
   }
 
-  _applyData(all.employ, all.reviews, all.years);
   buildYearSel();
 
-  // 연도별 추가 로드
+  // 연도별 employ 전체 로드 (히스토리 차트용)
   const years = DB_years.length
     ? DB_years
     : [...new Set(DB_employ.map(e => Number(e.year)))].sort((a,b) => b-a);
+
+  // 현재 연도 제외 나머지 연도 추가 로드
   const currentYear = new Date().getFullYear();
   const otherYears = years.filter(y => Number(y) !== currentYear);
   if (otherYears.length) {
@@ -320,6 +352,7 @@ async function loadData() {
     );
     extras.forEach(r => {
       if (r && r.success && r.data && r.data.length) {
+        // 중복 제거 후 병합
         r.data.forEach(e => {
           const exists = DB_employ.find(x => Number(x.year) === Number(e.year) && x.dept === e.dept);
           if (!exists) DB_employ.push(e);
@@ -328,38 +361,8 @@ async function loadData() {
     });
   }
 
-  _statsSaveCache(DB_employ, DB_reviews, DB_years);
-  if (loadEl) loadEl.style.display = 'none';
+  document.getElementById('loadingMsg').style.display = 'none';
   renderAll();
-}
-
-// 백그라운드 캐시 갱신 (캐시 hit 후 조용히 최신화)
-async function _loadDataBackground() {
-  try {
-    const all = await SAMIL_API.getAll().catch(() => null);
-    if (!all || !all.success) return;
-    const employ  = all.employ  || [];
-    const reviews = all.reviews || [];
-    const years   = (all.years  || []).sort((a,b) => b-a);
-    const currentYear = new Date().getFullYear();
-    const otherYears = years.filter(y => Number(y) !== currentYear);
-    if (otherYears.length) {
-      const extras = await Promise.all(otherYears.map(y => SAMIL_API.getEmployStats(y).catch(() => null)));
-      extras.forEach(r => {
-        if (r && r.success && r.data) r.data.forEach(e => {
-          const exists = employ.find(x => Number(x.year) === Number(e.year) && x.dept === e.dept);
-          if (!exists) employ.push(e);
-        });
-      });
-    }
-    _statsSaveCache(employ, reviews, years);
-    // 이전 캐시에 reviews 없었으면 UI 갱신
-    if (reviews.length > 0 && DB_reviews.length === 0) {
-      _applyData(employ, reviews, years);
-      buildYearSel();
-      renderAll();
-    }
-  } catch(_) {}
 }
 
 function buildYearSel() {
@@ -389,10 +392,6 @@ function renderAll() {
   document.getElementById('s-emp').textContent  = te || '—';
   document.getElementById('s-adv').textContent  = ta || '—';
   document.getElementById('s-rate').textContent = tg ? Math.round(te/tg*100)+'%' : '—';
-
-  // 빈 데이터 안내
-  const emptyNotice = document.getElementById('statsEmptyNotice');
-  if (emptyNotice) emptyNotice.style.display = list.length ? 'none' : 'block';
 
   renderDeptTable(list, year, tg, te, ta);
   renderHistChart();
@@ -473,7 +472,8 @@ function renderArchive(year) {
   ).join('');
 
   if (currentArcFilter !== '전체') list = list.filter(r => r.dept === currentArcFilter);
-  // 담임교사도 전체 아카이브 열람 가능
+  // 담임은 자기 학과만
+  if (ME.role === 'teacher') list = list.filter(r => r.dept === ME.dept);
 
   document.getElementById('arcSub').textContent = list.length + '건';
   document.getElementById('arcList').innerHTML = list.length
@@ -507,6 +507,7 @@ function openArc(i) {
   // 현재 렌더된 인덱스 기반
   let list = DB_reviews;
   if (currentArcFilter !== '전체') list = list.filter(r => r.dept === currentArcFilter);
+  if (ME.role === 'teacher') list = list.filter(r => r.dept === ME.dept);
   const r = list[i];
   if (!r) return;
 
@@ -533,6 +534,23 @@ function openArc(i) {
 
 function closeModal() { document.getElementById('arcModal').classList.remove('open'); }
 
+// ── 입사지원현황 iframe 모달 ──
+const APPLY_STATUS_URL = 'https://script.google.com/macros/s/AKfycbzCgFeIBKYjwftoYnYs0ihmpUrt4Pfa-tH9CX4k-JI3spAoXfaKKqQRSUMe8EPLZkJP/exec?page=view';
+
+function openApplyStatusModal() {
+  const frame = document.getElementById('applyStatusFrame');
+  if (!frame.src || frame.src === window.location.href) {
+    frame.src = APPLY_STATUS_URL;
+  }
+  document.getElementById('applyStatusOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeApplyStatusModal() {
+  document.getElementById('applyStatusOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
 // ══════════════════════════════════════════════
 // 초기화
 // ══════════════════════════════════════════════
@@ -546,20 +564,20 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (adminAuth === '1') {
     ME = { role: 'admin', name: '관리자' };
     sessionStorage.setItem('statsMe', JSON.stringify(ME));
-    _showContent(); updateNavAuth(); loadData();
+    _showContent(); _renderNavAuth(); loadData();
   } else if (teacherAuth && teacherME) {
     try {
       const t = JSON.parse(teacherME);
       ME = { ...t, role: 'teacher' };
       sessionStorage.setItem('statsMe', JSON.stringify(ME));
-      _showContent(); updateNavAuth(); loadData();
+      _showContent(); _renderNavAuth(); loadData();
     } catch(_) { _showLoginGate(); }
   } else {
     const saved = sessionStorage.getItem('statsMe');
     if (saved) {
       try {
         ME = JSON.parse(saved);
-        _showContent(); updateNavAuth(); loadData();
+        _showContent(); _renderNavAuth(); loadData();
       } catch(_) { sessionStorage.removeItem('statsMe'); _showLoginGate(); }
     } else {
       _showLoginGate();
@@ -575,52 +593,56 @@ window.addEventListener('DOMContentLoaded', async () => {
       const o = document.createElement('option');
       o.value = o.textContent = d.name; sel.appendChild(o);
     });
-    // 반 동적 로드용 클래스 목록 저장
-    if (dr.classes) _stClasses = dr.classes;
   }
 });
 
 function _showContent() {
-  const gw = document.getElementById('gateWrap');
-  if (gw) gw.style.display = 'none';
-  closeLogin();
+  document.getElementById('loginOverlay').style.display = 'none';
   document.getElementById('pageHero').style.display = '';
   document.getElementById('yearBar').style.display = '';
   document.getElementById('mainContent').style.display = '';
-  // ★ innerHTML 덮어쓰기 제거 — 기존 카드/표 요소를 유지해야 renderAll()이 동작함
-  updateNavAuth();
+  document.getElementById('mainContent').innerHTML = '<div class="loading">데이터를 불러오는 중...</div>';
+  _renderNavAuth();
 }
 
 function _showLoginGate() {
   document.getElementById('pageHero').style.display = 'none';
   document.getElementById('yearBar').style.display = 'none';
-  document.getElementById('mainContent').style.display = 'none';
-
-  let wrap = document.getElementById('gateWrap');
-  if (!wrap) {
-    wrap = document.createElement('div');
-    wrap.id = 'gateWrap';
-    const mc = document.getElementById('mainContent');
-    mc.parentNode.insertBefore(wrap, mc);
-  }
-  wrap.style.display = '';
-  wrap.innerHTML = `
-    <div class="gate-hero">
-      <h1>📊 취업현황</h1>
-      <p>학과별 취업현황 및 합격자 아카이브를 확인할 수 있습니다.</p>
-    </div>
+  document.getElementById('mainContent').style.display = '';
+  document.getElementById('mainContent').innerHTML = `
     <div style="padding:60px 16px">
       <div class="login-gate">
-        <div style="font-size:48px;margin-bottom:16px">🔒</div>
+        <div style="font-size:48px;margin-bottom:16px">📊</div>
         <h3>로그인이 필요합니다</h3>
         <p>취업현황은 담임교사 또는 관리자 로그인 후<br>이용할 수 있습니다.</p>
-        <button class="login-gate-btn" onclick="openLogin()">로그인하기</button>
+        <button class="login-gate-btn" onclick="openLoginModal()">로그인하기</button>
       </div>
     </div>`;
-  updateNavAuth();
 }
 
-// openLogin() / closeLogin() / updateNavAuth() / doLogout() → samil-login.js 에서 제공
+function openLoginModal() {
+  const el = document.getElementById('loginOverlay');
+  el.style.display = 'flex';
+}
+
+function closeLoginModal() {
+  document.getElementById('loginOverlay').style.display = 'none';
+}
+
+function _renderNavAuth() {
+  const el = document.getElementById('navAuth');
+  if (!el || !ME) return;
+  if (ME.role === 'admin') {
+    el.innerHTML =
+      `<a href="admin.html" class="nav-login nav-login-green">관리자 페이지</a>` +
+      `<a href="#" onclick="logout();return false" class="btn-logout">로그아웃</a>`;
+  } else {
+    const label = (ME.name || '담임') + ' 선생님';
+    el.innerHTML =
+      `<a href="teacher.html" class="nav-login nav-login-green">${label}</a>` +
+      `<a href="#" onclick="logout();return false" class="btn-logout">로그아웃</a>`;
+  }
+}
 
 function closeMenu() {
   document.getElementById('navMenu')?.classList.remove('open');
