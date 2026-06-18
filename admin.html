@@ -836,13 +836,18 @@ async function init() {
       DB.jobs         = all.jobs     || [];
       DB.statsHistory = all.stats    || [];
       DB.reviews      = all.reviews  || [];
-      // employ: GAS에 데이터 있으면 사용, 없으면 기존 localStorage 유지
+      // employ: GAS 데이터(전 연도 통합)와 localStorage 병합 — 데이터 손실 방지
       if (all.employ && all.employ.length) {
-        DB.employ = all.employ;
+        // GAS 데이터와 localStorage 데이터를 병합 (GAS 우선, 중복 제거)
+        const localEmploy = DB.employ || [];
+        const gasKeys = new Set(all.employ.map(e => `${e.year}_${e.dept}`));
+        const onlyLocal = localEmploy.filter(e => !gasKeys.has(`${e.year}_${e.dept}`));
+        DB.employ = [...all.employ, ...onlyLocal];
+        DB.employ.sort((a, b) => Number(b.year)-Number(a.year) || (a.dept||'').localeCompare(b.dept||''));
       } else if (DB.employ && DB.employ.length) {
         // localStorage에만 있는 경우 GAS에 자동 동기화
-        const years = [...new Set(DB.employ.map(e => Number(e.year)))];
-        years.forEach(y => {
+        const empYears = [...new Set(DB.employ.map(e => Number(e.year)))];
+        empYears.forEach(y => {
           const yd = DB.employ.filter(e => Number(e.year) === y);
           SAMIL_API.saveEmployStats(y, yd).catch(() => {});
         });
