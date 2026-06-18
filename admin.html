@@ -351,15 +351,12 @@ tr:last-child td{border-bottom:none}
   </div>
 
   <!-- ── 입사지원현황 ── -->
-  <div class="tab-panel" id="tab-apply">
-    <div class="page-header"><h1>입사지원현황 관리</h1><p>공고별 지원학생 및 관심학생 현황을 확인하고 관리합니다.</p></div>
-    <div class="card">
-      <div class="card-title">공고별 지원현황</div>
-      <div class="tbl-wrap"><table>
-        <thead><tr><th>회사명</th><th>모집분야</th><th>마감일</th><th>상태</th><th>지원학생</th><th>관심학생</th></tr></thead>
-        <tbody id="applyJobTb"><tr><td colspan="6" style="text-align:center;color:var(--text-sub)">공고 없음</td></tr></tbody>
-      </table></div>
-    </div>
+  <div class="tab-panel" id="tab-apply" style="height:calc(100vh - 80px);display:none;flex-direction:column">
+    <iframe id="applyFrame"
+      src="https://script.google.com/macros/s/AKfycbzCgFeIBKYjwftoYnYs0ihmpUrt4Pfa-tH9CX4k-JI3spAoXfaKKqQRSUMe8EPLZkJP/exec"
+      style="width:100%;flex:1;border:none;border-radius:12px;min-height:calc(100vh - 80px)"
+      allowfullscreen>
+    </iframe>
   </div>
 
   <!-- ── 배너관리 ── -->
@@ -891,7 +888,11 @@ function showTab(id) {
   const match = navItems.find(n => n.getAttribute('onclick')?.includes(`'${id}'`));
   if (match) match.classList.add('active');
   if (id === 'practice') loadPractice();
-  if (id === 'apply') renderApplyTab();
+  if (id === 'apply') {
+    // iframe 탭은 flex로 표시
+    const applyPanel = document.getElementById('tab-apply');
+    if (applyPanel) applyPanel.style.display = 'flex';
+  }
 }
 
 async function initYearSelect() {
