@@ -517,7 +517,8 @@ function updateNavAuth() {
     el.innerHTML=`<a href="admin.html" class="nav-login" style="background:#38A169!important">관리자 페이지</a><a href="#" onclick="doLogout();return false" style="color:rgba(255,255,255,.7);font-size:13px;padding:7px 10px">로그아웃</a>`;
   } else if(sessionStorage.getItem('samilTeacherAuth')){
     const t=JSON.parse(sessionStorage.getItem('samilTeacherME')||'{}');
-    el.innerHTML=`<span style="color:rgba(255,255,255,.8);font-size:13px;padding:7px 10px">${t.name||'담임'}선생님</span><a href="#" onclick="doLogout();return false" style="color:rgba(255,255,255,.7);font-size:13px;padding:7px 10px">로그아웃</a>`;
+    const label=(t.name||'담임')+'선생님'+(t.isNonHome?' (비담임)':'');
+    el.innerHTML=`<a href="teacher.html" class="nav-login" style="background:#38A169!important">${label}</a><a href="#" onclick="doLogout();return false" style="color:rgba(255,255,255,.7);font-size:13px;padding:7px 10px">로그아웃</a>`;
   } else {
     el.innerHTML=`<a href="#" class="nav-login" onclick="openLogin();closeMenu();return false">로그인</a>`;
   }

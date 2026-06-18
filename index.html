@@ -950,7 +950,7 @@ function updateNavAuth(){
     href='student.html'; label=(s.name||'학생')+'님';
   }
   if(href){
-    el.innerHTML=`<a href="${href}" class="nav-login" style="background:var(--green,#38A169)!important">${label}</a>`+
+    el.innerHTML=`<a href="${href}" class="nav-login" style="background:#38A169!important">${label}</a>`+
       `<a href="#" onclick="doLogout();return false" style="color:rgba(255,255,255,.7);font-size:13px;padding:7px 10px">로그아웃</a>`;
   } else {
     el.innerHTML=`<a href="#" class="nav-login" onclick="openLogin();closeMenu();return false">로그인</a>`;
