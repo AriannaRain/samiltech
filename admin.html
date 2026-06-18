@@ -836,19 +836,28 @@ async function init() {
       DB.jobs         = all.jobs     || [];
       DB.statsHistory = all.stats    || [];
       DB.reviews      = all.reviews  || [];
-      // employ: GAS 데이터(전 연도 통합)와 localStorage 병합 — 데이터 손실 방지
-      if (all.employ && all.employ.length) {
-        // GAS 데이터와 localStorage 데이터를 병합 (GAS 우선, 중복 제거)
-        const localEmploy = DB.employ || [];
-        const gasKeys = new Set(all.employ.map(e => `${e.year}_${e.dept}`));
+      // employ: getAll은 현재 연도 1개만 반환할 수 있으므로, 추가로 이전 연도들도 직접 조회
+      let gasEmploy = all.employ || [];
+      if (!gasEmploy.length || gasEmploy.length < 3) {
+        // 이전 연도 employ 데이터 추가 조회 (최근 4년)
+        const fetchYears = [currentYear-1, currentYear-2, currentYear-3].filter(y => y > 2010);
+        const extras = await Promise.all(
+          fetchYears.map(y => SAMIL_API.getEmployStats ? SAMIL_API.getEmployStats(y).catch(()=>({data:[]})) : Promise.resolve({data:[]}))
+        );
+        extras.forEach(r => { if (r && r.data && r.data.length) gasEmploy = gasEmploy.concat(r.data); });
+      }
+      // GAS 데이터와 localStorage 데이터 병합 (GAS 우선, localStorage 누락분 보충)
+      const localEmploy = DB.employ || [];
+      if (gasEmploy.length) {
+        const gasKeys = new Set(gasEmploy.map(e => `${e.year}_${e.dept}`));
         const onlyLocal = localEmploy.filter(e => !gasKeys.has(`${e.year}_${e.dept}`));
-        DB.employ = [...all.employ, ...onlyLocal];
+        DB.employ = [...gasEmploy, ...onlyLocal];
         DB.employ.sort((a, b) => Number(b.year)-Number(a.year) || (a.dept||'').localeCompare(b.dept||''));
-      } else if (DB.employ && DB.employ.length) {
-        // localStorage에만 있는 경우 GAS에 자동 동기화
-        const empYears = [...new Set(DB.employ.map(e => Number(e.year)))];
+      } else if (localEmploy.length) {
+        // GAS에 데이터 없으면 localStorage 유지 + GAS 동기화
+        const empYears = [...new Set(localEmploy.map(e => Number(e.year)))];
         empYears.forEach(y => {
-          const yd = DB.employ.filter(e => Number(e.year) === y);
+          const yd = localEmploy.filter(e => Number(e.year) === y);
           SAMIL_API.saveEmployStats(y, yd).catch(() => {});
         });
       }
