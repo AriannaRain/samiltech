@@ -150,6 +150,13 @@ tr:last-child td{border-bottom:none}
 .edit-modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-sub);line-height:1}
 .edit-modal-body{padding:24px}
 .edit-modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+/* ── 지원현황 서브모달 ── */
+.sub-table{width:100%;border-collapse:collapse;font-size:12px}
+.sub-table th{background:var(--bg);padding:7px 10px;text-align:left;font-weight:600;color:var(--text-sub);border-bottom:2px solid var(--border)}
+.sub-table td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.sub-table tr:last-child td{border-bottom:none}
+.sub-badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:600;background:#E2E8F0;color:#718096}
+.sub-badge.교사{background:#BEE3F8;color:#2B6CB0}
 </style>
 </head>
 <body>
@@ -176,6 +183,7 @@ tr:last-child td{border-bottom:none}
     <div class="nav-item active" onclick="showTab('dash')"><span class="nav-icon">📊</span>대시보드</div>
     <div class="nav-item" onclick="showTab('setup')"><span class="nav-icon">⚙️</span>초기설정</div>
     <div class="nav-item" onclick="showTab('job')"><span class="nav-icon">📋</span>채용공고</div>
+    <div class="nav-item" onclick="showTab('apply')"><span class="nav-icon">📨</span>입사지원현황</div>
     <div class="nav-item" onclick="showTab('banner')"><span class="nav-icon">📢</span>배너관리</div>
     <div class="nav-item" onclick="showTab('student')"><span class="nav-icon">🎓</span>학생데이터</div>
     <div class="nav-item" onclick="showTab('employ')"><span class="nav-icon">💼</span>취업현황</div>
@@ -338,6 +346,18 @@ tr:last-child td{border-bottom:none}
       <div class="tbl-wrap"><table>
         <thead><tr><th>회사명</th><th>모집분야</th><th>근무지</th><th>마감일</th><th>추천</th><th>상태</th><th>관리</th></tr></thead>
         <tbody id="jobTb"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- ── 입사지원현황 ── -->
+  <div class="tab-panel" id="tab-apply">
+    <div class="page-header"><h1>입사지원현황 관리</h1><p>공고별 지원학생 및 관심학생 현황을 확인하고 관리합니다.</p></div>
+    <div class="card">
+      <div class="card-title">공고별 지원현황</div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>회사명</th><th>모집분야</th><th>마감일</th><th>상태</th><th>지원학생</th><th>관심학생</th></tr></thead>
+        <tbody id="applyJobTb"><tr><td colspan="6" style="text-align:center;color:var(--text-sub)">공고 없음</td></tr></tbody>
       </table></div>
     </div>
   </div>
@@ -754,6 +774,17 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
+<!-- ══════ 모달: 지원현황 조회 ══════ -->
+<div class="edit-modal-overlay" id="applySubModal" onclick="if(event.target===this)document.getElementById('applySubModal').classList.remove('open')">
+  <div class="edit-modal" style="max-width:640px">
+    <div class="edit-modal-header">
+      <h3 id="apply-sub-title">지원학생 조회</h3>
+      <button class="edit-modal-close" onclick="document.getElementById('applySubModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="edit-modal-body" id="apply-sub-body" style="max-height:55vh;overflow-y:auto;padding-top:4px"></div>
+  </div>
+</div>
+
 <script src="samil-api.js"></script>
 <script>
 // ══════════════════════════════════════════════
@@ -860,6 +891,7 @@ function showTab(id) {
   const match = navItems.find(n => n.getAttribute('onclick')?.includes(`'${id}'`));
   if (match) match.classList.add('active');
   if (id === 'practice') loadPractice();
+  if (id === 'apply') renderApplyTab();
 }
 
 async function initYearSelect() {
@@ -1512,11 +1544,59 @@ function renderJobs() {
     <td>${j.rec ? '<span class="badge badge-rec">추천</span>' : '—'}</td>
     <td><span class="badge ${j.active?'badge-active':'badge-closed'}">${j.active?'진행중':'마감'}</span></td>
     <td style="display:flex;gap:4px;flex-wrap:wrap">
+      <button class="btn btn-sm btn-ghost" onclick="openAdminSubModal('apply','${j.id}')">지원현황</button>
+      <button class="btn btn-sm btn-ghost" onclick="openAdminSubModal('interest','${j.id}')">관심학생</button>
       <button class="btn btn-sm btn-ghost" onclick="editJob('${j.id}')">수정</button>
       <button class="btn btn-sm btn-ghost" onclick="toggleJob('${j.id}')">${j.active?'마감':'재개'}</button>
       <button class="btn btn-sm btn-danger" onclick="delJob('${j.id}')">삭제</button>
     </td></tr>`).join('')
   : '<tr><td colspan="7" style="text-align:center;color:var(--text-sub)">공고 없음</td></tr>';
+}
+
+async function renderApplyTab() {
+  const tb = document.getElementById('applyJobTb');
+  if (!tb) return;
+  const jobs = DB.jobs || [];
+  if (!jobs.length) {
+    tb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-sub)">등록된 공고 없음</td></tr>';
+    return;
+  }
+  tb.innerHTML = jobs.map(j => `<tr>
+    <td><strong>${j.co}</strong></td>
+    <td>${j.job}</td>
+    <td>${j.dl || '—'}</td>
+    <td><span class="badge ${j.active ? 'badge-active' : 'badge-closed'}">${j.active ? '진행중' : '마감'}</span></td>
+    <td><button class="btn btn-sm btn-ghost" onclick="openAdminSubModal('apply','${j.id}')">지원학생 조회</button></td>
+    <td><button class="btn btn-sm btn-ghost" onclick="openAdminSubModal('interest','${j.id}')">관심학생 조회</button></td>
+  </tr>`).join('');
+}
+
+async function openAdminSubModal(type, jobId) {
+  const isInterest = type === 'interest';
+  document.getElementById('apply-sub-title').textContent = isInterest ? '관심학생 조회' : '지원학생 조회';
+  const body = document.getElementById('apply-sub-body');
+  body.innerHTML = '<p style="color:var(--text-sub);font-size:13px">불러오는 중...</p>';
+  document.getElementById('applySubModal').classList.add('open');
+  const res = isInterest
+    ? await SAMIL_API.getInterested({ jobId })
+    : await SAMIL_API.getApplicants({ token: 'samil_admin_2024', jobId });
+  if (!res.success) { body.innerHTML = `<p style="color:var(--red)">${res.error || '오류가 발생했습니다'}</p>`; return; }
+  const list = res.data;
+  if (!list.length) { body.innerHTML = `<p style="color:var(--text-sub);font-size:13px">${isInterest ? '관심' : '지원'}한 학생이 없습니다.</p>`; return; }
+  if (isInterest) {
+    body.innerHTML = `<table class="sub-table"><thead><tr><th>학번</th><th>이름</th><th>학과</th><th>학년/반</th><th>등록일</th></tr></thead>
+      <tbody>${list.map(a => `<tr><td>${a.studentId}</td><td>${a.name}</td><td>${a.dept}</td><td>${a.grade}학년 ${a.cls}반</td><td>${(a.date||'').substring(0,10)}</td></tr>`).join('')}</tbody></table>`;
+  } else {
+    body.innerHTML = `<table class="sub-table"><thead><tr><th>학번</th><th>이름</th><th>학과</th><th>학년/반</th><th>지원일</th><th>등록</th><th>관리</th></tr></thead>
+      <tbody>${list.map(a => `<tr id="arow-${a._row}"><td>${a.studentId}</td><td>${a.name}</td><td>${a.dept}</td><td>${a.grade}학년 ${a.cls}반</td><td>${(a.date||'').substring(0,10)}</td><td><span class="sub-badge ${a.regType||''}">${a.regType||'학생'}</span></td><td><button style="font-size:12px;padding:3px 10px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:#fff" onclick="deleteApplyRow(${a._row})">삭제</button></td></tr>`).join('')}</tbody></table>`;
+  }
+}
+
+async function deleteApplyRow(rowNum) {
+  if (!confirm('삭제하시겠습니까?')) return;
+  const res = await SAMIL_API.deleteApply({ token: 'samil_admin_2024', rowNum });
+  if (res.success) document.getElementById(`arow-${rowNum}`)?.remove();
+  else alert(res.error || '삭제 실패');
 }
 
 function editJob(id) {
