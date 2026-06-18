@@ -801,8 +801,9 @@ if (!DB.depts)        DB.depts        = [];
 if (!DB.employ)       DB.employ       = [];
 if (!DB.reviews)      DB.reviews      = [];
 if (!DB.statsHistory) DB.statsHistory = [];
-DB.jobs    = [];
-DB.banners = [];
+// jobs/banners: localStorage 캐시 유지 → GAS 응답 전 즉시 표시
+if (!DB.jobs)    DB.jobs    = [];
+if (!DB.banners) DB.banners = [];
 
 let currentYear = DB.year;
 
@@ -2526,6 +2527,12 @@ async function delStat(year) {
     save(); loadStats();
   } catch(e) { alert('삭제 실패'); }
 }
+
+// ── 캐시 우선 즉시 렌더 (GAS cold start 딜레이 없이 바로 표시) ──
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('dash-year').textContent = currentYear;
+  updateDash();  // localStorage 캐시로 즉시 대시보드 숫자 표시
+});
 
 window.onload = init;
 
