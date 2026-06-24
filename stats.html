@@ -315,6 +315,8 @@ async function loginTeacher() {
   if (!res.success) { showErr(res.error || '로그인 실패'); return; }
   ME = { ...res.teacher, role: 'teacher' };
   sessionStorage.setItem('statsMe', JSON.stringify(ME));
+  sessionStorage.setItem('samilTeacherAuth', res.teacher.id || '1');
+  sessionStorage.setItem('samilTeacherME', JSON.stringify(res.teacher));
   afterLogin();
 }
 

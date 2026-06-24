@@ -852,8 +852,9 @@ function showUploadAlert(type,msg){
 function renderStudentList(){
   const q=(document.getElementById('searchName').value||'').toLowerCase();
   const list=getMyStudents().filter(s=>!q||s.name.includes(q)||s.id.includes(q));
-  document.getElementById('studentSubTitle').textContent=
-    `${ME.dept} ${ME.grade}학년 ${ME.cls}반 | 총 ${getMyStudents().length}명`;
+  document.getElementById('studentSubTitle').textContent= ME.isNonHome
+    ? `전체 | 총 ${getMyStudents().length}명`
+    : `${ME.dept} ${ME.grade}학년 ${ME.cls}반 | 총 ${getMyStudents().length}명`;
 
   document.getElementById('stuSummaryTb').innerHTML = list.length
     ? list.map(s=>{
@@ -889,7 +890,7 @@ function renderStudentList(){
           <td><span class="badge ${s.uploaded?'badge-green':'badge-gray'}">${s.uploaded?'등록':'미등록'}</span></td>
         </tr>`;
       }).join('')
-    : '<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text-sub)">학생 없음</td></tr>';
+    : '<tr><td colspan="13" style="text-align:center;padding:24px;color:var(--text-sub)">학생 없음</td></tr>';
 
   // 이벤트 위임
   const tb = document.getElementById('stuSummaryTb');

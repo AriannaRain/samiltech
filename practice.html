@@ -674,15 +674,15 @@ function toggleQna(id) {
 async function submitAnswer(qId) {
   const ta = document.getElementById('ansText_'+qId);
   if (!ta || !ta.value.trim()) { alert('답변 내용을 입력하세요'); return; }
-  const btn = ta.nextElementSibling;
-  btn.disabled = true; btn.textContent = '등록 중...';
+  const btn = ta.nextElementSibling ? ta.nextElementSibling.querySelector('button') || ta.nextElementSibling : null;
+  if (btn) { btn.disabled = true; btn.textContent = '등록 중...'; }
   let myName = '교사';
   try { myName = getMyName(); } catch(_) {}
   try {
     const r = await SAMIL_API.addQnAAnswer({ parentId: qId, content: ta.value.trim(), author: myName });
     if (r.success) { ta.value = ''; try { localStorage.removeItem(_QNA_CACHE_KEY); } catch(_){} await loadQnAs(); _qnaOpenId = qId; renderQnas(); }
-    else { alert(r.error || '등록 실패'); btn.disabled = false; btn.textContent = '답변 등록'; }
-  } catch(e) { console.error('submitAnswer error:', e); alert('오류: ' + (e.message||String(e))); btn.disabled = false; btn.textContent = '답변 등록'; }
+    else { alert(r.error || '등록 실패'); if (btn) { btn.disabled = false; btn.textContent = '답변 등록'; } }
+  } catch(e) { console.error('submitAnswer error:', e); alert('오류: ' + (e.message||String(e))); if (btn) { btn.disabled = false; btn.textContent = '답변 등록'; } }
 }
 
 async function qnaDelete(id, parentId, e) {
