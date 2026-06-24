@@ -376,9 +376,29 @@ function updateStatsDisplay(){
   set('s-done',  s.done   || '—');
 }
 
+// 학과 드롭다운을 학생(l-dept)·교사(t-dept) 동시에 채우는 헬퍼
+function fillDeptSelects(depts){
+  ['l-dept','t-dept'].forEach(id=>{
+    const sel = document.getElementById(id);
+    if(!sel || sel.options.length > 1) return; // 이미 채워진 경우 skip
+    depts.forEach(d=>{
+      const name = d.name||d.dept||d;
+      if(!name) return;
+      const o = document.createElement('option');
+      o.value = name; o.textContent = name; sel.appendChild(o);
+    });
+  });
+}
+
 window.addEventListener('DOMContentLoaded', async ()=>{
   if (typeof SAMIL_API.ping === 'function') SAMIL_API.ping();
   updateNavAuth();
+
+  // ── ⓪ 학과 드롭다운: localStorage 캐시로 즉시 표시 ──
+  try{
+    const dc = localStorage.getItem('samilDeptsCache');
+    if(dc){ const d = JSON.parse(dc); if(d && d.length) fillDeptSelects(d); }
+  }catch(_){}
 
   // ── ① samilJobsCache 즉시 렌더 (실제 데이터가 있을 때만) ──
   let hasCachedData = false;
@@ -495,13 +515,9 @@ window.addEventListener('DOMContentLoaded', async ()=>{
 
   // 학과 드롭다운
   const depts = (all.depts && all.depts.length) ? all.depts : SAMPLE.depts;
-  const selS = document.getElementById('l-dept');
-  if(selS.options.length <= 1){
-    depts.forEach(d=>{
-      const name = d.name||d.dept;
-      const o=document.createElement('option'); o.value=name; o.textContent=name; selS.appendChild(o);
-    });
-  }
+  fillDeptSelects(depts);
+  // 학과 캐시 저장 (다음 방문 시 즉시 표시)
+  try{ localStorage.setItem('samilDeptsCache', JSON.stringify(depts)); }catch(_){}
   if (!DATA.depts || !DATA.depts.length || DATA.depts.every(d=>d.g===0&&d.e===0&&d.a===0)) {
     DATA.depts = depts.map(d=>({dept:d.name||d.dept,g:0,e:0,a:0}));
   }
@@ -853,7 +869,12 @@ function switchTab(tab,btn){
 async function loadTcDepts(){
   const sel=document.getElementById('t-dept');
   if(sel.options.length>1) return; // 이미 로드됨
-  // ① 학생 로그인 드롭다운에 이미 로드된 학과 재활용 (추가 API 호출 없이)
+  // ① localStorage 캐시 재활용 (API 호출 없음)
+  try{
+    const dc = localStorage.getItem('samilDeptsCache');
+    if(dc){ const d=JSON.parse(dc); if(d&&d.length){ fillDeptSelects(d); return; } }
+  }catch(_){}
+  // ② 학생 드롭다운에 이미 로드된 학과 재활용
   const stuSel=document.getElementById('l-dept');
   if(stuSel && stuSel.options.length>1){
     Array.from(stuSel.options).slice(1).forEach(opt=>{
@@ -862,17 +883,15 @@ async function loadTcDepts(){
     });
     return;
   }
-  // ② 캐시/API fallback
+  // ③ 최후 fallback: API 호출
   try{
     const [deptsRes, classesRes] = await Promise.all([
       SAMIL_API.getDepts(),
       SAMIL_API.getClasses({ year: new Date().getFullYear() }),
     ]);
     const depts=deptsRes.success&&deptsRes.data&&deptsRes.data.length?deptsRes.data:[];
-    depts.forEach(d=>{
-      const o=document.createElement('option');
-      o.value=d.name||d.dept; o.textContent=d.name||d.dept; sel.appendChild(o);
-    });
+    fillDeptSelects(depts);
+    try{ localStorage.setItem('samilDeptsCache', JSON.stringify(depts)); }catch(_){}
     if(classesRes.success) DATA.classes = classesRes.data || [];
   }catch(e){}
 }
