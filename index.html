@@ -853,6 +853,16 @@ function switchTab(tab,btn){
 async function loadTcDepts(){
   const sel=document.getElementById('t-dept');
   if(sel.options.length>1) return; // 이미 로드됨
+  // ① 학생 로그인 드롭다운에 이미 로드된 학과 재활용 (추가 API 호출 없이)
+  const stuSel=document.getElementById('l-dept');
+  if(stuSel && stuSel.options.length>1){
+    Array.from(stuSel.options).slice(1).forEach(opt=>{
+      const o=document.createElement('option');
+      o.value=opt.value; o.textContent=opt.textContent; sel.appendChild(o);
+    });
+    return;
+  }
+  // ② 캐시/API fallback
   try{
     const [deptsRes, classesRes] = await Promise.all([
       SAMIL_API.getDepts(),

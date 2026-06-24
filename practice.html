@@ -284,13 +284,32 @@ footer strong{color:#fff}
         <button onclick="switchTab('ad',this)">관리자</button>
       </div>
       <div id="tab-tc">
-        <div class="form-group"><label>학과</label><select id="l-dept"><option value="">선택</option></select></div>
-        <div style="display:flex;gap:8px">
-          <div class="form-group" style="flex:1"><label>학년</label><select id="l-grade" onchange="updateCls()"><option value="">학년</option><option>1</option><option>2</option><option>3</option></select></div>
-          <div class="form-group" style="flex:1"><label>반</label><select id="l-cls"><option value="">반</option></select></div>
+        <!-- 담임 / 비담임 서브탭 -->
+        <div style="display:flex;gap:4px;background:#f4f6fa;padding:4px;border-radius:10px;margin-bottom:14px">
+          <button id="pr-sub-home" onclick="switchPrSub('home')"
+            style="flex:1;padding:7px;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit;background:#fff;color:#1A3A6B;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.1);transition:.2s">
+            🏠 담임교사
+          </button>
+          <button id="pr-sub-nh" onclick="switchPrSub('nh')"
+            style="flex:1;padding:7px;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit;background:none;color:#5A6A7E;font-weight:500;transition:.2s">
+            👤 비담임교사
+          </button>
         </div>
-        <div class="form-group"><label>이름</label><input id="l-name" placeholder="홍길동" onkeydown="if(event.key==='Enter')doLogin()"></div>
-        <div class="form-group"><label>비밀번호</label><input type="password" id="l-pw" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        <!-- 담임교사 필드 -->
+        <div id="pr-fields-home">
+          <div class="form-group"><label>학과</label><select id="l-dept"><option value="">선택</option></select></div>
+          <div style="display:flex;gap:8px">
+            <div class="form-group" style="flex:1"><label>학년</label><select id="l-grade" onchange="updateCls()"><option value="">학년</option><option>1</option><option>2</option><option>3</option></select></div>
+            <div class="form-group" style="flex:1"><label>반</label><select id="l-cls"><option value="">반</option></select></div>
+          </div>
+          <div class="form-group"><label>이름</label><input id="l-name" placeholder="홍길동" onkeydown="if(event.key==='Enter')doLogin()"></div>
+          <div class="form-group"><label>비밀번호</label><input type="password" id="l-pw" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        </div>
+        <!-- 비담임교사 필드 -->
+        <div id="pr-fields-nh" style="display:none">
+          <div class="form-group"><label>이름</label><input id="nh-l-name" placeholder="홍길동" onkeydown="if(event.key==='Enter')doLogin()"></div>
+          <div class="form-group"><label>비밀번호</label><input type="password" id="nh-l-pw" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        </div>
         <button class="btn-submit" onclick="doLogin()">로그인</button>
       </div>
       <div id="tab-ad" style="display:none">
@@ -306,20 +325,18 @@ let _classes = [];
 
 function isLoggedIn() {
   return sessionStorage.getItem('samilAdminAuth') === '1'
-    || !!sessionStorage.getItem('samilTeacherAuth')
-    || !!sessionStorage.getItem('samilNonHomeTeacherAuth');
+    || !!sessionStorage.getItem('samilTeacherAuth');
 }
 function isTeacher() {
   return sessionStorage.getItem('samilAdminAuth') === '1'
-    || !!sessionStorage.getItem('samilTeacherAuth')
-    || !!sessionStorage.getItem('samilNonHomeTeacherAuth');
+    || !!sessionStorage.getItem('samilTeacherAuth');
 }
 function isAdmin() {
   return sessionStorage.getItem('samilAdminAuth') === '1';
 }
 function getMyName() {
   let me = {};
-  try { me = JSON.parse(sessionStorage.getItem('samilTeacherME') || sessionStorage.getItem('samilNonHomeTeacherME') || '{}'); } catch(_) {}
+  try { me = JSON.parse(sessionStorage.getItem('samilTeacherME') || '{}'); } catch(_) {}
   if (sessionStorage.getItem('samilAdminAuth') === '1') return me.name || '관리자';
   return me.name || '교사';
 }
@@ -455,13 +472,23 @@ function switchTab(tab, btn) {
   btn.classList.add('active');
 }
 
+let _prSubMode = 'home';
+function switchPrSub(mode) {
+  _prSubMode = mode;
+  const isHome = mode === 'home';
+  document.getElementById('pr-fields-home').style.display = isHome ? '' : 'none';
+  document.getElementById('pr-fields-nh').style.display   = isHome ? 'none' : '';
+  const bh=document.getElementById('pr-sub-home'), bn=document.getElementById('pr-sub-nh');
+  if(bh){bh.style.background=isHome?'#fff':'none';bh.style.color=isHome?'#1A3A6B':'#5A6A7E';bh.style.fontWeight=isHome?'700':'500';bh.style.boxShadow=isHome?'0 1px 4px rgba(0,0,0,.1)':'none';}
+  if(bn){bn.style.background=isHome?'none':'#fff';bn.style.color=isHome?'#5A6A7E':'#1A3A6B';bn.style.fontWeight=isHome?'500':'700';bn.style.boxShadow=isHome?'none':'0 1px 4px rgba(0,0,0,.1)';}
+}
+
 async function loadDepts() {
   const sel = document.getElementById('l-dept');
   if (sel.options.length > 1) return;
   try {
-    const res = await SAMIL_API.getDepts();
+    const [res, cRes] = await Promise.all([SAMIL_API.getDepts(), SAMIL_API.getClasses({ year: new Date().getFullYear() })]);
     (res.data||[]).forEach(d => { const o=document.createElement('option'); o.value=o.textContent=d.name||d; sel.appendChild(o); });
-    const cRes = await SAMIL_API.getClasses({ year: new Date().getFullYear() });
     _classes = cRes.success ? cRes.data : [];
   } catch(_) {}
 }
@@ -477,22 +504,34 @@ function updateCls() {
 }
 
 async function doLogin() {
-  const dept=document.getElementById('l-dept').value;
-  const grade=document.getElementById('l-grade').value;
-  const cls=document.getElementById('l-cls').value;
-  const name=document.getElementById('l-name').value.trim();
-  const pw=document.getElementById('l-pw').value;
-  if(!dept||!grade||!cls||!name||!pw){alert('모든 항목을 입력하세요');return;}
   const btn=document.querySelector('#tab-tc .btn-submit');
-  btn.textContent='확인중…';btn.disabled=true;
-  const res=await SAMIL_API.loginTeacher(dept,grade,cls,name,pw);
-  btn.textContent='로그인';btn.disabled=false;
+  if(btn){btn.textContent='확인중…';btn.disabled=true;}
+  let res;
+  if(_prSubMode==='nh'){
+    const name=document.getElementById('nh-l-name').value.trim();
+    const pw=document.getElementById('nh-l-pw').value;
+    if(!name||!pw){alert('이름과 비밀번호를 입력하세요');if(btn){btn.textContent='로그인';btn.disabled=false;}return;}
+    res=await SAMIL_API.loginNonHomeTeacher(name,pw);
+  } else {
+    const dept=document.getElementById('l-dept').value;
+    const grade=document.getElementById('l-grade').value;
+    const cls=document.getElementById('l-cls').value;
+    const name=document.getElementById('l-name').value.trim();
+    const pw=document.getElementById('l-pw').value;
+    if(!dept||!grade||!cls||!name||!pw){alert('모든 항목을 입력하세요');if(btn){btn.textContent='로그인';btn.disabled=false;}return;}
+    res=await SAMIL_API.loginTeacher(dept,grade,cls,name,pw);
+  }
+  if(btn){btn.textContent='로그인';btn.disabled=false;}
   if(res.success){
     sessionStorage.setItem('samilTeacherAuth',res.teacher.id);
     sessionStorage.setItem('samilTeacherME',JSON.stringify(res.teacher));
     document.getElementById('loginModal').classList.remove('open');
     render(); renderQnaSection(); loadQnAs();
-  } else { document.getElementById('l-pw').value=''; alert(res.error||'로그인 실패'); }
+  } else {
+    const pwEl=_prSubMode==='nh'?document.getElementById('nh-l-pw'):document.getElementById('l-pw');
+    if(pwEl)pwEl.value='';
+    alert(res.error||'로그인 실패');
+  }
 }
 
 async function doAdminLogin() {

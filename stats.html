@@ -143,19 +143,38 @@ tr:hover td{background:#f9fafb}
       <button class="active" onclick="switchTab('tc',this)">담임교사</button>
       <button onclick="switchTab('ad',this)">관리자</button>
     </div>
-    <!-- 담임 로그인 -->
+    <!-- 담임 / 비담임 로그인 -->
     <div id="lt-tc">
-      <div class="form-group"><label>학과</label><select id="l-dept"><option value="">선택</option></select></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="form-group"><label>학년</label>
-          <select id="l-grade"><option value="">선택</option><option>1</option><option>2</option><option>3</option></select>
-        </div>
-        <div class="form-group"><label>반</label>
-          <select id="l-cls"><option value="">선택</option><option>1</option><option>2</option><option>3</option><option>4</option></select>
-        </div>
+      <!-- 담임 / 비담임 서브탭 -->
+      <div style="display:flex;gap:4px;background:#f4f6fa;padding:4px;border-radius:10px;margin-bottom:14px">
+        <button id="st-sub-home" onclick="switchStSub('home')"
+          style="flex:1;padding:7px;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit;background:#fff;color:#1A3A6B;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.1);transition:.2s">
+          🏠 담임교사
+        </button>
+        <button id="st-sub-nh" onclick="switchStSub('nh')"
+          style="flex:1;padding:7px;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit;background:none;color:#5A6A7E;font-weight:500;transition:.2s">
+          👤 비담임교사
+        </button>
       </div>
-      <div class="form-group"><label>이름</label><input id="l-name" placeholder="홍길동"></div>
-      <div class="form-group"><label>비밀번호</label><input id="l-pw" type="password"></div>
+      <!-- 담임교사 필드 -->
+      <div id="st-fields-home">
+        <div class="form-group"><label>학과</label><select id="l-dept"><option value="">선택</option></select></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="form-group"><label>학년</label>
+            <select id="l-grade"><option value="">선택</option><option>1</option><option>2</option><option>3</option></select>
+          </div>
+          <div class="form-group"><label>반</label>
+            <select id="l-cls"><option value="">선택</option><option>1</option><option>2</option><option>3</option><option>4</option></select>
+          </div>
+        </div>
+        <div class="form-group"><label>이름</label><input id="l-name" placeholder="홍길동" onkeydown="if(event.key==='Enter')loginTeacher()"></div>
+        <div class="form-group"><label>비밀번호</label><input id="l-pw" type="password" onkeydown="if(event.key==='Enter')loginTeacher()"></div>
+      </div>
+      <!-- 비담임교사 필드 -->
+      <div id="st-fields-nh" style="display:none">
+        <div class="form-group"><label>이름</label><input id="nh-l-name" placeholder="홍길동" onkeydown="if(event.key==='Enter')loginTeacher()"></div>
+        <div class="form-group"><label>비밀번호</label><input id="nh-l-pw" type="password" onkeydown="if(event.key==='Enter')loginTeacher()"></div>
+      </div>
       <button class="btn-login" onclick="loginTeacher()">로그인</button>
     </div>
     <!-- 관리자 로그인 -->
@@ -304,14 +323,43 @@ function switchTab(id, btn) {
   document.getElementById('loginErr').style.display = 'none';
 }
 
+let _stSubMode = 'home';
+function switchStSub(mode) {
+  _stSubMode = mode;
+  const homeBtn = document.getElementById('st-sub-home');
+  const nhBtn   = document.getElementById('st-sub-nh');
+  const homeFields = document.getElementById('st-fields-home');
+  const nhFields   = document.getElementById('st-fields-nh');
+  if (mode === 'home') {
+    homeBtn.style.cssText += 'background:#fff;color:#1A3A6B;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.1);';
+    nhBtn.style.cssText   += 'background:none;color:#5A6A7E;font-weight:500;box-shadow:none;';
+    homeFields.style.display = '';
+    nhFields.style.display   = 'none';
+  } else {
+    nhBtn.style.cssText     += 'background:#fff;color:#1A3A6B;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.1);';
+    homeBtn.style.cssText   += 'background:none;color:#5A6A7E;font-weight:500;box-shadow:none;';
+    homeFields.style.display = 'none';
+    nhFields.style.display   = '';
+  }
+  document.getElementById('loginErr').style.display = 'none';
+}
+
 async function loginTeacher() {
-  const dept  = document.getElementById('l-dept').value;
-  const grade = document.getElementById('l-grade').value;
-  const cls   = document.getElementById('l-cls').value;
-  const name  = document.getElementById('l-name').value.trim();
-  const pw    = document.getElementById('l-pw').value;
-  if (!dept || !grade || !cls || !name || !pw) { showErr('모든 항목을 입력하세요'); return; }
-  const res = await SAMIL_API.loginTeacher(dept, grade, cls, name, pw);
+  let res;
+  if (_stSubMode === 'nh') {
+    const name = document.getElementById('nh-l-name').value.trim();
+    const pw   = document.getElementById('nh-l-pw').value;
+    if (!name || !pw) { showErr('이름과 비밀번호를 입력하세요'); return; }
+    res = await SAMIL_API.loginNonHomeTeacher(name, pw);
+  } else {
+    const dept  = document.getElementById('l-dept').value;
+    const grade = document.getElementById('l-grade').value;
+    const cls   = document.getElementById('l-cls').value;
+    const name  = document.getElementById('l-name').value.trim();
+    const pw    = document.getElementById('l-pw').value;
+    if (!dept || !grade || !cls || !name || !pw) { showErr('모든 항목을 입력하세요'); return; }
+    res = await SAMIL_API.loginTeacher(dept, grade, cls, name, pw);
+  }
   if (!res.success) { showErr(res.error || '로그인 실패'); return; }
   ME = { ...res.teacher, role: 'teacher' };
   sessionStorage.setItem('statsMe', JSON.stringify(ME));

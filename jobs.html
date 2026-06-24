@@ -252,13 +252,32 @@ footer strong{color:#fff}
         <button class="btn-submit" onclick="loginStudent()">로그인</button>
       </div>
       <div id="tab-tc" style="display:none">
-        <div class="form-group"><label>학과</label><select id="t-dept" onchange="updateTcCls()" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"><option value="">학과 선택</option></select></div>
-        <div style="display:flex;gap:8px">
-          <div class="form-group" style="flex:1"><label>학년</label><select id="t-grade" onchange="updateTcCls()" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"><option value="">학년</option><option>1</option><option>2</option><option>3</option></select></div>
-          <div class="form-group" style="flex:1"><label>반</label><select id="t-cls" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"><option value="">반</option></select></div>
+        <!-- 담임 / 비담임 서브탭 -->
+        <div style="display:flex;gap:4px;background:#f4f6fa;padding:4px;border-radius:10px;margin-bottom:14px">
+          <button id="tc-sub-home" onclick="switchTcSub('home')"
+            style="flex:1;padding:7px;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit;background:#fff;color:#1A3A6B;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.1);transition:.2s">
+            🏠 담임교사
+          </button>
+          <button id="tc-sub-nh" onclick="switchTcSub('nh')"
+            style="flex:1;padding:7px;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit;background:none;color:#5A6A7E;font-weight:500;transition:.2s">
+            👤 비담임교사
+          </button>
         </div>
-        <div class="form-group"><label>이름</label><input id="t-name" placeholder="홍길동" onkeydown="if(event.key==='Enter')loginTeacher()"></div>
-        <div class="form-group"><label>비밀번호</label><input type="password" id="t-pw" onkeydown="if(event.key==='Enter')loginTeacher()"></div>
+        <!-- 담임교사 필드 -->
+        <div id="tc-fields-home">
+          <div class="form-group"><label>학과</label><select id="t-dept" onchange="updateTcCls()" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"><option value="">학과 선택</option></select></div>
+          <div style="display:flex;gap:8px">
+            <div class="form-group" style="flex:1"><label>학년</label><select id="t-grade" onchange="updateTcCls()" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"><option value="">학년</option><option>1</option><option>2</option><option>3</option></select></div>
+            <div class="form-group" style="flex:1"><label>반</label><select id="t-cls" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"><option value="">반</option></select></div>
+          </div>
+          <div class="form-group"><label>이름</label><input id="t-name" placeholder="홍길동" onkeydown="if(event.key==='Enter')loginTeacher()"></div>
+          <div class="form-group"><label>비밀번호</label><input type="password" id="t-pw" onkeydown="if(event.key==='Enter')loginTeacher()"></div>
+        </div>
+        <!-- 비담임교사 필드 -->
+        <div id="tc-fields-nh" style="display:none">
+          <div class="form-group"><label>이름</label><input id="nh-t-name" placeholder="홍길동" onkeydown="if(event.key==='Enter')loginTeacher()"></div>
+          <div class="form-group"><label>비밀번호</label><input type="password" id="nh-t-pw" onkeydown="if(event.key==='Enter')loginTeacher()"></div>
+        </div>
         <button class="btn-submit" onclick="loginTeacher()">로그인</button>
       </div>
       <div id="tab-ad" style="display:none">
@@ -752,11 +771,31 @@ function switchLoginTab(tab,btn){
 async function loadTcDepts(){
   const sel = document.getElementById('t-dept');
   if(sel.options.length>1) return;
+  // 학생 로그인 드롭다운에서 이미 로드된 학과 재활용
+  const stuSel = document.getElementById('l-dept');
+  if(stuSel && stuSel.options.length>1){
+    Array.from(stuSel.options).slice(1).forEach(opt=>{
+      const o=document.createElement('option');
+      o.value=opt.value; o.textContent=opt.textContent; sel.appendChild(o);
+    });
+    return;
+  }
   try{
     const res = await SAMIL_API.getDepts();
-    const depts = res.success&&res.data.length ? res.data : [];
+    const depts = res.success&&res.data&&res.data.length ? res.data : [];
     depts.forEach(d=>{ const o=document.createElement('option'); o.value=d.name||d.dept; o.textContent=d.name||d.dept; sel.appendChild(o); });
   }catch(e){}
+}
+
+let _tcSubMode = 'home';
+function switchTcSub(mode){
+  _tcSubMode = mode;
+  const isHome = mode === 'home';
+  document.getElementById('tc-fields-home').style.display = isHome ? '' : 'none';
+  document.getElementById('tc-fields-nh').style.display   = isHome ? 'none' : '';
+  const bh=document.getElementById('tc-sub-home'), bn=document.getElementById('tc-sub-nh');
+  if(bh){bh.style.background=isHome?'#fff':'none';bh.style.color=isHome?'#1A3A6B':'#5A6A7E';bh.style.fontWeight=isHome?'700':'500';bh.style.boxShadow=isHome?'0 1px 4px rgba(0,0,0,.1)':'none';}
+  if(bn){bn.style.background=isHome?'none':'#fff';bn.style.color=isHome?'#5A6A7E':'#1A3A6B';bn.style.fontWeight=isHome?'500':'700';bn.style.boxShadow=isHome?'none':'0 1px 4px rgba(0,0,0,.1)';}
 }
 
 async function loginStudent(){
@@ -780,15 +819,23 @@ async function loginStudent(){
 }
 
 async function loginTeacher(){
-  const dept=document.getElementById('t-dept').value;
-  const grade=document.getElementById('t-grade').value;
-  const cls=document.getElementById('t-cls').value;
-  const name=document.getElementById('t-name').value.trim();
-  const pw=document.getElementById('t-pw').value;
-  if(!dept||!grade||!cls||!name||!pw){alert('모든 항목을 입력하세요');return;}
   const btn=document.querySelector('#tab-tc .btn-submit');
   if(btn){btn.textContent='확인중…';btn.disabled=true;}
-  const res=await SAMIL_API.loginTeacher(dept,grade,cls,name,pw);
+  let res;
+  if(_tcSubMode==='nh'){
+    const name=document.getElementById('nh-t-name').value.trim();
+    const pw=document.getElementById('nh-t-pw').value;
+    if(!name||!pw){alert('이름과 비밀번호를 입력하세요');if(btn){btn.textContent='로그인';btn.disabled=false;}return;}
+    res=await SAMIL_API.loginNonHomeTeacher(name,pw);
+  } else {
+    const dept=document.getElementById('t-dept').value;
+    const grade=document.getElementById('t-grade').value;
+    const cls=document.getElementById('t-cls').value;
+    const name=document.getElementById('t-name').value.trim();
+    const pw=document.getElementById('t-pw').value;
+    if(!dept||!grade||!cls||!name||!pw){alert('모든 항목을 입력하세요');if(btn){btn.textContent='로그인';btn.disabled=false;}return;}
+    res=await SAMIL_API.loginTeacher(dept,grade,cls,name,pw);
+  }
   if(btn){btn.textContent='로그인';btn.disabled=false;}
   if(res.success){
     sessionStorage.setItem('samilTeacherAuth',res.teacher.id);
@@ -796,7 +843,11 @@ async function loginTeacher(){
     closeModal('loginModal');
     updateNavAuth();
     if(document.getElementById('panel-archive').style.display!=='none'){ ARCHIVE_DATA=[]; initArchiveTab(); }
-  } else { document.getElementById('t-pw').value=''; alert(res.error||'담임 계정 정보가 맞지 않습니다.'); }
+  } else {
+    const pwEl=_tcSubMode==='nh'?document.getElementById('nh-t-pw'):document.getElementById('t-pw');
+    if(pwEl)pwEl.value='';
+    alert(res.error||'계정 정보가 맞지 않습니다.');
+  }
 }
 
 function tryAdmin(){
