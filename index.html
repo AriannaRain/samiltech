@@ -868,32 +868,44 @@ function switchTab(tab,btn){
 }
 async function loadTcDepts(){
   const sel=document.getElementById('t-dept');
-  if(sel.options.length>1) return; // 이미 로드됨
-  // ① localStorage 캐시 재활용 (API 호출 없음)
-  try{
-    const dc = localStorage.getItem('samilDeptsCache');
-    if(dc){ const d=JSON.parse(dc); if(d&&d.length){ fillDeptSelects(d); return; } }
-  }catch(_){}
-  // ② 학생 드롭다운에 이미 로드된 학과 재활용
-  const stuSel=document.getElementById('l-dept');
-  if(stuSel && stuSel.options.length>1){
-    Array.from(stuSel.options).slice(1).forEach(opt=>{
-      const o=document.createElement('option');
-      o.value=opt.value; o.textContent=opt.textContent; sel.appendChild(o);
-    });
-    return;
+
+  // ── 학과 드롭다운: 아직 비어있을 때만 채움 ──
+  if(sel.options.length <= 1){
+    // ① localStorage 캐시 우선
+    let filled = false;
+    try{
+      const dc = localStorage.getItem('samilDeptsCache');
+      if(dc){ const d=JSON.parse(dc); if(d&&d.length){ fillDeptSelects(d); filled=true; } }
+    }catch(_){}
+    // ② 학생 드롭다운 재활용
+    if(!filled){
+      const stuSel=document.getElementById('l-dept');
+      if(stuSel && stuSel.options.length>1){
+        Array.from(stuSel.options).slice(1).forEach(opt=>{
+          const o=document.createElement('option');
+          o.value=opt.value; o.textContent=opt.textContent; sel.appendChild(o);
+        });
+        filled=true;
+      }
+    }
+    // ③ 최후 fallback: API 호출
+    if(!filled){
+      try{
+        const deptsRes = await SAMIL_API.getDepts();
+        const depts=deptsRes.success&&deptsRes.data&&deptsRes.data.length?deptsRes.data:[];
+        fillDeptSelects(depts);
+        try{ localStorage.setItem('samilDeptsCache', JSON.stringify(depts)); }catch(_){}
+      }catch(e){}
+    }
   }
-  // ③ 최후 fallback: API 호출
-  try{
-    const [deptsRes, classesRes] = await Promise.all([
-      SAMIL_API.getDepts(),
-      SAMIL_API.getClasses({ year: new Date().getFullYear() }),
-    ]);
-    const depts=deptsRes.success&&deptsRes.data&&deptsRes.data.length?deptsRes.data:[];
-    fillDeptSelects(depts);
-    try{ localStorage.setItem('samilDeptsCache', JSON.stringify(depts)); }catch(_){}
-    if(classesRes.success) DATA.classes = classesRes.data || [];
-  }catch(e){}
+
+  // ── 반 데이터(classes): 항상 확인, 없으면 API 호출 ──
+  if(!DATA.classes || !DATA.classes.length){
+    try{
+      const classesRes = await SAMIL_API.getClasses({ year: new Date().getFullYear() });
+      if(classesRes && classesRes.success) DATA.classes = classesRes.data || [];
+    }catch(e){}
+  }
 }
 async function loginStudent(){
   const dept=document.getElementById('l-dept').value;
