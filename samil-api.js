@@ -506,6 +506,19 @@ const SAMIL_API = (() => {
     return call({ action: 'initSheets', token: ADMIN_TOKEN });
   }
 
+  // ════════════════════════════════════════════
+  // 프로그램 다운로드 관리 (관리자 전용)
+  // ════════════════════════════════════════════
+  function getPrograms() {
+    return call({ action: 'getPrograms' });
+  }
+  function addProgram(name, version, desc, url) {
+    return call({ action: 'addProgram', token: ADMIN_TOKEN, name, version, desc, url });
+  }
+  function deleteProgram(id) {
+    return call({ action: 'deleteProgram', token: ADMIN_TOKEN, id });
+  }
+
   return {
     getAll,
     getJobs, addJob, updateJob, deleteJob, toggleJob,
@@ -530,6 +543,7 @@ const SAMIL_API = (() => {
     getPracticeSections, addPracticeSection, updatePracticeSection, deletePracticeSection, reorderPracticeSection,
     getPracticeFiles, addPracticeFile, updatePracticeFile, deletePracticeFile, reorderPracticeFile,
     getQnAs, addQnA, addQnAAnswer, deleteQnA, markAnswered, uploadQnAFile,
+    getPrograms, addProgram, deleteProgram,
     initSheets,
   };
 })();

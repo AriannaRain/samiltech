@@ -188,6 +188,7 @@ tr:last-child td{border-bottom:none}
     <div class="nav-item" onclick="showTab('employ')"><span class="nav-icon">💼</span>취업현황</div>
     <div class="nav-item" onclick="showTab('stats')"><span class="nav-icon">📈</span>취업통계</div>
     <div class="nav-item" onclick="showTab('practice')"><span class="nav-icon">🏭</span>현장실습자료</div>
+    <div class="nav-item" onclick="showTab('programs')"><span class="nav-icon">💾</span>프로그램 관리</div>
     <div class="nav-item" onclick="openApplyModal()" style="margin-top:12px;border-top:1px solid rgba(255,255,255,.1);padding-top:12px"><span class="nav-icon">📨</span>입사지원현황</div>
   </nav>
   <div class="sidebar-footer">
@@ -544,6 +545,34 @@ tr:last-child td{border-bottom:none}
         <button class="btn" style="padding:5px 14px;font-size:13px;border-radius:20px;border:1px solid #ddd" onclick="filterAdminQna('기타')">기타</button>
       </div>
       <div id="adminQnaList" style="min-height:60px;color:var(--text-sub);font-size:14px;text-align:center;padding:20px">Q&amp;A 탭 진입 시 자동 로드됩니다.</div>
+    </div>
+  </div>
+
+  <!-- ── 프로그램 관리 ── -->
+  <div class="tab-panel" id="tab-programs">
+    <div class="page-header"><h1>프로그램 관리</h1><p>교사가 다운로드할 수 있는 프로그램을 등록·삭제합니다.</p></div>
+    <div class="card">
+      <div class="card-title">프로그램 추가</div>
+      <div class="form-row">
+        <div class="form-group" style="flex:2"><label>프로그램명</label>
+          <input id="prog-name" placeholder="예: 생활기록부 추출기"></div>
+        <div class="form-group" style="flex:1"><label>버전</label>
+          <input id="prog-ver" placeholder="예: v2.1.0"></div>
+      </div>
+      <div class="form-group"><label>설명 (선택)</label>
+        <input id="prog-desc" placeholder="예: NEIS 생활기록부 Excel 추출 프로그램"></div>
+      <div class="form-group"><label>다운로드 URL (Google Drive 공유 링크)</label>
+        <input id="prog-url" placeholder="https://drive.google.com/file/d/..."></div>
+      <button class="btn btn-accent" onclick="adminAddProgram()">+ 추가</button>
+    </div>
+    <div class="card">
+      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
+        <span>등록된 프로그램 목록</span>
+        <button class="btn btn-ghost btn-sm" onclick="loadAdminPrograms()">🔄 새로고침</button>
+      </div>
+      <div id="adminProgramList">
+        <div style="text-align:center;padding:24px;color:var(--text-sub)">⏳ 불러오는 중...</div>
+      </div>
     </div>
   </div>
 
@@ -928,6 +957,7 @@ function showTab(id) {
   const match = navItems.find(n => n.getAttribute('onclick')?.includes(`'${id}'`));
   if (match) match.classList.add('active');
   if (id === 'practice') { loadPractice(); loadAdminQnAs(); }
+  if (id === 'programs') { loadAdminPrograms(); }
 }
 
 function openApplyModal() {
@@ -2826,6 +2856,75 @@ async function adminDeleteQna(id) {
   const r = await SAMIL_API.deleteQnA(allIds);
   if (r.success) await loadAdminQnAs();
   else alert(r.error || '삭제 실패');
+}
+
+
+// ══════════════════════════════════════════════
+// 프로그램 관리
+// ══════════════════════════════════════════════
+function _escHtmlAdmin(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+async function loadAdminPrograms(){
+  const el = document.getElementById('adminProgramList');
+  if(!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-sub)">⏳ 불러오는 중...</div>';
+  try{
+    const res = await SAMIL_API.getPrograms();
+    const list = (res && res.success && res.data) ? res.data : [];
+    if(!list.length){
+      el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-sub);font-size:13px">등록된 프로그램이 없습니다.</div>';
+      return;
+    }
+    el.innerHTML = '<div class="tbl-wrap"><table>' +
+      '<thead><tr><th>프로그램명</th><th>버전</th><th>설명</th><th>URL</th><th>관리</th></tr></thead>' +
+      '<tbody>' + list.map(p => `<tr>
+        <td><strong>${_escHtmlAdmin(p.name)}</strong></td>
+        <td>${_escHtmlAdmin(p.version||'—')}</td>
+        <td style="color:var(--text-sub)">${_escHtmlAdmin(p.desc||'—')}</td>
+        <td><a href="${_escHtmlAdmin(p.url||'#')}" target="_blank" rel="noopener" style="color:var(--primary-light);font-size:12px">링크 열기 ↗</a></td>
+        <td><button class="btn btn-sm btn-danger" onclick="adminDeleteProgram(${_escHtmlAdmin(JSON.stringify(p.id))})">삭제</button></td>
+      </tr>`).join('') +
+      '</tbody></table></div>';
+  }catch(e){
+    el.innerHTML = '<div style="color:var(--red);font-size:13px;padding:12px">프로그램 목록을 불러오지 못했습니다.</div>';
+  }
+}
+
+async function adminAddProgram(){
+  const name = document.getElementById('prog-name').value.trim();
+  const ver  = document.getElementById('prog-ver').value.trim();
+  const desc = document.getElementById('prog-desc').value.trim();
+  const url  = document.getElementById('prog-url').value.trim();
+  if(!name){ alert('프로그램명을 입력하세요'); return; }
+  if(!url){ alert('다운로드 URL을 입력하세요'); return; }
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = '추가 중...';
+  try{
+    const res = await SAMIL_API.addProgram(name, ver, desc, url);
+    if(res && res.success){
+      document.getElementById('prog-name').value = '';
+      document.getElementById('prog-ver').value  = '';
+      document.getElementById('prog-desc').value = '';
+      document.getElementById('prog-url').value  = '';
+      showSyncResult('프로그램이 추가되었습니다.');
+      loadAdminPrograms();
+    } else {
+      alert(res.error || '추가 실패');
+    }
+  }catch(e){
+    alert('오류: ' + e.message);
+  } finally{
+    btn.disabled = false; btn.textContent = '+ 추가';
+  }
+}
+
+async function adminDeleteProgram(id){
+  if(!confirm('이 프로그램을 삭제하시겠습니까?')) return;
+  try{
+    const res = await SAMIL_API.deleteProgram(id);
+    if(res && res.success){ showSyncResult('삭제되었습니다.'); loadAdminPrograms(); }
+    else alert(res.error || '삭제 실패');
+  }catch(e){ alert('오류: ' + e.message); }
 }
 
 </script>

@@ -380,6 +380,14 @@ tr:hover td{background:#fafbfd}
     <!-- 생기부 업로드 -->
     <div class="tab-panel" id="tab-upload">
       <div class="page-header"><h1>생활기록부 Excel 업로드</h1><p>추출기로 생성한 Excel 파일을 업로드하면 학생 계정이 자동 생성됩니다.</p></div>
+
+      <!-- 프로그램 다운로드 -->
+      <div class="card">
+        <div class="card-title">📥 생활기록부 추출 프로그램 다운로드</div>
+        <div id="programList">
+          <div style="text-align:center;padding:24px;color:var(--text-sub);font-size:13px">⏳ 불러오는 중...</div>
+        </div>
+      </div>
       <!-- 비담임교사 전용: 업로드 대상 학반 선택 -->
       <div class="card" id="nhUploadClassCard" style="display:none">
         <div class="card-title">📋 업로드 대상 학반 선택 <span style="font-size:12px;color:var(--text-sub);font-weight:400">(비담임교사 — 업로드할 반을 먼저 선택하세요)</span></div>
@@ -679,6 +687,8 @@ function init(){
   document.getElementById('d-uploaded').textContent= myStudents.filter(s=>s.uploaded).length;
   document.getElementById('d-jobs').textContent    = (DB.jobs||[]).filter(j=>j.active).length;
   _selId=null;
+  // 프로그램 목록 미리 로드
+  loadPrograms();
 
   // 최근 학생
   document.getElementById('recentStudentTb').innerHTML = myStudents.slice(0,5).map(s=>`
@@ -1172,6 +1182,41 @@ function showTab(id,el){
   document.getElementById('tab-'+id).classList.add('active');
   el.classList.add('active');
   if(id==='recommend') initRecommendTab();
+  if(id==='upload') loadPrograms();
+}
+
+function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── 프로그램 다운로드 목록 ──
+async function loadPrograms(){
+  const el = document.getElementById('programList');
+  if(!el) return;
+  try{
+    const res = await SAMIL_API.getPrograms();
+    const list = (res && res.success && res.data) ? res.data : [];
+    if(!list.length){
+      el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-sub);font-size:13px">등록된 프로그램이 없습니다. 관리자에게 문의하세요.</div>';
+      return;
+    }
+    el.innerHTML = list.map(p => `
+      <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:#FAFBFD">
+        <div style="font-size:28px">💾</div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:14px">${escHtml(p.name||'')}</div>
+          <div style="font-size:12px;color:var(--text-sub);margin-top:2px">
+            ${p.version ? `버전 ${escHtml(p.version)}` : ''}
+            ${p.desc ? ` &nbsp;·&nbsp; ${escHtml(p.desc)}` : ''}
+          </div>
+        </div>
+        <a href="${p.url||'#'}" target="_blank" rel="noopener"
+           style="padding:9px 18px;background:var(--primary);color:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap;transition:.15s"
+           onmouseover="this.style.background='#2E5FAD'" onmouseout="this.style.background='var(--primary)'">
+          ⬇ 다운로드
+        </a>
+      </div>`).join('');
+  }catch(e){
+    el.innerHTML = '<div style="color:var(--red);font-size:13px;padding:12px">프로그램 목록을 불러오지 못했습니다.</div>';
+  }
 }
 
 
