@@ -309,6 +309,7 @@ function switchPageTab(tab){
 
 // ── 초기화 ──
 window.addEventListener('DOMContentLoaded', async ()=>{
+  SAMIL_AUTH.restore();   // 기존 세션 키 → 통합 형식으로 정규화
   updateNavAuth();
 
   // 캐시 우선 렌더
@@ -583,7 +584,7 @@ async function deleteApplyRow(rowNum){
 // ── 선배 아카이브 ──
 async function initArchiveTab(){
   const gate = document.getElementById('archiveGate');
-  const isLoggedIn = sessionStorage.getItem('samilStudentAuth') || sessionStorage.getItem('samilTeacherAuth') || sessionStorage.getItem('samilAdminAuth') === '1';
+  const isLoggedIn = SAMIL_AUTH.isLoggedIn();
   if(!isLoggedIn){
     gate.innerHTML=`<div class="login-gate">
       <h3>🔐 로그인이 필요합니다</h3>
@@ -809,8 +810,7 @@ async function loginStudent(){
   const res=await SAMIL_API.loginStudent(dept,id,pw);
   if(btn){btn.textContent='로그인';btn.disabled=false;}
   if(res.success){
-    sessionStorage.setItem('samilStudentAuth',res.student.id);
-    sessionStorage.setItem('samilStudentME',JSON.stringify(res.student));
+    SAMIL_AUTH.setStudent(res.student);
     closeModal('loginModal');
     updateNavAuth();
     // 아카이브 탭 열려있으면 재초기화
@@ -838,8 +838,7 @@ async function loginTeacher(){
   }
   if(btn){btn.textContent='로그인';btn.disabled=false;}
   if(res.success){
-    sessionStorage.setItem('samilTeacherAuth',res.teacher.id);
-    sessionStorage.setItem('samilTeacherME',JSON.stringify(res.teacher));
+    SAMIL_AUTH.setTeacher(res.teacher);
     closeModal('loginModal');
     updateNavAuth();
     if(document.getElementById('panel-archive').style.display!=='none'){ ARCHIVE_DATA=[]; initArchiveTab(); }
@@ -855,7 +854,7 @@ function tryAdmin(){
   const masterPw=localStorage.getItem('samilMasterPw')||'samil_master';
   const commonPw=localStorage.getItem('samilCommonPw')||'samil2024';
   if(pw===masterPw||pw===commonPw){
-    sessionStorage.setItem('samilAdminAuth','1');
+    SAMIL_AUTH.setAdmin();
     closeModal('loginModal');
     updateNavAuth();
     if(document.getElementById('panel-archive').style.display!=='none'){ ARCHIVE_DATA=[]; initArchiveTab(); }
@@ -864,12 +863,13 @@ function tryAdmin(){
 
 function updateNavAuth(){
   const el=document.getElementById('nav-auth');
-  let href='',label='';
-  if(sessionStorage.getItem('samilAdminAuth')==='1'){ href='admin.html'; label='관리자 페이지'; }
-  else if(sessionStorage.getItem('samilTeacherAuth')){ const t=JSON.parse(sessionStorage.getItem('samilTeacherME')||'{}'); href='teacher.html'; label=(t.name||'담임')+'선생님'; }
-  else if(sessionStorage.getItem('samilStudentAuth')){ const s=JSON.parse(sessionStorage.getItem('samilStudentME')||'{}'); href='student.html'; label=(s.name||'학생')+'님'; }
-  if(href){
-    el.innerHTML=`<a href="${href}" class="nav-login" style="background:#38A169!important">${label}</a>`+
+  if(SAMIL_AUTH.isLoggedIn()){
+    const me=SAMIL_AUTH.getME();
+    let href='#';
+    if(me.role==='admin')   href='admin.html';
+    if(me.role==='teacher') href='teacher.html';
+    if(me.role==='student') href='student.html';
+    el.innerHTML=`<a href="${href}" class="nav-login" style="background:#38A169!important">${SAMIL_AUTH.getDisplayName()}</a>`+
       `<a href="#" onclick="doLogout();return false" style="color:rgba(255,255,255,.7);font-size:13px;padding:7px 10px">로그아웃</a>`;
   } else {
     el.innerHTML=`<a href="#" class="nav-login" onclick="openLogin();closeMenu();return false">로그인</a>`;
@@ -877,9 +877,7 @@ function updateNavAuth(){
 }
 
 function doLogout(){
-  ['samilAdminAuth','samilTeacherAuth','samilTeacherME',
-   'samilNonHomeTeacherAuth','samilNonHomeTeacherME',
-   'samilStudentAuth','samilStudentME','statsMe'].forEach(k=>sessionStorage.removeItem(k));
+  SAMIL_AUTH.logout();
   updateNavAuth();
   // 아카이브 탭이면 로그인 게이트로 복귀
   if(document.getElementById('panel-archive').style.display!=='none'){ ARCHIVE_DATA=[]; initArchiveTab(); }
@@ -888,6 +886,7 @@ function doLogout(){
 function toggleMenu(){ document.getElementById('navMenu').classList.toggle('open'); }
 function closeMenu(){ document.getElementById('navMenu').classList.remove('open'); }
 </script>
+<script src="samil-login.js"></script>
 <script src="samil-api.js"></script>
 </body>
 </html>

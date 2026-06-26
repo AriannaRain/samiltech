@@ -304,6 +304,7 @@ tr:hover td{background:#f9fafb}
   </div>
 </div>
 
+<script src="samil-login.js"></script>
 <script src="samil-api.js"></script>
 <script>
 let ME = null;
@@ -361,10 +362,7 @@ async function loginTeacher() {
     res = await SAMIL_API.loginTeacher(dept, grade, cls, name, pw);
   }
   if (!res.success) { showErr(res.error || '로그인 실패'); return; }
-  ME = { ...res.teacher, role: 'teacher' };
-  sessionStorage.setItem('statsMe', JSON.stringify(ME));
-  sessionStorage.setItem('samilTeacherAuth', res.teacher.id || '1');
-  sessionStorage.setItem('samilTeacherME', JSON.stringify(res.teacher));
+  ME = SAMIL_AUTH.setTeacher(res.teacher);
   afterLogin();
 }
 
@@ -373,8 +371,7 @@ async function loginAdmin() {
   if (!pw) { showErr('비밀번호를 입력하세요'); return; }
   const res = await SAMIL_API.verifyAdminPw(pw);
   if (!res.success) { showErr('비밀번호가 맞지 않습니다'); return; }
-  ME = { role: 'admin', name: '관리자' };
-  sessionStorage.setItem('statsMe', JSON.stringify(ME));
+  ME = SAMIL_AUTH.setAdmin();
   afterLogin();
 }
 
@@ -384,15 +381,12 @@ function showErr(msg) {
 }
 
 function logout() {
-  ['samilAdminAuth','samilTeacherAuth','samilTeacherME',
-   'samilNonHomeTeacherAuth','samilNonHomeTeacherME',
-   'samilStudentAuth','samilStudentME','statsMe'].forEach(k => sessionStorage.removeItem(k));
+  SAMIL_AUTH.logout();
   ME = null;
   location.reload();
 }
 
 function afterLogin() {
-  sessionStorage.setItem('statsMe', JSON.stringify(ME));
   closeLoginModal();
   _showContent();
   _renderNavAuth();
@@ -639,24 +633,12 @@ function closeApplyStatusModal() {
 // ══════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', async () => {
   if (typeof SAMIL_API.ping === "function") SAMIL_API.ping();
-  // ── 기존 세션 자동 로그인 ──
-  const adminAuth   = sessionStorage.getItem('samilAdminAuth');
-  const teacherAuth = sessionStorage.getItem('samilTeacherAuth');
-  const teacherME   = sessionStorage.getItem('samilTeacherME');
-
-  if (adminAuth === '1') {
-    ME = { role: 'admin', name: '관리자' };
-    sessionStorage.setItem('statsMe', JSON.stringify(ME));
+  // ── 기존 세션 자동 로그인 (SAMIL_AUTH 통합) ──
+  SAMIL_AUTH.restore();  // 어떤 페이지에서 로그인해도 통합 키로 정규화
+  if (SAMIL_AUTH.isLoggedIn()) {
+    ME = SAMIL_AUTH.getME();
     _showContent(); _renderNavAuth(); loadData();
-  } else if (teacherAuth && teacherME) {
-    try {
-      const t = JSON.parse(teacherME);
-      ME = { ...t, role: 'teacher' };
-      sessionStorage.setItem('statsMe', JSON.stringify(ME));
-      _showContent(); _renderNavAuth(); loadData();
-    } catch(_) { _showLoginGate(); }
   } else {
-    sessionStorage.removeItem('statsMe'); // 전역 로그아웃 후 남은 statsMe 정리
     _showLoginGate();
   }
 
@@ -703,7 +685,7 @@ function closeLoginModal() {
 function _renderNavAuth() {
   const el = document.getElementById('nav-auth');
   if (!el) return;
-  if (!ME) {
+  if (!ME || !SAMIL_AUTH.isLoggedIn()) {
     el.innerHTML = `<a href="#" class="nav-login" onclick="openLoginModal();return false">로그인</a>`;
     return;
   }
@@ -712,7 +694,7 @@ function _renderNavAuth() {
       `<a href="admin.html" class="nav-login" style="background:#38A169!important">관리자 페이지</a>` +
       `<a href="#" onclick="logout();return false" style="color:rgba(255,255,255,.7);font-size:13px;padding:7px 10px">로그아웃</a>`;
   } else {
-    const label = (ME.name || '담임') + '선생님';
+    const label = SAMIL_AUTH.getDisplayName() || ((ME.name || '담임') + '선생님');
     el.innerHTML =
       `<a href="teacher.html" class="nav-login" style="background:#38A169!important">${label}</a>` +
       `<a href="#" onclick="logout();return false" style="color:rgba(255,255,255,.7);font-size:13px;padding:7px 10px">로그아웃</a>`;
