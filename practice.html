@@ -179,7 +179,7 @@ footer strong{color:#fff}
 .qna-modal-submit{padding:12px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;width:100%}
 .qna-modal-submit:disabled{opacity:.6;cursor:not-allowed}
 /* ── 2단 레이아웃 (좌: Q&A+자료실 / 우: 소위원회+안내사항) ── */
-.practice-layout{max-width:1240px;margin:0 auto;padding:28px 16px;display:grid;grid-template-columns:1.5fr 1fr;gap:0;align-items:start}
+.practice-layout{max-width:1520px;margin:0 auto;padding:28px 16px;display:grid;grid-template-columns:1.2fr 1fr;gap:0;align-items:start}
 .practice-left{min-width:0;padding-right:24px}
 .practice-right{min-width:0;display:flex;flex-direction:column;gap:24px;padding-left:24px}
 @media(min-width:961px){.practice-left{border-right:1px solid var(--border)}}
@@ -194,6 +194,11 @@ footer strong{color:#fff}
 .committee-table{width:100%;border-collapse:collapse;font-size:12px}
 .committee-table thead th{position:sticky;top:0;background:#F4F6FA;padding:9px 6px;font-size:11px;font-weight:700;color:var(--text-sub);border-bottom:1px solid var(--border);text-align:center;z-index:1}
 .committee-table td{padding:9px 6px;border-bottom:1px solid var(--border);text-align:center;color:var(--text);word-break:break-word}
+.committee-table th:nth-child(1),.committee-table td:nth-child(1){width:32px}
+.committee-table th:nth-child(2),.committee-table td:nth-child(2){width:13%}
+.committee-table th:nth-child(3),.committee-table td:nth-child(3){width:78px;white-space:nowrap}
+.committee-table th:nth-child(4),.committee-table td:nth-child(4){width:17%}
+.committee-table th:nth-child(5),.committee-table td:nth-child(5){text-align:left;padding-left:10px}
 .committee-table tbody tr:last-child td{border-bottom:none}
 .committee-table tbody tr:hover td{background:#F7F9FC}
 .side-panel-empty{padding:28px 16px;text-align:center;color:var(--text-sub);font-size:13px}
