@@ -117,6 +117,9 @@ footer strong{color:#fff}
 .qna-title-text{font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
 .qna-file-icon{color:var(--text-sub);font-size:13px;flex-shrink:0}
 .qna-ans-count{display:inline-block;background:#EBF8FF;color:#2B6CB0;font-size:11px;font-weight:700;padding:1px 7px;border-radius:10px;flex-shrink:0}
+.qna-toggle-btn{margin-left:auto;flex-shrink:0;padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:14px;font-size:11px;font-weight:600;color:var(--text-sub);cursor:pointer;font-family:inherit;white-space:nowrap;transition:.15s}
+.qna-toggle-btn:hover{background:var(--primary);border-color:var(--primary);color:#fff}
+.qna-row.open .qna-toggle-btn{background:var(--primary);border-color:var(--primary);color:#fff}
 /* 상태 배지 */
 .badge-wait{display:inline-block;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;background:#FFF3E0;color:#E65100;border:1px solid #FFB74D;white-space:nowrap}
 .badge-done{display:inline-block;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;background:#E8F5E9;color:#2E7D32;border:1px solid #81C784;white-space:nowrap}
@@ -873,7 +876,7 @@ function renderQnas() {
     rows += `<tr class="qna-row${_qnaOpenId===q.id?' open':''}" onclick="toggleQna('${q.id}')">
       <td class="col-num">${filtered.length - idx}</td>
       <td class="col-status">${badge}</td>
-      <td class="col-title"><div class="qna-title-cell">${fileIcon}<span class="qna-title-text">${escHtml(q.title||q.content||'')}</span>${ansCnt}</div></td>
+      <td class="col-title"><div class="qna-title-cell">${fileIcon}<span class="qna-title-text">${escHtml(q.title||q.content||'')}</span>${ansCnt}<button class="qna-toggle-btn" onclick="event.stopPropagation();toggleQna('${q.id}')">${_qnaOpenId===q.id ? '▲ 접기' : '▼ 펼치기'}</button></div></td>
       <td class="col-ans" style="color:var(--text-sub)">${answers.length}</td>
       <td class="col-author">${escHtml(q.author||'')}</td>
       <td class="col-date">${dateStr}</td>
