@@ -173,6 +173,40 @@ footer strong{color:#fff}
 .qna-file-name{font-size:12px;color:var(--primary);margin-top:6px}
 .qna-modal-submit{padding:12px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;width:100%}
 .qna-modal-submit:disabled{opacity:.6;cursor:not-allowed}
+/* ── 2단 레이아웃 (좌: Q&A+자료실 / 우: 소위원회+안내사항) ── */
+.practice-layout{max-width:1240px;margin:0 auto;padding:28px 16px;display:grid;grid-template-columns:1.5fr 1fr;gap:24px;align-items:start}
+@media(max-width:960px){.practice-layout{grid-template-columns:1fr}}
+.practice-left{min-width:0}
+.practice-right{min-width:0;display:flex;flex-direction:column;gap:24px}
+/* 우측 사이드 패널 (소위원회 시트 / 안내사항 메모창) */
+.side-panel{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden}
+.side-panel-header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 18px;background:var(--primary);color:#fff}
+.side-panel-title{font-size:14px;font-weight:700;white-space:nowrap}
+.side-panel-add{padding:6px 12px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.side-panel-add:hover{background:rgba(255,255,255,.28)}
+.committee-scroll{max-height:380px;overflow-y:auto}
+.committee-table{width:100%;border-collapse:collapse;font-size:12px}
+.committee-table thead th{position:sticky;top:0;background:#F4F6FA;padding:9px 6px;font-size:11px;font-weight:700;color:var(--text-sub);border-bottom:1px solid var(--border);text-align:center;z-index:1}
+.committee-table td{padding:9px 6px;border-bottom:1px solid var(--border);text-align:center;color:var(--text);word-break:break-word}
+.committee-table tbody tr:last-child td{border-bottom:none}
+.committee-table tbody tr:hover td{background:#F7F9FC}
+.side-panel-empty{padding:28px 16px;text-align:center;color:var(--text-sub);font-size:13px}
+.side-row-btn{background:none;border:none;cursor:pointer;color:var(--text-sub);font-size:13px;padding:2px 4px;line-height:1}
+.side-row-btn:hover{color:#C53030}
+.notice-list{max-height:380px;overflow-y:auto;padding:8px 18px}
+.notice-item{padding:12px 0;border-bottom:1px solid var(--border)}
+.notice-item:last-child{border-bottom:none}
+.notice-item-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.notice-item-meta{font-size:11px;color:var(--text-sub);white-space:nowrap}
+.notice-item-content{font-size:13px;line-height:1.65;color:var(--text);white-space:pre-wrap;word-break:break-word}
+/* 소위원회 / 안내사항 작성 모달 (Q&A 모달 스타일 재사용) */
+.side-form-group{margin-bottom:14px}
+.side-form-group label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+.side-form-group input,.side-form-group textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box}
+.side-form-group input:focus,.side-form-group textarea:focus{border-color:var(--primary-light)}
+.side-form-group textarea{resize:vertical;min-height:90px}
+.side-form-row{display:flex;gap:10px}
+.side-form-row .side-form-group{flex:1}
 </style>
 </head>
 <body>
@@ -201,46 +235,111 @@ footer strong{color:#fff}
   </div>
 </div>
 
-<!-- Q&A 게시판 섹션 (상단) -->
-<div class="container qna-section" id="qnaSection" style="display:none">
-  <!-- 헤더 행: 제목 + 탭 + 글쓰기 -->
-  <div class="qna-board-top">
-    <div class="qna-board-title">💬 현장실습 Q&amp;A</div>
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <div class="qna-tab-group">
-        <button class="qna-tab active" onclick="setQnaTab('all',this)">전체질문</button>
-        <button class="qna-tab" onclick="setQnaTab('wait',this)">진행중 Q&amp;A</button>
-        <button class="qna-tab" onclick="setQnaTab('done',this)">완료된 Q&amp;A</button>
+<!-- 2단 레이아웃: 좌(Q&A + 자료실) / 우(소위원회 + 안내사항) -->
+<div class="practice-layout" id="practiceLayout" style="display:none">
+  <div class="practice-left">
+    <!-- Q&A 게시판 섹션 -->
+    <div class="qna-section" id="qnaSection">
+      <!-- 헤더 행: 제목 + 탭 + 글쓰기 -->
+      <div class="qna-board-top">
+        <div class="qna-board-title">💬 현장실습 Q&amp;A</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div class="qna-tab-group">
+            <button class="qna-tab active" onclick="setQnaTab('all',this)">전체질문</button>
+            <button class="qna-tab" onclick="setQnaTab('wait',this)">진행중 Q&amp;A</button>
+            <button class="qna-tab" onclick="setQnaTab('done',this)">완료된 Q&amp;A</button>
+          </div>
+          <button class="qna-write-btn" id="qnaWriteBtn" onclick="openQnaForm()" style="display:none">✏️ 글쓰기</button>
+        </div>
       </div>
-      <button class="qna-write-btn" id="qnaWriteBtn" onclick="openQnaForm()" style="display:none">✏️ 글쓰기</button>
+      <!-- 게시판 테이블 -->
+      <table class="qna-board-table" id="qnaBoardTable">
+        <thead>
+          <tr>
+            <th class="col-num">번호</th>
+            <th class="col-status">상태</th>
+            <th class="col-title">제목</th>
+            <th class="col-ans">답변</th>
+            <th class="col-author">작성자</th>
+            <th class="col-date">날짜</th>
+          </tr>
+        </thead>
+        <tbody id="qnaList"><tr><td colspan="6" class="qna-board-loading">Q&amp;A를 불러오는 중...</td></tr></tbody>
+      </table>
+    </div>
+
+    <!-- 자료실 구분선 + 자료실 섹션 -->
+    <div id="fileSection">
+      <div class="file-section-divider">
+        <div class="file-section-label">📂 현장실습 자료실</div>
+      </div>
+      <div id="mainContent"></div>
     </div>
   </div>
-  <!-- 게시판 테이블 -->
-  <table class="qna-board-table" id="qnaBoardTable">
-    <thead>
-      <tr>
-        <th class="col-num">번호</th>
-        <th class="col-status">상태</th>
-        <th class="col-title">제목</th>
-        <th class="col-ans">답변</th>
-        <th class="col-author">작성자</th>
-        <th class="col-date">날짜</th>
-      </tr>
-    </thead>
-    <tbody id="qnaList"><tr><td colspan="6" class="qna-board-loading">Q&amp;A를 불러오는 중...</td></tr></tbody>
-  </table>
-</div>
 
-<!-- 자료실 구분선 + 자료실 섹션 -->
-<div class="container" id="fileSection" style="display:none">
-  <div class="file-section-divider">
-    <div class="file-section-label">📂 현장실습 자료실</div>
+  <div class="practice-right">
+    <!-- 현장실습소위원회 관리 시트 -->
+    <div class="side-panel" id="committeeSection">
+      <div class="side-panel-header">
+        <span class="side-panel-title">🗂 현장실습소위원회 관리</span>
+        <button class="side-panel-add" id="committeeAddBtn" onclick="openCommitteeForm()" style="display:none">+ 추가</button>
+      </div>
+      <div class="committee-scroll">
+        <table class="committee-table">
+          <thead>
+            <tr><th>No</th><th>학과</th><th>일자</th><th>기한번호</th><th>비고</th><th id="committeeActionsHead" style="display:none"></th></tr>
+          </thead>
+          <tbody id="committeeList"><tr><td colspan="6" class="side-panel-empty">불러오는 중...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 안내사항 메모창 -->
+    <div class="side-panel" id="noticeSection">
+      <div class="side-panel-header">
+        <span class="side-panel-title">📌 안내사항</span>
+        <button class="side-panel-add" id="noticeAddBtn" onclick="openNoticeForm()" style="display:none">+ 안내 추가</button>
+      </div>
+      <div class="notice-list" id="noticeList">불러오는 중...</div>
+    </div>
   </div>
-  <div id="mainContent"></div>
 </div>
 
 <!-- 비로그인 시 단일 게이트 -->
 <div class="container" id="gateContent"></div>
+
+<!-- 소위원회 등록 모달 -->
+<div class="qna-modal-overlay" id="committeeModal" onclick="if(event.target===this)closeCommitteeModal()">
+  <div class="qna-modal">
+    <div class="qna-modal-header">
+      <div class="qna-modal-title">🗂 소위원회 항목 등록</div>
+      <button class="qna-modal-close" onclick="closeCommitteeModal()">✕</button>
+    </div>
+    <div class="qna-modal-body">
+      <div class="side-form-group"><label>학과</label><input id="cm-dept" placeholder="예: 로봇설계과"></div>
+      <div class="side-form-row">
+        <div class="side-form-group"><label>일자</label><input type="date" id="cm-date"></div>
+        <div class="side-form-group"><label>내부기한번호</label><input id="cm-refno" placeholder="예: 2026-013"></div>
+      </div>
+      <div class="side-form-group"><label>비고</label><textarea id="cm-note" placeholder="비고 사항을 입력하세요"></textarea></div>
+      <button class="qna-modal-submit" onclick="submitCommittee()">등록하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 안내사항 등록 모달 -->
+<div class="qna-modal-overlay" id="noticeModal" onclick="if(event.target===this)closeNoticeModal()">
+  <div class="qna-modal">
+    <div class="qna-modal-header">
+      <div class="qna-modal-title">📌 안내사항 등록</div>
+      <button class="qna-modal-close" onclick="closeNoticeModal()">✕</button>
+    </div>
+    <div class="qna-modal-body">
+      <div class="side-form-group"><label>내용</label><textarea id="nt-content" placeholder="안내할 내용을 입력하세요"></textarea></div>
+      <button class="qna-modal-submit" onclick="submitNotice()">등록하기</button>
+    </div>
+  </div>
+</div>
 
 <!-- Q&A 작성 모달 -->
 <div class="qna-modal-overlay" id="qnaModal" onclick="if(event.target===this)closeQnaModal()">
@@ -403,9 +502,9 @@ function toggleQnaSection() {
 async function render() {
   updateNavAuth();
 
-  const gate    = document.getElementById('gateContent');
-  const fileSec = document.getElementById('fileSection');
-  const mainEl  = document.getElementById('mainContent');
+  const gate   = document.getElementById('gateContent');
+  const layout = document.getElementById('practiceLayout');
+  const mainEl = document.getElementById('mainContent');
 
   if (!isLoggedIn()) {
     gate.innerHTML = `<div class="login-gate">
@@ -413,12 +512,12 @@ async function render() {
       <p>현장실습 자료실 및 Q&A는 담임교사 또는 관리자 로그인 후 이용할 수 있습니다.</p>
       <button class="login-gate-btn" onclick="openLogin()">로그인하기</button>
     </div>`;
-    fileSec.style.display = 'none';
+    layout.style.display = 'none';
     return;
   }
 
   gate.innerHTML = '';
-  fileSec.style.display = '';
+  layout.style.display = 'grid';
 
   // ① 캐시 즉시 표시
   const cached = _loadCache();
@@ -517,6 +616,8 @@ async function doLogin() {
     SAMIL_AUTH.setTeacher(res.teacher);
     document.getElementById('loginModal').classList.remove('open');
     render(); renderQnaSection(); loadQnAs();
+    renderCommitteeSection(); loadCommittee();
+    renderNoticeSection(); loadNotices();
   } else {
     const pwEl=_prSubMode==='nh'?document.getElementById('nh-l-pw'):document.getElementById('l-pw');
     if(pwEl)pwEl.value='';
@@ -531,12 +632,15 @@ async function doAdminLogin() {
     SAMIL_AUTH.setAdmin();
     document.getElementById('loginModal').classList.remove('open');
     render(); renderQnaSection(); loadQnAs();
+    renderCommitteeSection(); loadCommittee();
+    renderNoticeSection(); loadNotices();
   } else { document.getElementById('a-pw').value=''; alert('비밀번호가 맞지 않습니다'); }
 }
 
 function doLogout() {
   SAMIL_AUTH.logout();
   updateNavAuth(); render(); renderQnaSection();
+  renderCommitteeSection(); renderNoticeSection();
 }
 
 function updateNavAuth() {
@@ -577,17 +681,135 @@ function _qnaLoadCache() {
 }
 
 function renderQnaSection() {
-  const sec      = document.getElementById('qnaSection');
+  if (!isLoggedIn()) return;
   const writeBtn = document.getElementById('qnaWriteBtn');
-  const fileSec  = document.getElementById('fileSection');
-  if (!isLoggedIn()) {
-    sec.style.display     = 'none';
-    if (fileSec) fileSec.style.display = 'none';
+  if (writeBtn) writeBtn.style.display = isTeacher() ? '' : 'none';
+}
+
+// ── 현장실습소위원회 관리 ──────────────────────
+let _committeeAll = [];
+
+function renderCommitteeSection() {
+  if (!isLoggedIn()) return;
+  const addBtn = document.getElementById('committeeAddBtn');
+  const head   = document.getElementById('committeeActionsHead');
+  if (addBtn) addBtn.style.display = isAdmin() ? '' : 'none';
+  if (head)   head.style.display   = isAdmin() ? '' : 'none';
+}
+
+async function loadCommittee() {
+  if (!isLoggedIn()) return;
+  try {
+    const r = await SAMIL_API.getCommittee();
+    _committeeAll = r.success ? (r.data || []) : [];
+  } catch(_) { _committeeAll = []; }
+  renderCommittee();
+}
+
+function renderCommittee() {
+  const tbody = document.getElementById('committeeList');
+  if (!tbody) return;
+  const cols = isAdmin() ? 6 : 5;
+  if (!_committeeAll.length) {
+    tbody.innerHTML = `<tr><td colspan="${cols}" class="side-panel-empty">등록된 항목이 없습니다.</td></tr>`;
     return;
   }
-  sec.style.display = '';
-  if (fileSec) fileSec.style.display = '';
-  if (writeBtn) writeBtn.style.display = isTeacher() ? '' : 'none';
+  tbody.innerHTML = _committeeAll.map((c, idx) => `
+    <tr>
+      <td>${_committeeAll.length - idx}</td>
+      <td>${escHtml(c.dept)}</td>
+      <td>${escHtml((c.date||'').substring(0,10))}</td>
+      <td>${escHtml(c.refNo)}</td>
+      <td>${escHtml(c.note)}</td>
+      ${isAdmin() ? `<td><button class="side-row-btn" onclick="deleteCommitteeRow('${c.id}')" title="삭제">🗑</button></td>` : ''}
+    </tr>`).join('');
+}
+
+function openCommitteeForm() {
+  if (!isAdmin()) return;
+  document.getElementById('committeeModal').classList.add('open');
+}
+
+function closeCommitteeModal() {
+  document.getElementById('committeeModal').classList.remove('open');
+  ['cm-dept','cm-date','cm-refno','cm-note'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+}
+
+async function submitCommittee() {
+  const dept  = document.getElementById('cm-dept').value.trim();
+  const date  = document.getElementById('cm-date').value;
+  const refNo = document.getElementById('cm-refno').value.trim();
+  const note  = document.getElementById('cm-note').value.trim();
+  if (!dept || !date) { alert('학과와 일자를 입력하세요'); return; }
+  const r = await SAMIL_API.addCommittee({ dept, date, refNo, note });
+  if (r.success) { closeCommitteeModal(); await loadCommittee(); }
+  else alert(r.error || '등록 실패');
+}
+
+async function deleteCommitteeRow(id) {
+  if (!confirm('삭제하시겠습니까?')) return;
+  const r = await SAMIL_API.deleteCommittee(id);
+  if (r.success) await loadCommittee();
+  else alert(r.error || '삭제 실패');
+}
+
+// ── 현장실습 안내사항 메모창 ────────────────────
+let _noticeAll = [];
+
+function renderNoticeSection() {
+  if (!isLoggedIn()) return;
+  const addBtn = document.getElementById('noticeAddBtn');
+  if (addBtn) addBtn.style.display = isAdmin() ? '' : 'none';
+}
+
+async function loadNotices() {
+  if (!isLoggedIn()) return;
+  try {
+    const r = await SAMIL_API.getNotices();
+    _noticeAll = r.success ? (r.data || []) : [];
+  } catch(_) { _noticeAll = []; }
+  renderNotices();
+}
+
+function renderNotices() {
+  const list = document.getElementById('noticeList');
+  if (!list) return;
+  if (!_noticeAll.length) { list.innerHTML = `<div class="side-panel-empty">등록된 안내사항이 없습니다.</div>`; return; }
+  list.innerHTML = _noticeAll.map(n => `
+    <div class="notice-item">
+      <div class="notice-item-top">
+        <span class="notice-item-meta">${escHtml(n.author||'')} · ${(n.date||'').substring(0,10)}</span>
+        ${isAdmin() ? `<button class="side-row-btn" onclick="deleteNoticeItem('${n.id}')" title="삭제">🗑</button>` : ''}
+      </div>
+      <div class="notice-item-content">${escHtml(n.content)}</div>
+    </div>`).join('');
+}
+
+function openNoticeForm() {
+  if (!isAdmin()) return;
+  document.getElementById('noticeModal').classList.add('open');
+}
+
+function closeNoticeModal() {
+  document.getElementById('noticeModal').classList.remove('open');
+  const el = document.getElementById('nt-content'); if (el) el.value = '';
+}
+
+async function submitNotice() {
+  const content = document.getElementById('nt-content').value.trim();
+  if (!content) { alert('내용을 입력하세요'); return; }
+  let myName = '관리자';
+  try { myName = getMyName(); } catch(_) {}
+  const r = await SAMIL_API.addNotice({ content, author: myName });
+  if (r.success) { closeNoticeModal(); await loadNotices(); }
+  else alert(r.error || '등록 실패');
+}
+
+async function deleteNoticeItem(id) {
+  if (!confirm('삭제하시겠습니까?')) return;
+  const r = await SAMIL_API.deleteNotice(id);
+  if (r.success) await loadNotices();
+  else alert(r.error || '삭제 실패');
 }
 
 async function loadQnAs() {
@@ -799,9 +1021,11 @@ async function submitQna() {
 window.addEventListener('DOMContentLoaded', () => {
   SAMIL_AUTH.restore();  // 기존 세션 키 → 통합 형식으로 정규화
   if (typeof SAMIL_API.ping === "function") SAMIL_API.ping();
-  renderQnaSection(); // 섹션 가시성 먼저
-  render();           // 자료실 내용 로드
-  if (isLoggedIn()) loadQnAs();
+  renderQnaSection();        // 섹션 가시성 먼저
+  renderCommitteeSection();
+  renderNoticeSection();
+  render();                  // 자료실 내용 로드
+  if (isLoggedIn()) { loadQnAs(); loadCommittee(); loadNotices(); }
 });
 </script>
 <script src="samil-login.js"></script>

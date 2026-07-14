@@ -500,6 +500,50 @@ const SAMIL_API = (() => {
   }
 
   // ════════════════════════════════════════════
+  // 현장실습소위원회 (조회: 로그인 사용자 / 쓰기: 관리자 전용)
+  // ════════════════════════════════════════════
+  async function getCommittee() {
+    const c = _cGet('committee'); if (c) return c;
+    const r = await get({ action: 'getCommittee' });
+    if (r.success) _cSet('committee', r, 300000);
+    return r;
+  }
+  async function addCommittee(data) {
+    _cDel('committee');
+    return call({ action: 'addCommittee', token: ADMIN_TOKEN, ...data });
+  }
+  async function updateCommittee(data) {
+    _cDel('committee');
+    return call({ action: 'updateCommittee', token: ADMIN_TOKEN, ...data });
+  }
+  async function deleteCommittee(id) {
+    _cDel('committee');
+    return call({ action: 'deleteCommittee', token: ADMIN_TOKEN, id });
+  }
+
+  // ════════════════════════════════════════════
+  // 현장실습 안내사항 메모 (조회: 로그인 사용자 / 쓰기: 관리자 전용)
+  // ════════════════════════════════════════════
+  async function getNotices() {
+    const c = _cGet('notices'); if (c) return c;
+    const r = await get({ action: 'getNotices' });
+    if (r.success) _cSet('notices', r, 300000);
+    return r;
+  }
+  async function addNotice(data) {
+    _cDel('notices');
+    return call({ action: 'addNotice', token: ADMIN_TOKEN, ...data });
+  }
+  async function updateNotice(data) {
+    _cDel('notices');
+    return call({ action: 'updateNotice', token: ADMIN_TOKEN, ...data });
+  }
+  async function deleteNotice(id) {
+    _cDel('notices');
+    return call({ action: 'deleteNotice', token: ADMIN_TOKEN, id });
+  }
+
+  // ════════════════════════════════════════════
   // 시트 초기화
   // ════════════════════════════════════════════
   async function initSheets() {
@@ -543,6 +587,8 @@ const SAMIL_API = (() => {
     getPracticeSections, addPracticeSection, updatePracticeSection, deletePracticeSection, reorderPracticeSection,
     getPracticeFiles, addPracticeFile, updatePracticeFile, deletePracticeFile, reorderPracticeFile,
     getQnAs, addQnA, addQnAAnswer, deleteQnA, markAnswered, uploadQnAFile,
+    getCommittee, addCommittee, updateCommittee, deleteCommittee,
+    getNotices, addNotice, updateNotice, deleteNotice,
     getPrograms, addProgram, deleteProgram,
     initSheets,
   };
