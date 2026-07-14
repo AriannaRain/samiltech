@@ -323,7 +323,7 @@ footer strong{color:#fff}
 <div class="qna-modal-overlay" id="committeeModal" onclick="if(event.target===this)closeCommitteeModal()">
   <div class="qna-modal">
     <div class="qna-modal-header">
-      <div class="qna-modal-title">🗂 소위원회 항목 등록</div>
+      <div class="qna-modal-title" id="committeeModalTitle">🗂 소위원회 항목 등록</div>
       <button class="qna-modal-close" onclick="closeCommitteeModal()">✕</button>
     </div>
     <div class="qna-modal-body">
@@ -333,7 +333,7 @@ footer strong{color:#fff}
         <div class="side-form-group"><label>내부기한번호</label><input id="cm-refno" placeholder="예: 2026-013"></div>
       </div>
       <div class="side-form-group"><label>비고</label><textarea id="cm-note" placeholder="비고 사항을 입력하세요"></textarea></div>
-      <button class="qna-modal-submit" onclick="submitCommittee()">등록하기</button>
+      <button class="qna-modal-submit" id="committeeSubmitBtn" onclick="submitCommittee()">등록하기</button>
     </div>
   </div>
 </div>
@@ -342,12 +342,12 @@ footer strong{color:#fff}
 <div class="qna-modal-overlay" id="noticeModal" onclick="if(event.target===this)closeNoticeModal()">
   <div class="qna-modal">
     <div class="qna-modal-header">
-      <div class="qna-modal-title">📌 안내사항 등록</div>
+      <div class="qna-modal-title" id="noticeModalTitle">📌 안내사항 등록</div>
       <button class="qna-modal-close" onclick="closeNoticeModal()">✕</button>
     </div>
     <div class="qna-modal-body">
       <div class="side-form-group"><label>내용</label><textarea id="nt-content" placeholder="안내할 내용을 입력하세요"></textarea></div>
-      <button class="qna-modal-submit" onclick="submitNotice()">등록하기</button>
+      <button class="qna-modal-submit" id="noticeSubmitBtn" onclick="submitNotice()">등록하기</button>
     </div>
   </div>
 </div>
@@ -732,18 +732,38 @@ function renderCommittee() {
       <td>${escHtml((c.date||'').substring(0,10))}</td>
       <td>${escHtml(c.refNo)}</td>
       <td>${escHtml(c.note)}</td>
-      ${isAdmin() ? `<td><button class="side-row-btn" onclick="deleteCommitteeRow('${c.id}')" title="삭제">🗑</button></td>` : ''}
+      ${isAdmin() ? `<td style="white-space:nowrap"><button class="side-row-btn" onclick="openCommitteeForm('${c.id}')" title="수정">✏️</button><button class="side-row-btn" onclick="deleteCommitteeRow('${c.id}')" title="삭제">🗑</button></td>` : ''}
     </tr>`).join('');
 }
 
-function openCommitteeForm() {
+let _committeeEditId = null;
+
+function openCommitteeForm(id) {
   if (!isAdmin()) return;
+  _committeeEditId = id || null;
+  const titleEl  = document.getElementById('committeeModalTitle');
+  const submitEl = document.getElementById('committeeSubmitBtn');
+  if (_committeeEditId) {
+    const c = _committeeAll.find(x => x.id === _committeeEditId);
+    if (c) {
+      document.getElementById('cm-dept').value  = c.dept  || '';
+      document.getElementById('cm-date').value  = c.date  || '';
+      document.getElementById('cm-refno').value = c.refNo || '';
+      document.getElementById('cm-note').value  = c.note  || '';
+    }
+    if (titleEl)  titleEl.textContent  = '🗂 소위원회 항목 수정';
+    if (submitEl) submitEl.textContent = '수정하기';
+  } else {
+    if (titleEl)  titleEl.textContent  = '🗂 소위원회 항목 등록';
+    if (submitEl) submitEl.textContent = '등록하기';
+  }
   document.getElementById('committeeModal').classList.add('open');
 }
 
 function closeCommitteeModal() {
   document.getElementById('committeeModal').classList.remove('open');
   ['cm-dept','cm-date','cm-refno','cm-note'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  _committeeEditId = null;
 }
 
 async function submitCommittee() {
@@ -752,9 +772,11 @@ async function submitCommittee() {
   const refNo = document.getElementById('cm-refno').value.trim();
   const note  = document.getElementById('cm-note').value.trim();
   if (!dept || !date) { alert('학과와 일자를 입력하세요'); return; }
-  const r = await SAMIL_API.addCommittee({ dept, date, refNo, note });
+  const r = _committeeEditId
+    ? await SAMIL_API.updateCommittee({ id: _committeeEditId, dept, date, refNo, note })
+    : await SAMIL_API.addCommittee({ dept, date, refNo, note });
   if (r.success) { closeCommitteeModal(); await loadCommittee(); }
-  else alert(r.error || '등록 실패');
+  else alert(r.error || '저장 실패');
 }
 
 async function deleteCommitteeRow(id) {
@@ -790,20 +812,35 @@ function renderNotices() {
     <div class="notice-item">
       <div class="notice-item-top">
         <span class="notice-item-meta">${escHtml(n.author||'')} · ${(n.date||'').substring(0,10)}</span>
-        ${isAdmin() ? `<button class="side-row-btn" onclick="deleteNoticeItem('${n.id}')" title="삭제">🗑</button>` : ''}
+        ${isAdmin() ? `<span style="white-space:nowrap"><button class="side-row-btn" onclick="openNoticeForm('${n.id}')" title="수정">✏️</button><button class="side-row-btn" onclick="deleteNoticeItem('${n.id}')" title="삭제">🗑</button></span>` : ''}
       </div>
       <div class="notice-item-content">${escHtml(n.content)}</div>
     </div>`).join('');
 }
 
-function openNoticeForm() {
+let _noticeEditId = null;
+
+function openNoticeForm(id) {
   if (!isAdmin()) return;
+  _noticeEditId = id || null;
+  const titleEl  = document.getElementById('noticeModalTitle');
+  const submitEl = document.getElementById('noticeSubmitBtn');
+  if (_noticeEditId) {
+    const n = _noticeAll.find(x => x.id === _noticeEditId);
+    if (n) document.getElementById('nt-content').value = n.content || '';
+    if (titleEl)  titleEl.textContent  = '📌 안내사항 수정';
+    if (submitEl) submitEl.textContent = '수정하기';
+  } else {
+    if (titleEl)  titleEl.textContent  = '📌 안내사항 등록';
+    if (submitEl) submitEl.textContent = '등록하기';
+  }
   document.getElementById('noticeModal').classList.add('open');
 }
 
 function closeNoticeModal() {
   document.getElementById('noticeModal').classList.remove('open');
   const el = document.getElementById('nt-content'); if (el) el.value = '';
+  _noticeEditId = null;
 }
 
 async function submitNotice() {
@@ -811,9 +848,11 @@ async function submitNotice() {
   if (!content) { alert('내용을 입력하세요'); return; }
   let myName = '관리자';
   try { myName = getMyName(); } catch(_) {}
-  const r = await SAMIL_API.addNotice({ content, author: myName });
+  const r = _noticeEditId
+    ? await SAMIL_API.updateNotice({ id: _noticeEditId, content })
+    : await SAMIL_API.addNotice({ content, author: myName });
   if (r.success) { closeNoticeModal(); await loadNotices(); }
-  else alert(r.error || '등록 실패');
+  else alert(r.error || '저장 실패');
 }
 
 async function deleteNoticeItem(id) {
