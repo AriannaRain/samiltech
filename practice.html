@@ -86,7 +86,7 @@ nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:var(--pri
 footer{background:var(--primary);color:rgba(255,255,255,.65);text-align:center;padding:20px;font-size:12px;margin-top:48px}
 footer strong{color:#fff}
 /* ── Q&A 게시판 ── */
-.qna-section{margin-top:28px}
+.qna-section{margin-top:0;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);padding:20px 20px 16px;margin-bottom:24px}
 /* 게시판 헤더 */
 .qna-board-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:0;flex-wrap:wrap;gap:10px}
 .qna-board-title{font-size:17px;font-weight:700;color:var(--text)}
@@ -97,7 +97,7 @@ footer strong{color:#fff}
 .qna-write-btn{padding:9px 18px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px}
 .qna-write-btn:hover{background:var(--primary-light)}
 /* 테이블 */
-.qna-board-table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-top:10px;box-shadow:var(--shadow)}
+.qna-board-table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-top:10px}
 .qna-board-table thead tr{background:var(--primary);color:#fff}
 .qna-board-table th{padding:11px 12px;font-size:13px;font-weight:600;text-align:center;white-space:nowrap}
 .qna-board-table th.col-title{text-align:left}
@@ -154,8 +154,10 @@ footer strong{color:#fff}
 .qna-board-empty{text-align:center;padding:40px 0;color:var(--text-sub);font-size:14px}
 .qna-board-loading{text-align:center;padding:32px 0;color:var(--text-sub);font-size:13px}
 /* 자료실 구분 */
-.file-section-divider{display:flex;align-items:center;gap:0;margin:40px 0 0;border-top:3px solid var(--primary)}
-.file-section-label{background:var(--primary);color:#fff;padding:8px 24px;font-size:14px;font-weight:700;border-radius:0 0 10px 0;display:inline-block}
+#fileSection{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden}
+.file-section-divider{display:flex;align-items:center;gap:0;margin:0}
+.file-section-label{background:var(--primary);color:#fff;padding:14px 18px;font-size:15px;font-weight:700;display:block;width:100%;box-sizing:border-box}
+#mainContent{padding:16px 18px}
 /* Q&A 작성 모달 */
 .qna-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:3000;align-items:center;justify-content:center;padding:16px}
 .qna-modal-overlay.open{display:flex}
@@ -174,10 +176,11 @@ footer strong{color:#fff}
 .qna-modal-submit{padding:12px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;width:100%}
 .qna-modal-submit:disabled{opacity:.6;cursor:not-allowed}
 /* ── 2단 레이아웃 (좌: Q&A+자료실 / 우: 소위원회+안내사항) ── */
-.practice-layout{max-width:1240px;margin:0 auto;padding:28px 16px;display:grid;grid-template-columns:1.5fr 1fr;gap:24px;align-items:start}
-@media(max-width:960px){.practice-layout{grid-template-columns:1fr}}
-.practice-left{min-width:0}
-.practice-right{min-width:0;display:flex;flex-direction:column;gap:24px}
+.practice-layout{max-width:1240px;margin:0 auto;padding:28px 16px;display:grid;grid-template-columns:1.5fr 1fr;gap:0;align-items:start}
+.practice-left{min-width:0;padding-right:24px}
+.practice-right{min-width:0;display:flex;flex-direction:column;gap:24px;padding-left:24px}
+@media(min-width:961px){.practice-left{border-right:1px solid var(--border)}}
+@media(max-width:960px){.practice-layout{grid-template-columns:1fr}.practice-left{padding-right:0;border-right:none;margin-bottom:8px}.practice-right{padding-left:0}}
 /* 우측 사이드 패널 (소위원회 시트 / 안내사항 메모창) */
 .side-panel{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden}
 .side-panel-header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 18px;background:var(--primary);color:#fff}
